@@ -1,7 +1,5 @@
-import type { JsonValue } from '../types/json'
-
 export function matchesCondition(
-  condition: JsonValue,
+  condition: unknown,
   output: Record<string, unknown>,
 ): boolean {
   if (typeof condition !== 'object' || condition === null || Array.isArray(condition)) {

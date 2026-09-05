@@ -1,4 +1,4 @@
-import { config } from './config'
+import './config'
 import { prisma } from './prisma'
 import { startServer } from './server'
 import { startTelegramListener } from './telegram/listener'

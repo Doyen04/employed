@@ -1,6 +1,7 @@
 import type { TelegramClient } from 'teleproto'
 import { NewMessage } from 'teleproto/events'
 import type { NewMessageEvent } from 'teleproto/events'
+import bigInt from 'big-integer'
 
 import { prisma } from '../prisma'
 import { buildClient } from './client'
@@ -8,7 +9,6 @@ import { getSessionString } from './sessionStore'
 import { runAnalysis } from '../llm/analyze'
 import { matchesCondition } from '../actions/resolver'
 import { dispatchAction } from '../actions/dispatch'
-import type { Message } from '../generated/prisma/client'
 import { toJsonValue } from '../types/json'
 import { emitMessageNew } from '../socket/server'
 
@@ -35,6 +35,7 @@ async function resolveChatTitle(
   client: TelegramClient,
   event: NewMessageEvent,
 ): Promise<string> {
+  if (event.chatId === undefined) return 'unknown'
   const direct = (event as { chat?: { title?: unknown } }).chat?.title
   if (typeof direct === 'string' && direct.length > 0) return direct
 

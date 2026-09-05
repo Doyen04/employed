@@ -1,5 +1,5 @@
 import { decryptSecret } from '../crypto'
-import type { Notifier, NotifierResult, NotificationPayload } from './types'
+import type { Notifier, NotifierResult, NotificationPayload } from '../types'
 
 const BODY_MAX = 4096
 
@@ -30,7 +30,7 @@ export const telegramNotifier: Notifier = {
       return { status: 'failed', error: 'telegram notifier requires config.targetChatId' }
     }
 
-    const { tryTelegramClient } = await import('../telegram/client')
+    const { tryTelegramClient } = await import('../../telegram/client')
     const client = await tryTelegramClient()
     if (!client) {
       return { status: 'failed', error: 'telegram session not authenticated' }

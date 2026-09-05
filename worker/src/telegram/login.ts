@@ -36,7 +36,6 @@ async function main() {
     },
     onError: (error) => {
       console.error('Login error:', error)
-      return false
     },
   })
 

@@ -1,4 +1,4 @@
-import type { Notifier, NotifierResult, NotificationPayload } from '../types'
+import type { Notifier, NotifierResult } from '../types'
 
 export const webhookNotifier: Notifier = {
   async send(payload, config): Promise<NotifierResult> {
