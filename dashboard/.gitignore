@@ -10,6 +10,4 @@ dist-ssr
 .output
 .vinxi
 __unconfig*
-todos.json
-
-src/generated
+    todos.json

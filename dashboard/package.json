@@ -14,16 +14,9 @@
         "format": "prettier --write . && eslint --fix",
         "check": "prettier --check .",
         "post-cta-init": "npx -y create-db@latest --user-agent tanstack/tsrouter",
-        "db:generate": "dotenv -e .env.local -- prisma generate",
-        "db:push": "dotenv -e .env.local -- prisma db push",
-        "db:migrate": "dotenv -e .env.local -- prisma migrate dev",
-        "db:studio": "dotenv -e .env.local -- prisma studio",
-        "db:seed": "dotenv -e .env.local -- prisma db seed",
-        "postinstall": "npm run generate-routes && npm run db:generate || echo 'Skipping prisma generate — set up .env.local first'"
+        "postinstall": "npm run generate-routes"
     },
     "dependencies": {
-        "@prisma/adapter-pg": "^7.4.2",
-        "@prisma/client": "^7.4.2",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-devtools": "latest",
         "@tanstack/react-router": "latest",
@@ -33,7 +26,6 @@
         "clsx": "^2.1.1",
         "lucide-react": "^0.577.0",
         "nitro": "3.0.260610-beta",
-        "prisma": "^7.4.2",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "tailwind-merge": "^3.0.2",
@@ -49,7 +41,6 @@
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^6.0.1",
-        "dotenv-cli": "^11.0.0",
         "eslint": "^9.20.0",
         "prettier": "^3.8.1",
         "tsx": "^4.21.0",
@@ -59,14 +50,10 @@
     "pnpm": {
         "onlyBuiltDependencies": [
             "esbuild",
-            "lightningcss",
-            "@prisma/engines",
-            "prisma"
+            "lightningcss"
         ]
     },
     "allowScripts": {
-        "prisma@7.10.0": true,
-        "@prisma/engines@7.10.0": true,
         "esbuild@0.28.2": true,
         "unrs-resolver@1.12.2": true
     }
