@@ -40,3 +40,10 @@ export async function tryTelegramClient(): Promise<TelegramClient | null> {
     return null
   }
 }
+
+export function resetTelegramClient(): void {
+  if (!client) return
+  const oldClient = client
+  client = null
+  oldClient.disconnect().catch(() => {})
+}

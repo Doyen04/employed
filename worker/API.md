@@ -94,9 +94,30 @@ preserved when `config` is omitted on PATCH. The dashboard re-asks for secrets w
 
 ### Telegram session
 
-| Method | Path | Response |
-|---|---|---|
-| GET | `/telegram/status` | `200 { loggedIn: boolean }` |
+| Method | Path | Body | Response |
+|---|---|---|---|
+| GET | `/telegram/status` | — | `200 { loggedIn: boolean, login: LoginStatus }` |
+| GET | `/telegram/login` | — | `200 { login: LoginStatus }` |
+| POST | `/telegram/login/start` | `{ phoneNumber }` | `202 { login: LoginStatus }` or `409 { error }` when a flow is already running |
+| POST | `/telegram/login/code` | `{ code }` | `200 { login: LoginStatus }` or `409` when no code prompt is pending |
+| POST | `/telegram/login/password` | `{ password }` | `200 { login: LoginStatus }` or `409` when no password prompt is pending |
+| POST | `/telegram/login/abort` | — | `200 { login: LoginStatus }` |
 
-Login itself happens out-of-band with `npm run login` in the worker repo (phone + OTP → session
-encrypted into Postgres).
+The login flow is a single active login per worker:
+
+1. `POST /telegram/login/start` with a phone number kicks off the flow and returns
+   `LoginStatus<started>` (`202`).
+2. Poll `GET /telegram/status` (or `/telegram/login`): when Telegram asks for the
+   SMS/OTP code the status becomes `awaitingCode`; if the account has 2FA it then
+   becomes `awaitingPassword` (with the optional `hint`).
+3. Submit the code / 2FA password. After the final step the status flips to `done`
+   and the session is stored encrypted; the worker hot-starts the realtime listener.
+4. Any error (wrong code, timeout, cancellation, Telegram-side failure) leaves the
+   status as `error` with a message. `POST /login/abort` cancels a running flow.
+
+`LoginStatus` is one of:
+`{ state: 'idle' } | { state: 'started' } | { state: 'awaitingCode' } |
+{ state: 'awaitingPassword'; hint?: string } | { state: 'done' } |
+{ state: 'error'; error: string }`
+
+Login itself can still be run out-of-band with `npm run login` in the worker repo.
