@@ -1,4 +1,4 @@
-import { decryptSecret } from '../crypto'
+import { decryptSecret } from '../../crypto'
 import type { Notifier, NotifierResult, NotificationPayload } from '../types'
 
 const BODY_MAX = 4096
