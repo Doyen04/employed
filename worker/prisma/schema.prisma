@@ -7,8 +7,105 @@ datasource db {
   provider = "postgresql"
 }
 
-model Todo {
-  id        Int      @id @default(autoincrement())
-  title     String
+enum NotifierType {
+  telegram
+  email
+  webhook
+  push
+  slack
+}
+
+enum ActionStatus {
+  pending
+  sent
+  failed
+}
+
+model User {
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now())
+}
+
+model Chat {
+  id             String    @id @default(cuid())
+  telegramChatId BigInt
+  title          String
+  isMonitored    Boolean   @default(false)
+  addedAt        DateTime  @default(now())
+  messages       Message[]
+
+  @@unique([telegramChatId])
+}
+
+model Message {
+  id                String     @id @default(cuid())
+  chatId            String
+  telegramMessageId Int
+  senderName        String?
+  text              String
+  receivedAt        DateTime   @default(now())
+  chat              Chat       @relation(fields: [chatId], references: [id])
+  analyses          Analysis[]
+
+  @@unique([chatId, telegramMessageId])
+}
+
+model AnalysisConfig {
+  id             String        @id @default(cuid())
+  name           String
+  promptTemplate String
+  outputSchema   Json
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  analyses       Analysis[]
+  actionRules    ActionRule[]
+}
+
+model Analysis {
+  id               String         @id @default(cuid())
+  messageId        String
+  analysisConfigId String
+  rawResponse      Json
+  analyzedAt       DateTime       @default(now())
+  message          Message        @relation(fields: [messageId], references: [id])
+  analysisConfig   AnalysisConfig @relation(fields: [analysisConfigId], references: [id])
+  actionLogs       ActionLog[]
+}
+
+model ActionRule {
+  id               String         @id @default(cuid())
+  analysisConfigId String
+  condition        Json
+  notifierId       String
+  isActive         Boolean        @default(true)
+  analysisConfig   AnalysisConfig @relation(fields: [analysisConfigId], references: [id])
+  notifier         Notifier       @relation(fields: [notifierId], references: [id])
+}
+
+model Notifier {
+  id          String       @id @default(cuid())
+  type        NotifierType
+  name        String
+  config      Json
+  isActive    Boolean      @default(true)
+  actionRules ActionRule[]
+  actionLogs  ActionLog[]
+}
+
+model ActionLog {
+  id          String       @id @default(cuid())
+  analysisId  String
+  notifierId  String
+  status      ActionStatus @default(pending)
+  sentAt      DateTime?
+  errorDetail String?
+  retryCount  Int          @default(0)
+  analysis    Analysis     @relation(fields: [analysisId], references: [id])
+  notifier    Notifier     @relation(fields: [notifierId], references: [id])
 }

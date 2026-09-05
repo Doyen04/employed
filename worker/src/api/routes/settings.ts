@@ -1,0 +1,153 @@
+import { Router } from 'express'
+import { z } from 'zod'
+
+import { prisma } from '../../prisma'
+import { encryptSecret } from '../../crypto'
+import type { ActionRule, AnalysisConfig, Notifier } from '../../generated/prisma/client'
+
+export const settingsRouter = Router()
+
+const NOTIFIER_TYPES = ['telegram', 'email', 'webhook', 'push', 'slack'] as const
+
+function serializeConfig(config: AnalysisConfig) {
+  return {
+    id: config.id,
+    name: config.name,
+    promptTemplate: config.promptTemplate,
+    outputSchema: config.outputSchema,
+    isActive: config.isActive,
+    createdAt: config.createdAt.toISOString(),
+  }
+}
+
+function serializeNotifier(notifier: Notifier) {
+  return {
+    id: notifier.id,
+    type: notifier.type,
+    name: notifier.name,
+    isActive: notifier.isActive,
+    configConfigured: true,
+  }
+}
+
+function serializeRule(rule: ActionRule & { notifier: { id: string; name: string; type: string } }) {
+  return {
+    id: rule.id,
+    analysisConfigId: rule.analysisConfigId,
+    condition: rule.condition,
+    notifierId: rule.notifierId,
+    notifierName: rule.notifier.name,
+    notifierType: rule.notifier.type,
+    isActive: rule.isActive,
+  }
+}
+
+settingsRouter.get('/', async (_req, res) => {
+  const [analysisConfigs, actionRules, notifiers] = await Promise.all([
+    prisma.analysisConfig.findMany({ orderBy: { createdAt: 'asc' } }),
+    prisma.actionRule.findMany({ orderBy: { id: 'asc' }, include: { notifier: true } }),
+    prisma.notifier.findMany({ orderBy: { id: 'asc' } }),
+  ])
+
+  res.json({
+    analysisConfigs: analysisConfigs.map(serializeConfig),
+    actionRules: actionRules.map(serializeRule),
+    notifiers: notifiers.map(serializeNotifier),
+  })
+})
+
+const configSchema = z.object({
+  name: z.string().min(1),
+  promptTemplate: z.string().min(1),
+  outputSchema: z.record(z.unknown()),
+  isActive: z.boolean().default(true),
+})
+
+settingsRouter.post('/analysis-configs', async (req, res) => {
+  const body = configSchema.parse(req.body ?? {})
+  const config = await prisma.analysisConfig.create({ data: body })
+  res.status(201).json(serializeConfig(config))
+})
+
+settingsRouter.patch('/analysis-configs/:id', async (req, res) => {
+  const body = configSchema.partial().parse(req.body ?? {})
+  const config = await prisma.analysisConfig.update({
+    where: { id: req.params.id },
+    data: body,
+  })
+  res.json(serializeConfig(config))
+})
+
+settingsRouter.delete('/analysis-configs/:id', async (req, res) => {
+  await prisma.analysisConfig.delete({ where: { id: req.params.id } })
+  res.status(204).end()
+})
+
+const notifierSchema = z.object({
+  type: z.enum(NOTIFIER_TYPES),
+  name: z.string().min(1),
+  config: z.record(z.unknown()),
+  isActive: z.boolean().default(true),
+})
+
+settingsRouter.post('/notifiers', async (req, res) => {
+  const body = notifierSchema.parse(req.body ?? {})
+  const notifier = await prisma.notifier.create({
+    data: {
+      type: body.type,
+      name: body.name,
+      isActive: body.isActive,
+      config: encryptSecret(JSON.stringify(body.config)),
+    },
+  })
+  res.status(201).json(serializeNotifier(notifier))
+})
+
+settingsRouter.patch('/notifiers/:id', async (req, res) => {
+  const body = notifierSchema.partial().parse(req.body ?? {})
+  const data: Record<string, unknown> = {}
+  if (body.name !== undefined) data.name = body.name
+  if (body.isActive !== undefined) data.isActive = body.isActive
+  if (body.type !== undefined) data.type = body.type
+  if (body.config !== undefined) {
+    data.config = encryptSecret(JSON.stringify(body.config))
+  }
+  const notifier = await prisma.notifier.update({ where: { id: req.params.id }, data })
+  res.json(serializeNotifier(notifier))
+})
+
+settingsRouter.delete('/notifiers/:id', async (req, res) => {
+  await prisma.notifier.delete({ where: { id: req.params.id } })
+  res.status(204).end()
+})
+
+const ruleSchema = z.object({
+  analysisConfigId: z.string().min(1),
+  condition: z.record(z.unknown()),
+  notifierId: z.string().min(1),
+  isActive: z.boolean().default(true),
+})
+
+settingsRouter.post('/action-rules', async (req, res) => {
+  const body = ruleSchema.parse(req.body ?? {})
+  const rule = await prisma.actionRule.create({
+    data: body,
+    include: { notifier: true },
+  })
+  res.status(201).json(serializeRule(rule))
+})
+
+settingsRouter.patch('/action-rules/:id', async (req, res) => {
+  const body = ruleSchema.partial().parse(req.body ?? {})
+  const rule = await prisma.actionRule.update({
+    where: { id: req.params.id },
+    data: body,
+    include: { notifier: true },
+  })
+  res.json(serializeRule(rule))
+})
+
+settingsRouter.delete('/action-rules/:id', async (req, res) => {
+  await prisma.actionRule.delete({ where: { id: req.params.id } })
+  res.status(204).end()
+})
