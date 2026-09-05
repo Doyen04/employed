@@ -66,6 +66,7 @@ async function ingestMessage(
   const text = (event.message.message ?? '').trim()
   if (!text) return
 
+  if (event.chatId === undefined) return
   const telegramChatId = BigInt(event.chatId.toString())
   const telegramMessageId = event.message.id
 
@@ -97,7 +98,7 @@ async function ingestMessage(
   })
 
   await setLastSeen(telegramChatId, telegramMessageId)
-  await processMessage(client, message, chat)
+  await processMessage(message, chat)
 }
 
 interface MessageRow {
@@ -108,8 +109,7 @@ interface MessageRow {
 }
 
 async function processMessage(
-  client: TelegramClient,
-  message: MessageRow & { receivedAt: Date },
+  message: MessageRow,
   chat: { id: string; title: string },
 ): Promise<void> {
   const configs = await prisma.analysisConfig.findMany({
@@ -137,7 +137,7 @@ async function processMessage(
 
       for (const rule of cfg.actionRules) {
         if (!matchesCondition(rule.condition, output)) continue
-        await dispatchAction(rule, analysis, message, chat)
+        await dispatchAction(rule, analysis, { message, chat })
       }
 
       emitMessageNew({ message, chat, analysis: output, analysisConfigName: cfg.name })
@@ -161,7 +161,7 @@ async function backfillMonitoredChats(client: TelegramClient): Promise<void> {
     if (lastSeen == null) continue
 
     try {
-      const messages = await client.getMessages(chat.telegramChatId, {
+      const messages = await client.getMessages(bigInt(String(chat.telegramChatId)), {
         offsetId: lastSeen,
         reverse: true,
         limit: 50,
@@ -186,7 +186,7 @@ async function backfillMonitoredChats(client: TelegramClient): Promise<void> {
         })
 
         await setLastSeen(chat.telegramChatId, msg.id)
-        await processMessage(client, upserted, chat)
+        await processMessage(upserted, chat)
       }
     } catch (error) {
       console.error(`[listener] backfill failed for chat ${chat.id}:`, (error as Error).message)
