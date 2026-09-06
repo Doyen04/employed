@@ -57,6 +57,7 @@ Use established libraries for everything else — hand-rolling these is forbidde
 ## Commands
 
 ### worker/ (`C:\Users\HP\Documents\5WEB_PROJECT\employed\worker`)
+
 ```
 npm run typecheck    # tsc --noEmit          — run after every change
 npm run db:generate  # prisma generate
@@ -70,6 +71,7 @@ npm run login        # interactive Telegram session (npm run start first)
 ```
 
 ### dashboard/ (`C:\Users\HP\Documents\5WEB_PROJECT\employed\dashboard`)
+
 ```
 npm run lint
 npm run build        # also regenerates routeTree.gen.ts via postinstall
@@ -77,6 +79,7 @@ npm run dev
 ```
 
 ## Environment
+
 - Windows PowerShell 5.1. Never chain with `&&`; use `; if ($?) { ... }`.
 - `npm-install` blocks scripts: `worker/package.json` `allowScripts` lists approved
   packages (prisma, @prisma/engines, esbuild, unrs-resolver). Add new native deps there.
@@ -84,6 +87,7 @@ npm run dev
   `P1000 Authentication failed` usually means a stale `DATABASE_URL` in `worker/.env`.
 
 ## Contract
+
 - `worker/API.md` is the canonical owner of the HTTP + Socket.io contract. Dashboard server
   functions must be written against it.
 - Notifier/LLM configs stored by the worker are encrypted (AES-256-GCM) via `worker/ENCRYPTION_KEY`.
