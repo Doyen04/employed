@@ -1,8 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getCookie, setCookie } from '@tanstack/react-start/server'
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { compare } from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
 const SESSION_COOKIE = 'employed_auth'
+const JWT_ISSUER = 'employed-dashboard'
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 
 function cookieOptions(maxAge?: number) {
@@ -15,40 +17,26 @@ function cookieOptions(maxAge?: number) {
   }
 }
 
-function safeEqual(a: string, b: string): boolean {
-  const left = Buffer.from(a)
-  const right = Buffer.from(b)
-  if (left.length !== right.length) return false
-  return timingSafeEqual(left, right)
-}
-
-function sign(value: string): string {
-  const secret = process.env.AUTH_SECRET
-  if (!secret) {
-    throw new Error('AUTH_SECRET is not set — add it to dashboard/.env.local')
-  }
-  return createHmac('sha256', secret).update(value).digest('base64url')
-}
-
-function createSessionToken(): string {
-  const raw = randomBytes(32).toString('base64url')
-  return `${raw}.${sign(raw)}`
-}
-
-function isSessionValid(value: string | undefined): boolean {
-  if (!value) return false
-  const dot = value.lastIndexOf('.')
-  if (dot === -1) return false
-  return safeEqual(sign(value.slice(0, dot)), value.slice(dot + 1))
-}
-
 function authError(message: string): Error & { status: number } {
   const error = new Error(message) as Error & { status: number }
   error.status = 401
   return error
 }
 
-/** Throw (401) when the request cookie is not a valid admin session. */
+/** Rejects a token unless it is a valid JWT signed with AUTH_SECRET for this app. */
+function isSessionValid(token: string | undefined): boolean {
+  if (!token) return false
+  const secret = process.env.AUTH_SECRET
+  if (!secret) return false
+  try {
+    jwt.verify(token, secret, { issuer: JWT_ISSUER })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Guard for proxying server functions — throws 401 when the request has no valid session. */
 export const requireAuthed = createServerFn({
   method: 'GET',
 }).handler(async () => {
@@ -69,11 +57,21 @@ export const login = createServerFn({ method: 'POST' })
     return input
   })
   .handler(async ({ data: password }) => {
-    const expected = process.env.DASHBOARD_ADMIN_PASSWORD ?? ''
-    if (expected.length === 0 || !safeEqual(password, expected)) {
+    const secret = process.env.AUTH_SECRET
+    const hash = process.env.DASHBOARD_ADMIN_PASSWORD_HASH
+    if (!secret || !hash) {
+      throw authError('admin auth is not configured')
+    }
+    const valid = await compare(password, hash)
+    if (!valid) {
       throw authError('invalid password')
     }
-    setCookie(SESSION_COOKIE, createSessionToken(), cookieOptions())
+    const token = jwt.sign({ sub: 'admin' }, secret, {
+      expiresIn: MAX_AGE_SECONDS,
+      issuer: JWT_ISSUER,
+      audience: JWT_ISSUER,
+    })
+    setCookie(SESSION_COOKIE, token, cookieOptions())
     return { ok: true }
   })
 
