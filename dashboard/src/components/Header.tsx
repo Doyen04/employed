@@ -11,7 +11,7 @@ export default function Header() {
                         className="inline-flex items-center gap-2 rounded-full border border-(--chip-line) bg-(--chip-bg) px-3 py-1.5 text-sm text-(--sea-ink) no-underline shadow-[0_8px_24px_rgba(30,90,72,0.08)] sm:px-4 sm:py-2"
                     >
                         <span className="h-2 w-2 rounded-full bg-[linear-gradient(90deg,#56c6be,#7ed3bf)]" />
-                        TanStack Start
+                        Employed
                     </Link>
                 </h2>
 
@@ -23,21 +23,6 @@ export default function Header() {
                     >
                         Home
                     </Link>
-                    <Link
-                        to="/about"
-                        className="nav-link"
-                        activeProps={{ className: 'nav-link is-active' }}
-                    >
-                        About
-                    </Link>
-                    <a
-                        href="https://tanstack.com/start/latest/docs/framework/react/overview"
-                        className="nav-link"
-                        target="_blank"
-                        rel="noreferrer"
-                    >
-                        Docs
-                    </a>
                 </div>
 
                 <div className="ml-auto flex items-center gap-1.5 sm:gap-2">

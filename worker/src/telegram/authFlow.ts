@@ -18,7 +18,7 @@ const PROMPT_TIMEOUT_MS = 5 * 60 * 1000
 
 class TelegramLoginFlow {
   private status: TelegramLoginStatus = { state: 'idle' }
-  private client: TelegramClient | null = null
+  private client: TelegramClient<StringSession> | null = null
   private promptResolve: ((value: string) => void) | null = null
   private promptReject: ((error: Error) => void) | null = null
   private promptTimer: ReturnType<typeof setTimeout> | null = null
@@ -79,9 +79,9 @@ class TelegramLoginFlow {
         phoneNumber: phone,
         phoneCode: async () => this.waitForPrompt('code'),
         password: async (hint) => this.waitForPrompt('password', hint),
-        onError: (error) => {
+        onError: async (error) => {
           this.status = { state: 'error', error: error.message }
-          return true
+          throw error
         },
       })
 
