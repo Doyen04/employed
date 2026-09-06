@@ -1,3 +1,5 @@
+import { BrainCircuit, Radio } from 'lucide-react'
+
 import { useLiveMessageNew } from '../../client/useRealtime'
 import type { RealtimeMessageNew } from '../../lib/types'
 
@@ -6,26 +8,28 @@ export function LiveFeed() {
 
   if (events.length === 0) {
     return (
-      <p className="text-sm text-[var(--sea-ink-soft)]">
-        Waiting for analyzed messages… connect the socket via the VITE_WORKER_SOCKET_* envs.
-      </p>
+      <div className="live-empty">
+        <span><Radio aria-hidden="true" /></span>
+        <div><b>Waiting for the next signal</b><p>New analyzed messages will stream here while this page is open.</p></div>
+      </div>
     )
   }
 
   return (
-    <ul className="m-0 flex flex-col gap-2">
-      {events.map((event, index) => (
-        <li
-          key={index}
-          className="rounded-xl border border-(--line) bg-[var(--header-bg)] px-4 py-2.5"
-        >
-          <p className="m-0 text-sm text-[var(--sea-ink)]">
-            <span className="font-semibold">{event.chat.title}</span>
-            <span className="text-[var(--sea-ink-soft)]"> · {event.analysisConfigName}</span>
-          </p>
-          <p className="m-0 mt-0.5 text-xs text-[var(--sea-ink-soft)]">{event.message.text}</p>
-        </li>
+    <div className="live-feed-list">
+      {[...events].reverse().slice(0, 8).map((event) => (
+        <article key={`${event.message.id}-${event.analysisConfigName}`} className="live-feed-row">
+          <span className="live-analysis-icon"><BrainCircuit aria-hidden="true" /></span>
+          <div className="recent-main">
+            <div className="recent-meta">
+              <b>{event.chat.title}</b>
+              <span>{event.message.senderName ?? 'Unknown sender'} · {event.analysisConfigName}</span>
+            </div>
+            <p>{event.message.text}</p>
+          </div>
+          <span className="live-new-badge">New</span>
+        </article>
       ))}
-    </ul>
+    </div>
   )
 }

@@ -1,129 +1,323 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowUpRight, MessageSquareMore, Radar, Radio } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowRight,
+  Bot,
+  CheckCircle2,
+  Clock3,
+  MessageSquare,
+  Radio,
+  RefreshCw,
+  Send,
+  Settings2,
+  Webhook,
+  Zap,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
+import { getOverview } from '../../server/overview'
 import { getTelegramStatus } from '../../server/telegram'
-import { listChats } from '../../server/chats'
 import { LiveFeed } from '../../components/dashboard/LiveFeed'
-import { Panel } from '../../components/dashboard/Panel'
-import { WorkerStatusPill } from '../../components/dashboard/WorkerStatusPill'
-import type { WorkerChat, WorkerTelegramStatus } from '../../lib/types'
+import type { WorkerOverview, WorkerOverviewAction, WorkerTelegramStatus } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/dashboard')({ component: OverviewPage })
 
 function OverviewPage() {
-  const [status, setStatus] = useState<WorkerTelegramStatus | null>(null)
-  const [chats, setChats] = useState<WorkerChat[]>([])
+  const [overview, setOverview] = useState<WorkerOverview | null>(null)
+  const [telegram, setTelegram] = useState<WorkerTelegramStatus | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let alive = true
-    async function load() {
-      try {
-        const [nextStatus, chatsResult] = await Promise.all([getTelegramStatus(), listChats()])
-        if (!alive) return
-        setStatus(nextStatus)
-        setChats(chatsResult.items)
-        setError(null)
-      } catch (err) {
-        if (alive) setError(errorText(err))
-      }
-    }
-    void load()
-    return () => {
-      alive = false
-    }
+  const load = useCallback(async (refresh = false) => {
+    if (refresh) setRefreshing(true)
+    else setLoading(true)
+    setError(null)
+
+    const [overviewResult, telegramResult] = await Promise.allSettled([
+      getOverview(),
+      getTelegramStatus(),
+    ])
+
+    if (overviewResult.status === 'fulfilled') setOverview(overviewResult.value)
+    else setError(errorText(overviewResult.reason))
+
+    if (telegramResult.status === 'fulfilled') setTelegram(telegramResult.value)
+    else if (overviewResult.status === 'fulfilled') setError(errorText(telegramResult.reason))
+
+    setLoading(false)
+    setRefreshing(false)
   }, [])
 
-  if (error) {
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  if (loading) return <OverviewSkeleton />
+
+  if (!overview) {
     return (
-      <Panel title="Worker unreachable" description="The dashboard talks to the worker over its HTTP API.">
-        <p role="alert" className="m-0 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-600">
-          {error}
-        </p>
-      </Panel>
+      <section className="app-empty-state">
+        <span className="app-empty-icon is-error"><AlertTriangle aria-hidden="true" /></span>
+        <p className="app-eyebrow">Connection error</p>
+        <h1>We couldn’t reach your worker.</h1>
+        <p>{error ?? 'The worker overview API did not return data.'}</p>
+        <button type="button" className="app-primary-button" onClick={() => void load(true)}>
+          <RefreshCw aria-hidden="true" /> Try again
+        </button>
+      </section>
     )
   }
 
-  const monitored = chats.filter((chat) => chat.isMonitored).length
-  const telegramLabel = status === null ? '…' : status.loggedIn ? 'Telegram online' : 'Needs login'
+  const attentionCount = overview.counts.actions.failed + overview.counts.actions.pending
+  const isConfigured =
+    overview.counts.chats.monitored > 0 &&
+    overview.counts.analysisConfigs.active > 0 &&
+    overview.counts.rules.active > 0 &&
+    overview.counts.notifiers.active > 0
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="island-shell relative overflow-hidden rounded-[2rem] px-6 py-8 sm:px-8">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(79,184,178,0.24),transparent_66%)]" />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="island-kicker mb-2">Overview</p>
-            <h1 className="display-title m-0 text-3xl font-bold tracking-tight text-[var(--sea-ink)]">
-              {chats.length > 0
-                ? `${monitored} of ${chats.length} chats monitored`
-                : 'Telegram not connected'}
-            </h1>
-            <p className="mb-0 mt-2 max-w-xl text-sm text-[var(--sea-ink-soft)]">
-              New messages are analyzed in real time; matches flow into the live feed below.
-            </p>
-          </div>
-          <WorkerStatusPill />
+    <div className="overview-page">
+      <section className="overview-heading">
+        <div>
+          <p className="app-eyebrow">Command center</p>
+          <h1>Your automation, at a glance.</h1>
+          <p>Monitor the path from Telegram message to AI decision and delivered action.</p>
         </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard icon={Radar} label="Chats" value={String(chats.length)} />
-          <StatCard icon={Radio} label="Monitored" value={String(monitored)} />
-          <StatCard icon={MessageSquareMore} label="Telegram session" value={telegramLabel} />
+        <div className="overview-heading-actions">
+          <span className={`system-state ${telegram?.loggedIn ? 'is-healthy' : 'is-warning'}`}>
+            <span /> {telegram?.loggedIn ? 'Telegram connected' : 'Telegram needs attention'}
+          </span>
+          <button
+            type="button"
+            className="app-icon-button"
+            onClick={() => void load(true)}
+            disabled={refreshing}
+            aria-label="Refresh overview"
+            title="Refresh overview"
+          >
+            <RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
+          </button>
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel className="lg:col-span-2" title="Live analysis" description="Via the browser → worker socket.">
-          <LiveFeed />
-        </Panel>
+      {error && (
+        <div className="overview-alert" role="alert">
+          <AlertTriangle aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+      )}
 
-        <Panel title="Quick actions">
-          <ul className="m-0 flex flex-col gap-2">
-            {QUICK_LINKS.map((link) => (
-              <li key={link.to}>
-                <Link
-                  to={link.to}
-                  className="group flex items-center justify-between rounded-xl border border-(--line) bg-[var(--header-bg)] px-4 py-2.5 text-sm font-semibold text-[var(--sea-ink)] no-underline hover:border-[rgba(50,143,151,0.4)]"
-                >
-                  {link.label}
-                  <ArrowUpRight className="h-4 w-4 text-[var(--sea-ink-soft)] transition group-hover:text-[var(--lagoon-deep)]" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Panel>
+      {!isConfigured && <SetupBanner overview={overview} telegram={telegram} />}
+
+      <section className="metric-grid" aria-label="Operational metrics">
+        <MetricCard
+          icon={MessageSquare}
+          label="Messages captured"
+          value={formatNumber(overview.counts.messages.total)}
+          detail={timeLabel(overview.timestamps.latestMessageAt, 'No messages yet')}
+          tone="mint"
+        />
+        <MetricCard
+          icon={Radio}
+          label="Monitored chats"
+          value={`${overview.counts.chats.monitored}/${overview.counts.chats.total}`}
+          detail={overview.counts.chats.monitored > 0 ? 'Listening for new messages' : 'Choose chats to monitor'}
+          tone="blue"
+        />
+        <MetricCard
+          icon={Send}
+          label="Actions delivered"
+          value={formatNumber(overview.counts.actions.sent)}
+          detail={`${formatPercent(overview.counts.actions.successRate)} success rate`}
+          tone="purple"
+        />
+        <MetricCard
+          icon={attentionCount > 0 ? AlertTriangle : CheckCircle2}
+          label="Needs attention"
+          value={formatNumber(attentionCount)}
+          detail={attentionCount > 0 ? `${overview.counts.actions.failed} failed · ${overview.counts.actions.pending} pending` : 'No action issues'}
+          tone={attentionCount > 0 ? 'orange' : 'green'}
+        />
+      </section>
+
+      <section className="pipeline-panel">
+        <div className="app-panel-heading">
+          <div>
+            <p className="app-eyebrow">Automation pipeline</p>
+            <h2>Every stage, ready to work.</h2>
+          </div>
+          <span className="last-activity"><Clock3 /> Last analysis {timeLabel(overview.timestamps.latestAnalysisAt, 'not yet run')}</span>
+        </div>
+        <div className="pipeline-grid">
+          <PipelineStage
+            icon={Radio}
+            label="Source"
+            title="Telegram"
+            value={telegram?.loggedIn ? 'Connected' : 'Not connected'}
+            healthy={Boolean(telegram?.loggedIn)}
+            to="/telegram"
+          />
+          <PipelineStage
+            icon={Bot}
+            label="Intelligence"
+            title="AI analyses"
+            value={`${overview.counts.analysisConfigs.active} active`}
+            healthy={overview.counts.analysisConfigs.active > 0}
+            to="/settings"
+          />
+          <PipelineStage
+            icon={Settings2}
+            label="Decision"
+            title="Action rules"
+            value={`${overview.counts.rules.active} active`}
+            healthy={overview.counts.rules.active > 0}
+            to="/settings"
+          />
+          <PipelineStage
+            icon={Webhook}
+            label="Destination"
+            title="Notifiers"
+            value={`${overview.counts.notifiers.active} active`}
+            healthy={overview.counts.notifiers.active > 0}
+            to="/settings"
+            last
+          />
+        </div>
+      </section>
+
+      <div className="overview-content-grid">
+        <section className="app-data-panel">
+          <div className="app-panel-heading compact">
+            <div><p className="app-eyebrow">Intelligence inbox</p><h2>Recent messages</h2></div>
+            <Link to="/messages" className="app-text-link">View all <ArrowRight /></Link>
+          </div>
+          {overview.recentMessages.length === 0 ? (
+            <CompactEmpty icon={MessageSquare} text="Messages from monitored chats will appear here." />
+          ) : (
+            <div className="recent-list">
+              {overview.recentMessages.map((message) => (
+                <article className="recent-message" key={message.id}>
+                  <span className="source-avatar">{initials(message.chat.title)}</span>
+                  <div className="recent-main">
+                    <div className="recent-meta"><b>{message.chat.title}</b><span>{message.senderName ?? 'Unknown sender'} · {timeLabel(message.receivedAt)}</span></div>
+                    <p>{truncate(message.text, 150)}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="app-data-panel">
+          <div className="app-panel-heading compact">
+            <div><p className="app-eyebrow">Delivery activity</p><h2>Recent actions</h2></div>
+            <Link to="/action-logs" className="app-text-link">View logs <ArrowRight /></Link>
+          </div>
+          {overview.recentActions.length === 0 ? (
+            <CompactEmpty icon={Zap} text="Matched rules and dispatched actions will appear here." />
+          ) : (
+            <div className="action-list">
+              {overview.recentActions.map((action) => <ActionRow action={action} key={action.id} />)}
+            </div>
+          )}
+        </section>
       </div>
+
+      <section className="app-data-panel live-panel">
+        <div className="app-panel-heading compact">
+          <div><p className="app-eyebrow">Realtime</p><h2>Live analysis feed</h2></div>
+          <span className="live-listening"><span /> Listening for analyzed messages</span>
+        </div>
+        <LiveFeed />
+      </section>
     </div>
   )
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: LucideIcon
-  label: string
-  value: string
-}) {
+function SetupBanner({ overview, telegram }: { overview: WorkerOverview; telegram: WorkerTelegramStatus | null }) {
+  const steps = [
+    { done: Boolean(telegram?.loggedIn), label: 'Connect Telegram', to: '/telegram' as const },
+    { done: overview.counts.chats.monitored > 0, label: 'Monitor a chat', to: '/chats' as const },
+    { done: overview.counts.analysisConfigs.active > 0, label: 'Activate an analysis', to: '/settings' as const },
+    { done: overview.counts.rules.active > 0 && overview.counts.notifiers.active > 0, label: 'Route an action', to: '/settings' as const },
+  ]
+  const completed = steps.filter((step) => step.done).length
+  const next = steps.find((step) => !step.done)
+
   return (
-    <div className="rounded-2xl border border-(--line) bg-[var(--header-bg)] px-5 py-4">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--sea-ink-soft)]">
-        <Icon className="h-3.5 w-3.5 text-[var(--lagoon-deep)]" aria-hidden="true" />
-        {label}
+    <section className="setup-banner">
+      <div className="setup-progress"><span style={{ width: `${(completed / steps.length) * 100}%` }} /></div>
+      <div className="setup-copy">
+        <span className="setup-icon"><Zap /></span>
+        <div><p className="app-eyebrow">Finish setup · {completed} of {steps.length}</p><h2>{next ? next.label : 'Your pipeline is ready'}</h2></div>
       </div>
-      <p className="m-0 mt-1.5 truncate text-lg font-bold text-[var(--sea-ink)]">{value}</p>
-    </div>
+      {next && <Link to={next.to} className="app-primary-button">Continue setup <ArrowRight /></Link>}
+    </section>
   )
 }
 
-const QUICK_LINKS = [
-  { to: '/chats' as const, label: 'Choose monitored chats' },
-  { to: '/telegram' as const, label: 'Manage the Telegram session' },
-  { to: '/settings' as const, label: 'Tune analysis prompts & rules' },
-  { to: '/action-logs' as const, label: 'Review dispatched actions' },
-]
+function MetricCard({ icon: Icon, label, value, detail, tone }: { icon: LucideIcon; label: string; value: string; detail: string; tone: string }) {
+  return (
+    <article className="metric-card">
+      <div className={`metric-icon tone-${tone}`}><Icon aria-hidden="true" /></div>
+      <p>{label}</p>
+      <strong>{value}</strong>
+      <span>{detail}</span>
+    </article>
+  )
+}
+
+function PipelineStage({ icon: Icon, label, title, value, healthy, to, last = false }: { icon: LucideIcon; label: string; title: string; value: string; healthy: boolean; to: '/telegram' | '/settings'; last?: boolean }) {
+  return (
+    <Link to={to} className="pipeline-stage">
+      <div className="pipeline-stage-top"><span className="pipeline-icon"><Icon /></span>{!last && <ArrowRight className="pipeline-arrow" />}</div>
+      <p>{label}</p>
+      <h3>{title}</h3>
+      <span className={healthy ? 'stage-state is-ready' : 'stage-state is-missing'}><span /> {value}</span>
+    </Link>
+  )
+}
+
+function ActionRow({ action }: { action: WorkerOverviewAction }) {
+  return (
+    <article className="action-row">
+      <span className={`action-state-icon is-${action.status}`}>
+        {action.status === 'sent' ? <CheckCircle2 /> : action.status === 'failed' ? <AlertTriangle /> : <Clock3 />}
+      </span>
+      <div className="recent-main">
+        <div className="recent-meta"><b>{action.notifier.name}</b><span>{action.analysis.analysisConfigName} · {timeLabel(action.analysis.analyzedAt)}</span></div>
+        <p>{action.message.chatTitle}: {truncate(action.message.text, 90)}</p>
+      </div>
+      <span className={`action-status is-${action.status}`}>{action.status}</span>
+    </article>
+  )
+}
+
+function CompactEmpty({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
+  return <div className="compact-empty"><Icon /><p>{text}</p></div>
+}
+
+function OverviewSkeleton() {
+  return <div className="overview-skeleton" aria-label="Loading overview"><div className="skeleton-line wide" /><div className="skeleton-line" /><div className="skeleton-grid">{[1, 2, 3, 4].map((item) => <div key={item} />)}</div><div className="skeleton-panel" /></div>
+}
+
+function formatNumber(value: number): string { return new Intl.NumberFormat().format(value) }
+function formatPercent(value: number): string { return `${Math.round(value)}%` }
+function truncate(value: string, max: number): string { return value.length > max ? `${value.slice(0, max)}…` : value }
+function initials(value: string): string { return value.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'TG' }
+function timeLabel(value: string | null, fallback = '—'): string {
+  if (!value) return fallback
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return fallback
+  const seconds = Math.round((date.getTime() - Date.now()) / 1000)
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+  if (Math.abs(seconds) < 60) return formatter.format(seconds, 'second')
+  const minutes = Math.round(seconds / 60)
+  if (Math.abs(minutes) < 60) return formatter.format(minutes, 'minute')
+  const hours = Math.round(minutes / 60)
+  if (Math.abs(hours) < 24) return formatter.format(hours, 'hour')
+  return formatter.format(Math.round(hours / 24), 'day')
+}

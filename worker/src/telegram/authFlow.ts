@@ -54,9 +54,8 @@ class TelegramLoginFlow {
     const expected = this.status.state === 'awaitingPassword' ? 'password' : 'code'
     if (expected !== kind) return false
 
-    this.clearPrompt()
     const resolve = this.promptResolve
-    this.promptResolve = null
+    this.clearPrompt()
     resolve(value)
     return true
   }

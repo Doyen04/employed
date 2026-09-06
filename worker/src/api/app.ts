@@ -8,6 +8,7 @@ import { messagesRouter } from './routes/messages'
 import { settingsRouter } from './routes/settings'
 import { actionLogsRouter } from './routes/actionLogs'
 import { telegramRouter } from './routes/telegram'
+import { overviewRouter } from './routes/overview'
 
 export function createApp() {
     const app = express()
@@ -24,6 +25,7 @@ export function createApp() {
 
     app.use(requireApiKey)
 
+    app.use('/overview', overviewRouter)
     app.use('/chats', chatsRouter)
     app.use('/messages', messagesRouter)
     app.use('/settings', settingsRouter)

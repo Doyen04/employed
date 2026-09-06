@@ -3,6 +3,7 @@ import { NewMessage } from 'teleproto/events'
 import type { NewMessageEvent } from 'teleproto/events'
 import bigInt from 'big-integer'
 
+import { Prisma } from '../generated/prisma/client'
 import { prisma } from '../prisma'
 import { buildClient } from './client'
 import { getSessionString } from './sessionStore'
@@ -50,12 +51,19 @@ async function resolveChatTitle(
   return String(event.chatId)
 }
 
-function senderNameOf(event: NewMessageEvent): string | null {
-  const sender = (event.message as { sender?: { firstName?: string; lastName?: string } }).sender
+function senderNameOf(message: unknown): string | null {
+  const { sender, senderId } = message as {
+    sender?: { firstName?: string; lastName?: string; title?: string }
+    senderId?: { toString(): string }
+  }
   if (sender?.firstName) {
     return sender.lastName ? `${sender.firstName} ${sender.lastName}` : sender.firstName
   }
-  return event.message.senderId?.toString() ?? null
+  return sender?.title ?? senderId?.toString() ?? null
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
 }
 
 async function ingestMessage(
@@ -83,34 +91,37 @@ async function ingestMessage(
 
   if (!chat.isMonitored) return
 
-  const message = await prisma.message.upsert({
-    where: {
-      chatId_telegramMessageId: { chatId: chat.id, telegramMessageId },
-    },
-    update: {},
-    create: {
-      chatId: chat.id,
-      telegramMessageId,
-      senderName: senderNameOf(event),
-      text,
-      receivedAt,
-    },
-  })
+  let message: MessageRow | undefined
+  try {
+    message = await prisma.message.create({
+      data: {
+        chatId: chat.id,
+        telegramMessageId,
+        senderName: senderNameOf(event.message),
+        text,
+        receivedAt,
+      },
+    })
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) throw error
+  }
 
   await setLastSeen(telegramChatId, telegramMessageId)
-  await processMessage(message, chat)
+  if (message) await processMessage(message, chat)
 }
 
 interface MessageRow {
   id: string
   chatId: string
+  telegramMessageId: number
+  senderName: string | null
   text: string
   receivedAt: Date
 }
 
 async function processMessage(
   message: MessageRow,
-  chat: { id: string; title: string },
+  chat: { id: string; title: string; telegramChatId: bigint },
 ): Promise<void> {
   const configs = await prisma.analysisConfig.findMany({
     where: { isActive: true },
@@ -137,10 +148,32 @@ async function processMessage(
 
       for (const rule of cfg.actionRules) {
         if (!matchesCondition(rule.condition, output)) continue
-        await dispatchAction(rule, analysis, { message, chat })
+        await dispatchAction(rule, analysis, {
+          message,
+          chat,
+          analysisConfigName: cfg.name,
+        })
       }
 
-      emitMessageNew({ message, chat, analysis: output, analysisConfigName: cfg.name })
+      const chatPayload = {
+        id: chat.id,
+        title: chat.title,
+        telegramChatId: chat.telegramChatId.toString(),
+      }
+      emitMessageNew({
+        message: {
+          id: message.id,
+          chatId: message.chatId,
+          telegramMessageId: message.telegramMessageId,
+          senderName: message.senderName,
+          text: message.text,
+          receivedAt: message.receivedAt.toISOString(),
+          chat: chatPayload,
+        },
+        chat: chatPayload,
+        analysis: toJsonValue(output),
+        analysisConfigName: cfg.name,
+      })
     } catch (error) {
       console.error('[listener] analysis failed:', (error as Error).message)
     }
@@ -171,22 +204,23 @@ async function backfillMonitoredChats(client: TelegramClient): Promise<void> {
         const text = (msg.message ?? '').trim()
         if (!text) continue
 
-        const upserted = await prisma.message.upsert({
-          where: {
-            chatId_telegramMessageId: { chatId: chat.id, telegramMessageId: msg.id },
-          },
-          update: {},
-          create: {
-            chatId: chat.id,
-            telegramMessageId: msg.id,
-            senderName: null,
-            text,
-            receivedAt: new Date(msg.date * 1000),
-          },
-        })
+        let created: MessageRow | undefined
+        try {
+          created = await prisma.message.create({
+            data: {
+              chatId: chat.id,
+              telegramMessageId: msg.id,
+              senderName: senderNameOf(msg),
+              text,
+              receivedAt: new Date(msg.date * 1000),
+            },
+          })
+        } catch (error) {
+          if (!isUniqueConstraintError(error)) throw error
+        }
 
         await setLastSeen(chat.telegramChatId, msg.id)
-        await processMessage(upserted, chat)
+        if (created) await processMessage(created, chat)
       }
     } catch (error) {
       console.error(`[listener] backfill failed for chat ${chat.id}:`, (error as Error).message)

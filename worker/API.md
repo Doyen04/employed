@@ -12,7 +12,8 @@ Authorization: Bearer <WORKER_API_KEY>
 
 Requests without the header, or with a wrong token, get `401 { "error": "unauthorized" }`.
 The dashboard passes the token from its `WORKER_API_KEY` env var. All `BigInt` fields
-(`telegramChatId`, message ids) are serialised as strings to stay JSON-safe.
+(currently `telegramChatId`) are serialised as strings to stay JSON-safe; Telegram message IDs
+are stored as integers and returned as numbers.
 
 ## Socket.io (realtime)
 
@@ -32,6 +33,54 @@ defaults to `WORKER_API_KEY`. Events:
 | Method | Path | Body/Query | Response |
 |---|---|---|---|
 | GET | `/health` | — | `200 { "ok": true }` (no auth) |
+
+### Overview
+
+| Method | Path | Body/Query | Response |
+|---|---|---|---|
+| GET | `/overview` | — | `200 Overview` |
+
+`Overview` shape:
+
+```text
+{
+  counts: {
+    chats: { total: number, monitored: number },
+    messages: { total: number },
+    analysisConfigs: { total: number, active: number },
+    rules: { total: number, active: number },
+    notifiers: { total: number, active: number },
+    actions: {
+      sent: number,
+      failed: number,
+      pending: number,
+      successRate: number
+    }
+  },
+  timestamps: {
+    latestMessageAt: ISO|null,
+    latestAnalysisAt: ISO|null,
+    latestActionAt: ISO|null
+  },
+  recentMessages: Message[],
+  recentActions: OverviewAction[]
+}
+```
+
+`successRate` is a percentage calculated as `sent / (sent + failed) * 100`, or `0`
+when there are no completed actions. `latestActionAt` is the newest action's analysis
+timestamp because `ActionLog` has no creation timestamp. `recentMessages` contains at
+most five records and uses the same `Message` shape documented below.
+
+`OverviewAction` shape:
+`{ id, status: 'pending'|'sent'|'failed', retryCount, sentAt: ISO|null,
+   errorDetail: string|null, notifier: { name, type },
+   analysis: { analysisConfigName, analyzedAt: ISO },
+   message: { text, senderName: string|null, receivedAt: ISO, chatTitle } }`
+
+`recentActions` contains at most five records, ordered newest first by
+`analysis.analyzedAt`, then by `id` descending. All dates are ISO strings and all
+`BigInt` identifiers are strings.
 
 ### Chats
 

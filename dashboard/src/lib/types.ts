@@ -90,6 +90,48 @@ export interface Paged<T> {
   hasMore: boolean
 }
 
+export interface WorkerOverviewAction {
+  id: string
+  status: ActionLogStatus
+  retryCount: number
+  sentAt: string | null
+  errorDetail: string | null
+  notifier: { name: string; type: NotifierType }
+  analysis: {
+    analysisConfigName: string
+    analyzedAt: string
+  }
+  message: {
+    text: string
+    senderName: string | null
+    receivedAt: string
+    chatTitle: string
+  }
+}
+
+export interface WorkerOverview {
+  counts: {
+    chats: { total: number; monitored: number }
+    messages: { total: number }
+    analysisConfigs: { total: number; active: number }
+    rules: { total: number; active: number }
+    notifiers: { total: number; active: number }
+    actions: {
+      sent: number
+      failed: number
+      pending: number
+      successRate: number
+    }
+  }
+  timestamps: {
+    latestMessageAt: string | null
+    latestAnalysisAt: string | null
+    latestActionAt: string | null
+  }
+  recentMessages: WorkerMessage[]
+  recentActions: WorkerOverviewAction[]
+}
+
 export type TelegramLoginState =
   | { state: 'idle' }
   | { state: 'started' }

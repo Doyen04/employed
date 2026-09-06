@@ -7,8 +7,9 @@ import type { NotificationPayload } from './types'
 import type { ActionLog, ActionRule, Analysis, Chat, Message, Notifier } from '../generated/prisma/client'
 
 interface DispatchContext {
-  message: Pick<Message, 'receivedAt' | 'text'>
+  message: Pick<Message, 'receivedAt' | 'senderName' | 'text'>
   chat: Pick<Chat, 'title'>
+  analysisConfigName: string
 }
 
 export async function dispatchAction(
@@ -16,13 +17,15 @@ export async function dispatchAction(
   analysis: Analysis,
   context: DispatchContext,
 ): Promise<void> {
+  if (!rule.notifier.isActive) return
+
   const notifier = notifierRegistry[rule.notifier.type]
   const payload: NotificationPayload = {
     chatTitle: context.chat.title,
-    senderName: null,
+    senderName: context.message.senderName,
     text: context.message.text,
     receivedAt: context.message.receivedAt.toISOString(),
-    analysisConfigName: '',
+    analysisConfigName: context.analysisConfigName,
     analysis: analysis.rawResponse as unknown as Record<string, unknown>,
   }
 
