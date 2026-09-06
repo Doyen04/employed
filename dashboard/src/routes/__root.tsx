@@ -24,7 +24,16 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Employed',
+        title: 'Employed — Telegram signal intelligence',
+      },
+      {
+        name: 'description',
+        content:
+          'Employed monitors the Telegram conversations you choose, analyzes messages with AI, and triggers the right action when something important appears.',
+      },
+      {
+        name: 'theme-color',
+        content: '#071d1a',
       },
     ],
     links: [
@@ -39,7 +48,7 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const isApp = pathname === '/login' || pathname.startsWith('/dashboard')
+  const isPublicLanding = pathname === '/'
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -47,10 +56,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
-        {!isApp && <Header />}
+      <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]">
+        {isPublicLanding && <Header />}
         {children}
-        {!isApp && <Footer />}
+        {isPublicLanding && <Footer />}
         <TanStackDevtools
           config={{
             position: 'bottom-right',
