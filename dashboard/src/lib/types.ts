@@ -1,5 +1,8 @@
 export type NotifierType = 'telegram' | 'email' | 'webhook' | 'push' | 'slack'
 
+/** JSON-compatible value — required for fields that cross the server-fn RPC boundary. */
+export type Json = string | number | boolean | null | Json[] | { [key: string]: Json }
+
 export interface WorkerChat {
   id: string
   telegramChatId: string
@@ -28,7 +31,7 @@ export interface WorkerAnalysisConfig {
   id: string
   name: string
   promptTemplate: string
-  outputSchema: unknown
+  outputSchema: Json
   isActive: boolean
   createdAt: string
 }
@@ -44,7 +47,7 @@ export interface WorkerNotifier {
 export interface WorkerActionRule {
   id: string
   analysisConfigId: string
-  condition: unknown
+  condition: Json
   notifierId: string
   notifierName: string
   notifierType: NotifierType
@@ -69,7 +72,7 @@ export interface WorkerActionLog {
   analysis: {
     id: string
     analyzedAt: string
-    rawResponse: unknown
+    rawResponse: Json
     analysisConfigName: string
     message: {
       id: string

@@ -6,6 +6,7 @@ import type {
   WorkerAnalysisConfig,
   WorkerNotifier,
   WorkerSettings,
+  Json,
 } from '../lib/types'
 import { requireAuthed } from './auth'
 import { workerFetch } from './worker'
@@ -17,7 +18,7 @@ export const getSettings = createServerFn().handler(async () => {
 
 export const createAnalysisConfig = createServerFn({ method: 'POST' })
   .validator(
-    (input: { name: string; promptTemplate: string; outputSchema: unknown; isActive?: boolean }) =>
+    (input: { name: string; promptTemplate: string; outputSchema: Json; isActive?: boolean }) =>
       input,
   )
   .handler(async ({ data }) => {
@@ -34,7 +35,7 @@ export const updateAnalysisConfig = createServerFn({ method: 'POST' })
       id: string
       name?: string
       promptTemplate?: string
-      outputSchema?: unknown
+      outputSchema?: Json
       isActive?: boolean
     }) => input,
   )
@@ -97,7 +98,7 @@ export const createActionRule = createServerFn({ method: 'POST' })
   .validator(
     (input: {
       analysisConfigId: string
-      condition: unknown
+      condition: Json
       notifierId: string
       isActive?: boolean
     }) => input,
@@ -115,7 +116,7 @@ export const updateActionRule = createServerFn({ method: 'POST' })
     (input: {
       id: string
       analysisConfigId?: string
-      condition?: unknown
+      condition?: Json
       notifierId?: string
       isActive?: boolean
     }) => input,
