@@ -8,7 +8,7 @@ export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
     const session = await getSession()
     if (session.authenticated) {
-      throw redirect({ to: '/' })
+      throw redirect({ to: '/dashboard' })
     }
   },
   component: LoginPage,
@@ -26,7 +26,7 @@ function LoginPage() {
     setError(null)
     try {
       await login({ data: password })
-      await navigate({ to: '/' })
+      await navigate({ to: '/dashboard' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'login failed')
       setBusy(false)

@@ -9,10 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ProtectedIndexRouteImport } from './routes/_protected/index'
+import { Route as ProtectedActionLogsRouteImport } from './routes/_protected/action-logs'
+import { Route as ProtectedChatsRouteImport } from './routes/_protected/chats'
+import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
+import { Route as ProtectedMessagesRouteImport } from './routes/_protected/messages'
+import { Route as ProtectedSettingsRouteImport } from './routes/_protected/settings'
+import { Route as ProtectedTelegramRouteImport } from './routes/_protected/telegram'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
@@ -22,41 +33,118 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedIndexRoute = ProtectedIndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ProtectedActionLogsRoute = ProtectedActionLogsRouteImport.update({
+  id: '/action-logs',
+  path: '/action-logs',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedChatsRoute = ProtectedChatsRouteImport.update({
+  id: '/chats',
+  path: '/chats',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedMessagesRoute = ProtectedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedSettingsRoute = ProtectedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedTelegramRoute = ProtectedTelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
   getParentRoute: () => ProtectedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof ProtectedIndexRoute
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/action-logs': typeof ProtectedActionLogsRoute
+  '/chats': typeof ProtectedChatsRoute
+  '/dashboard': typeof ProtectedDashboardRoute
+  '/messages': typeof ProtectedMessagesRoute
+  '/settings': typeof ProtectedSettingsRoute
+  '/telegram': typeof ProtectedTelegramRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/': typeof ProtectedIndexRoute
+  '/action-logs': typeof ProtectedActionLogsRoute
+  '/chats': typeof ProtectedChatsRoute
+  '/dashboard': typeof ProtectedDashboardRoute
+  '/messages': typeof ProtectedMessagesRoute
+  '/settings': typeof ProtectedSettingsRoute
+  '/telegram': typeof ProtectedTelegramRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteWithChildren
   '/login': typeof LoginRoute
-  '/_protected/': typeof ProtectedIndexRoute
+  '/_protected/action-logs': typeof ProtectedActionLogsRoute
+  '/_protected/chats': typeof ProtectedChatsRoute
+  '/_protected/dashboard': typeof ProtectedDashboardRoute
+  '/_protected/messages': typeof ProtectedMessagesRoute
+  '/_protected/settings': typeof ProtectedSettingsRoute
+  '/_protected/telegram': typeof ProtectedTelegramRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/action-logs'
+    | '/chats'
+    | '/dashboard'
+    | '/messages'
+    | '/settings'
+    | '/telegram'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/'
-  id: '__root__' | '/_protected' | '/login' | '/_protected/'
+  to:
+    | '/'
+    | '/login'
+    | '/action-logs'
+    | '/chats'
+    | '/dashboard'
+    | '/messages'
+    | '/settings'
+    | '/telegram'
+  id:
+    | '__root__'
+    | '/'
+    | '/_protected'
+    | '/login'
+    | '/_protected/action-logs'
+    | '/_protected/chats'
+    | '/_protected/dashboard'
+    | '/_protected/messages'
+    | '/_protected/settings'
+    | '/_protected/telegram'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_protected': {
       id: '/_protected'
       path: ''
@@ -71,22 +159,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected/': {
-      id: '/_protected/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof ProtectedIndexRouteImport
+    '/_protected/action-logs': {
+      id: '/_protected/action-logs'
+      path: '/action-logs'
+      fullPath: '/action-logs'
+      preLoaderRoute: typeof ProtectedActionLogsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/chats': {
+      id: '/_protected/chats'
+      path: '/chats'
+      fullPath: '/chats'
+      preLoaderRoute: typeof ProtectedChatsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/dashboard': {
+      id: '/_protected/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof ProtectedDashboardRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/messages': {
+      id: '/_protected/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof ProtectedMessagesRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/settings': {
+      id: '/_protected/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof ProtectedSettingsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/telegram': {
+      id: '/_protected/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof ProtectedTelegramRouteImport
       parentRoute: typeof ProtectedRoute
     }
   }
 }
 
 interface ProtectedRouteChildren {
-  ProtectedIndexRoute: typeof ProtectedIndexRoute
+  ProtectedActionLogsRoute: typeof ProtectedActionLogsRoute
+  ProtectedChatsRoute: typeof ProtectedChatsRoute
+  ProtectedDashboardRoute: typeof ProtectedDashboardRoute
+  ProtectedMessagesRoute: typeof ProtectedMessagesRoute
+  ProtectedSettingsRoute: typeof ProtectedSettingsRoute
+  ProtectedTelegramRoute: typeof ProtectedTelegramRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
-  ProtectedIndexRoute: ProtectedIndexRoute,
+  ProtectedActionLogsRoute: ProtectedActionLogsRoute,
+  ProtectedChatsRoute: ProtectedChatsRoute,
+  ProtectedDashboardRoute: ProtectedDashboardRoute,
+  ProtectedMessagesRoute: ProtectedMessagesRoute,
+  ProtectedSettingsRoute: ProtectedSettingsRoute,
+  ProtectedTelegramRoute: ProtectedTelegramRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
@@ -94,6 +227,7 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
   LoginRoute: LoginRoute,
 }

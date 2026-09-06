@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowUpRight, MessageSquareMore, Radar, Radio } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 import { getTelegramStatus } from '../../server/telegram'
 import { listChats } from '../../server/chats'
@@ -105,7 +106,7 @@ function StatCard({
   label,
   value,
 }: {
-  icon: typeof Radar
+  icon: LucideIcon
   label: string
   value: string
 }) {

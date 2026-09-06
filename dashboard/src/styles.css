@@ -320,6 +320,29 @@ a {
     animation: rise-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.dashboard-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sea-ink-soft);
+    text-decoration: none;
+    text-align: left;
+}
+
+.dashboard-nav:hover {
+    background: var(--link-bg-hover);
+    color: var(--sea-ink);
+}
+
+.dashboard-nav.is-active {
+    background: linear-gradient(90deg, rgba(47, 158, 146, 0.16), rgba(86, 198, 190, 0.1));
+    color: var(--lagoon-deep);
+}
+
 @keyframes rise-in {
     from {
         opacity: 0;

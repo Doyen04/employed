@@ -1,3 +1,4 @@
+import { useRouterState } from '@tanstack/react-router'
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
@@ -19,7 +20,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Employed',
       },
     ],
     links: [
@@ -33,6 +34,9 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const isApp = pathname === '/login' || pathname.startsWith('/dashboard')
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -40,9 +44,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
-        <Header />
+        {!isApp && <Header />}
         {children}
-        <Footer />
+        {!isApp && <Footer />}
         <TanStackDevtools
           config={{
             position: 'bottom-right',
