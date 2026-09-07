@@ -114,8 +114,8 @@ function ConfigList({
           <span
             className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
               row.active
-                ? 'bg-[rgba(79,184,178,0.18)] text-[var(--lagoon-deep)]'
-                : 'bg-[rgba(23,58,64,0.08)] text-[var(--sea-ink-soft)]'
+                ? 'bg-[rgba(236,185,20,0.18)] text-[var(--lagoon-deep)]'
+                : 'bg-[rgba(79,61,53,0.08)] text-[var(--sea-ink-soft)]'
             }`}
           >
             {row.active ? 'ACTIVE' : 'PAUSED'}

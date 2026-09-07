@@ -34,7 +34,7 @@ export const Route = createRootRoute({
       },
       {
         name: 'theme-color',
-        content: '#071d1a',
+        content: '#4F3D35',
       },
     ],
     links: [
@@ -58,7 +58,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]">
+      <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(236,185,20,0.3)]">
         {isPublicLanding && <Header />}
         {children}
         {isPublicLanding && <Footer />}

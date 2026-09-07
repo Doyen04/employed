@@ -76,7 +76,7 @@ function ActionLogsPage() {
           {hasMore && (
             <button
               onClick={() => void load(false)}
-              className="mt-4 rounded-full border border-(--line) bg-[var(--header-bg)] px-5 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:border-[rgba(50,143,151,0.4)]"
+              className="mt-4 rounded-full border border-[var(--line)] bg-[var(--header-bg)] px-5 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:border-[var(--lagoon)]"
             >
               Load more
             </button>
@@ -89,9 +89,9 @@ function ActionLogsPage() {
 
 function StatusBadge({ status }: { status: WorkerActionLog['status'] }) {
   const styles: Record<WorkerActionLog['status'], string> = {
-    sent: 'bg-[rgba(79,184,178,0.18)] text-[var(--lagoon-deep)]',
-    pending: 'bg-amber-100 text-amber-700',
-    failed: 'bg-red-100 text-red-600',
+    sent: 'bg-[rgba(236,185,20,0.18)] text-[var(--lagoon-deep)]',
+    pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    failed: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
   }
   return (
     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${styles[status]}`}>

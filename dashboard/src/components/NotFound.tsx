@@ -10,7 +10,7 @@ export function NotFound() {
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--sea-ink-soft)] dark:text-emerald-400/80">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--sea-ink-soft)]">
             404 Error
           </span>
           <h1 className="text-3xl font-bold tracking-tight text-[var(--sea-ink)] dark:text-zinc-100">
@@ -24,7 +24,7 @@ export function NotFound() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <Link
             to="/dashboard"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--sea-ink)] text-white dark:bg-emerald-500 dark:text-zinc-950 font-medium text-sm transition-all hover:opacity-90 shadow-sm"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--lagoon-deep)] text-white dark:bg-[var(--lagoon)] dark:text-[#4F3D35] font-medium text-sm transition-all hover:opacity-90 shadow-sm"
           >
             <Home className="w-4 h-4" />
             Go to Dashboard

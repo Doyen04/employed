@@ -6,18 +6,18 @@ import { TelegramLoginCard, useTelegramLoggedIn } from '../../components/dashboa
 export const Route = createFileRoute('/_protected/telegram')({ component: TelegramPage })
 
 function TelegramPage() {
-  const { loggedIn, onDone } = useTelegramLoggedIn()
+  const { loggedIn, onDone, onDisconnect } = useTelegramLoggedIn()
 
   return (
     <Panel
       title="Telegram session"
       description={
         loggedIn
-          ? 'The worker is authenticated — it can listen for incoming messages.'
-          : 'Authenticate the worker with your personal Telegram account.'
+          ? 'The worker is authenticated — it can listen for incoming messages in real time.'
+          : 'Authenticate the worker with your personal Telegram account via MTProto.'
       }
     >
-      <TelegramLoginCard loggedIn={loggedIn} onDone={onDone} />
+      <TelegramLoginCard loggedIn={loggedIn} onDone={onDone} onDisconnect={onDisconnect} />
     </Panel>
   )
 }

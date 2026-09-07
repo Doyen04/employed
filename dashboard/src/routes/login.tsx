@@ -54,7 +54,7 @@ function LoginPage() {
               required
               autoFocus
               placeholder="••••••••"
-              className="rounded-xl border border-(--line) bg-[var(--header-bg)] px-4 py-2.5 font-normal text-[var(--sea-ink)] outline-none transition focus:border-[rgba(50,143,151,0.6)]"
+              className="rounded-xl border border-[var(--line)] bg-[var(--header-bg)] px-4 py-2.5 font-normal text-[var(--sea-ink)] outline-none transition focus:border-[var(--lagoon)] focus:ring-2 focus:ring-[var(--lagoon)]/20"
             />
           </label>
 
@@ -67,7 +67,7 @@ function LoginPage() {
           <button
             type="submit"
             disabled={busy || !password}
-            className="rounded-full bg-[linear-gradient(90deg,#2f9e92,#56c6be)] px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full bg-[linear-gradient(135deg,#ECB914,#F6D579)] px-5 py-2.5 text-sm font-semibold text-[#4F3D35] transition hover:-translate-y-0.5 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? 'Signing in…' : 'Sign in'}
           </button>

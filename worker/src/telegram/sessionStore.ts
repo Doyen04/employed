@@ -26,3 +26,15 @@ export async function setSessionString(session: string): Promise<void> {
 export async function hasSession(): Promise<boolean> {
   return (await getSessionString()) !== null
 }
+
+export async function clearSession(): Promise<void> {
+  await prisma.actionLog.deleteMany()
+  await prisma.analysis.deleteMany()
+  await prisma.message.deleteMany()
+  await prisma.chat.deleteMany()
+  await prisma.setting.deleteMany({
+    where: {
+      OR: [{ key: SESSION_KEY }, { key: { startsWith: 'tg.lastMsg:' } }],
+    },
+  })
+}
