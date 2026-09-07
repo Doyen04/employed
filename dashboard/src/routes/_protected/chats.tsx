@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, Radio, RefreshCw, Zap } from 'lucide-react'
+import { ArrowRight, Radio, RefreshCw, Search, Zap } from 'lucide-react'
 
 import { listChats, refreshChats, updateChat } from '../../server/chats'
 import { getTelegramStatus } from '../../server/telegram'
@@ -23,6 +23,7 @@ function ChatsPage() {
     const [chats, setChats] = useState<WorkerChat[]>([])
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
     const [filter, setFilter] = useState<ChatFilter>('all')
+    const [query, setQuery] = useState('')
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -84,15 +85,18 @@ function ChatsPage() {
     }
 
     const monitoredCount = chats.filter((chat) => chat.isMonitored).length
-    const filtered = useMemo(
-        () =>
-            filter === 'all'
-                ? chats
-                : chats.filter((chat) =>
-                      filter === 'monitored' ? chat.isMonitored : !chat.isMonitored,
-                  ),
-        [chats, filter],
-    )
+    const filtered = useMemo(() => {
+        const q = query.trim().toLowerCase()
+        return chats.filter((chat) => {
+            const matchesFilter =
+                filter === 'all' ? true : filter === 'monitored' ? chat.isMonitored : !chat.isMonitored
+            if (!q) return matchesFilter
+            return (
+                matchesFilter &&
+                (chat.title.toLowerCase().includes(q) || chat.telegramChatId.includes(q))
+            )
+        })
+    }, [chats, filter, query])
 
     if (loading) return <PageSkeleton label="Loading chats" />
 
@@ -149,7 +153,19 @@ function ChatsPage() {
                         <p className="m-0 text-xs text-[var(--sea-ink-soft)]">
                             {chats.length} dialogs · <b className="text-[var(--sea-ink)] dark:text-zinc-200">{monitoredCount} monitored</b>
                         </p>
-                        <div className="flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--sea-ink-soft)]" aria-hidden="true" />
+                                <input
+                                    type="search"
+                                    value={query}
+                                    onChange={(event) => setQuery(event.target.value)}
+                                    placeholder="Search chats…"
+                                    aria-label="Search chats"
+                                    className="w-44 rounded-full border border-[var(--line)] bg-[var(--surface)] py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-[var(--lagoon)] dark:text-zinc-100"
+                                />
+                            </div>
+                            <div className="flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1">
                             {FILTERS.map(({ key, label }) => (
                                 <button
                                     key={key}
@@ -165,6 +181,7 @@ function ChatsPage() {
                             ))}
                         </div>
                     </div>
+                </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[40rem] text-left text-sm">
@@ -180,7 +197,7 @@ function ChatsPage() {
                                 {filtered.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="px-4 py-8 text-center text-xs text-[var(--sea-ink-soft)]">
-                                            No {filter === 'all' ? '' : filter} chats match this filter.
+                                            No chats match {query ? `"${query}"` : 'the filter'}.
                                         </td>
                                     </tr>
                                 ) : (
