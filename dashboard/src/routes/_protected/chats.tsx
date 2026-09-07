@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, Radio, RefreshCw, Zap } from 'lucide-react'
 
@@ -11,9 +11,18 @@ import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/chats')({ component: ChatsPage })
 
+type ChatFilter = 'all' | 'monitored' | 'paused'
+
+const FILTERS: { key: ChatFilter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'monitored', label: 'Monitored' },
+    { key: 'paused', label: 'Paused' },
+]
+
 function ChatsPage() {
     const [chats, setChats] = useState<WorkerChat[]>([])
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
+    const [filter, setFilter] = useState<ChatFilter>('all')
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -74,6 +83,17 @@ function ChatsPage() {
         }
     }
 
+    const monitoredCount = chats.filter((chat) => chat.isMonitored).length
+    const filtered = useMemo(
+        () =>
+            filter === 'all'
+                ? chats
+                : chats.filter((chat) =>
+                      filter === 'monitored' ? chat.isMonitored : !chat.isMonitored,
+                  ),
+        [chats, filter],
+    )
+
     if (loading) return <PageSkeleton label="Loading chats" />
 
     return (
@@ -82,12 +102,8 @@ function ChatsPage() {
             description="Pull the account’s dialogs from Telegram and choose which ones are monitored."
             action={
                 telegramLoggedIn ? (
-                    <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--header-bg)] px-4 py-1.5 text-xs font-semibold text-[var(--sea-ink)] dark:text-zinc-200 transition hover:border-[var(--lagoon)] disabled:opacity-50"
-                    >
-                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+                    <button onClick={handleRefresh} disabled={refreshing} className="app-primary-button disabled:cursor-wait disabled:opacity-50">
+                        <RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
                         {refreshing ? 'Refreshing…' : 'Refresh from Telegram'}
                     </button>
                 ) : undefined
@@ -128,33 +144,99 @@ function ChatsPage() {
                     </p>
                 </div>
             ) : (
-                <ul className="m-0 flex flex-col gap-2">
-                    {chats.map((chat) => (
-                        <li
-                            key={chat.id}
-                            className="flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--header-bg)] px-4 py-2.5"
-                        >
-                            <div className="min-w-0">
-                                <p className="m-0 truncate text-sm font-semibold text-[var(--sea-ink)] dark:text-zinc-100">
-                                    {chat.title}
-                                </p>
-                                <p className="m-0 text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400 font-mono">
-                                    ID: {chat.telegramChatId}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => void handleToggleMonitor(chat)}
-                                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${chat.isMonitored
-                                        ? 'bg-[rgba(236,185,20,0.2)] text-[var(--lagoon-deep)] dark:text-[var(--lagoon)] border border-[rgba(236,185,20,0.35)]'
-                                        : 'bg-zinc-200/60 dark:bg-zinc-800 text-[var(--sea-ink-soft)] dark:text-zinc-400'
+                <div className="overflow-hidden rounded-2xl border border-[var(--line)]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-strong)] px-4 py-3">
+                        <p className="m-0 text-xs text-[var(--sea-ink-soft)]">
+                            {chats.length} dialogs · <b className="text-[var(--sea-ink)] dark:text-zinc-200">{monitoredCount} monitored</b>
+                        </p>
+                        <div className="flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface)] p-1">
+                            {FILTERS.map(({ key, label }) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setFilter(key)}
+                                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${filter === key
+                                        ? 'bg-[rgba(236,185,20,0.18)] text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]'
+                                        : 'text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)] dark:hover:text-zinc-200'
                                     }`}
-                            >
-                                {chat.isMonitored ? 'Monitoring' : 'Paused'}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[40rem] text-left text-sm">
+                            <thead>
+                                <tr className="border-b border-[var(--line)] text-xs uppercase tracking-wider text-[var(--sea-ink-soft)]">
+                                    <th className="px-4 py-2.5 font-semibold">Chat</th>
+                                    <th className="whitespace-nowrap px-4 py-2.5 font-semibold">Telegram ID</th>
+                                    <th className="whitespace-nowrap px-4 py-2.5 font-semibold">Status</th>
+                                    <th className="whitespace-nowrap px-4 py-2.5 text-right font-semibold">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-4 py-8 text-center text-xs text-[var(--sea-ink-soft)]">
+                                            No {filter === 'all' ? '' : filter} chats match this filter.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filtered.map((chat) => (
+                                        <tr
+                                            key={chat.id}
+                                            className="border-b border-[var(--line)] transition last:border-0 hover:bg-[var(--surface-strong)]"
+                                        >
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2.5">
+                                                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.18)] text-xs font-bold text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]">
+                                                        {initials(chat.title)}
+                                                    </span>
+                                                    <span className="truncate font-medium text-[var(--sea-ink)] dark:text-zinc-100">
+                                                        {chat.title}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-[var(--sea-ink-soft)]">
+                                                {chat.telegramChatId}
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3">
+                                                <span
+                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${chat.isMonitored
+                                                        ? 'bg-[rgba(236,185,20,0.18)] text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]'
+                                                        : 'bg-[rgba(79,61,53,0.08)] text-[var(--sea-ink-soft)] dark:bg-zinc-800 dark:text-zinc-400'
+                                                    }`}
+                                                >
+                                                    {chat.isMonitored && <Radio className="h-3 w-3" aria-hidden="true" />}
+                                                    {chat.isMonitored ? 'Monitoring' : 'Paused'}
+                                                </span>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3 text-right">
+                                                <button
+                                                    onClick={() => void handleToggleMonitor(chat)}
+                                                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                                        chat.isMonitored
+                                                            ? 'bg-zinc-200/60 text-[var(--sea-ink-soft)] hover:bg-zinc-300/60 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                                                            : 'bg-[rgba(236,185,20,0.2)] text-[var(--lagoon-deep)] dark:text-[var(--lagoon)] border border-[rgba(236,185,20,0.35)] hover:opacity-90'
+                                                    }`}
+                                                >
+                                                    {chat.isMonitored ? 'Pause' : 'Monitor'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             )}
         </Panel>
     )
+}
+
+function initials(value: string): string {
+    return value.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'TG'
 }
