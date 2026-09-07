@@ -19,6 +19,7 @@ import type { LucideIcon } from 'lucide-react'
 import { getOverview } from '../../server/overview'
 import { getTelegramStatus } from '../../server/telegram'
 import { LiveFeed } from '../../components/dashboard/LiveFeed'
+import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerOverview, WorkerOverviewAction, WorkerTelegramStatus } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -55,7 +56,7 @@ function OverviewPage() {
         void load()
     }, [load])
 
-    if (loading) return <OverviewSkeleton />
+    if (loading) return <PageSkeleton label="Loading overview" />
 
     if (!overview) {
         return (
@@ -298,10 +299,6 @@ function ActionRow({ action }: { action: WorkerOverviewAction }) {
 
 function CompactEmpty({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
     return <div className="compact-empty"><Icon /><p>{text}</p></div>
-}
-
-function OverviewSkeleton() {
-    return <div className="overview-skeleton" aria-label="Loading overview"><div className="skeleton-line wide" /><div className="skeleton-line" /><div className="skeleton-grid">{[1, 2, 3, 4].map((item) => <div key={item} />)}</div><div className="skeleton-panel" /></div>
 }
 
 function formatNumber(value: number): string { return new Intl.NumberFormat().format(value) }

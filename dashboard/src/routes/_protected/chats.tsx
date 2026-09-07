@@ -5,6 +5,7 @@ import { ArrowRight, Radio, RefreshCw, Zap } from 'lucide-react'
 import { listChats, refreshChats, updateChat } from '../../server/chats'
 import { getTelegramStatus } from '../../server/telegram'
 import { Panel } from '../../components/dashboard/Panel'
+import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerChat } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -45,6 +46,7 @@ function ChatsPage() {
     }, [])
 
     async function handleRefresh() {
+        setLoading(true)
         setRefreshing(true)
         setError(null)
         try {
@@ -72,6 +74,8 @@ function ChatsPage() {
         }
     }
 
+    if (loading) return <PageSkeleton label="Loading chats" />
+
     return (
         <Panel
             title="Chats"
@@ -91,9 +95,7 @@ function ChatsPage() {
         >
             {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
 
-            {loading ? (
-                <p className="text-sm text-[var(--sea-ink-soft)]">Loading chats…</p>
-            ) : !telegramLoggedIn ? (
+            {!telegramLoggedIn ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)] my-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--lagoon)]/15 text-[var(--sea-ink)] dark:text-[var(--lagoon)] mb-3">
                         <Radio className="h-6 w-6" />

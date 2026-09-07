@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { getSettings } from '../../server/settings'
 import { Panel } from '../../components/dashboard/Panel'
+import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerSettings } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -39,11 +40,7 @@ function SettingsPage() {
   }
 
   if (!settings) {
-    return (
-      <Panel title="Settings">
-        <p className="m-0 text-sm text-[var(--sea-ink-soft)]">Loading settings…</p>
-      </Panel>
-    )
+    return <PageSkeleton label="Loading settings" />
   }
 
   return (

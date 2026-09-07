@@ -88,7 +88,6 @@ function AppShell() {
                         <WorkerStatusPill />
                         <ThemeToggle />
                         <Link to="/settings" className="topbar-settings" aria-label="Open automation settings"><Settings2 /></Link>
-                        <button type="button" onClick={() => void handleSignOut()} className="topbar-signout" aria-label="Sign out"><LogOut /></button>
                     </div>
                 </header>
 

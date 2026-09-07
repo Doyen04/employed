@@ -54,14 +54,19 @@ export function TelegramLoginCard({
             const res = await telegramLoginStatus()
             setLoginState(res.login)
             if (res.login.state === 'done') {
-                onDone()
-                setShowReauth(false)
+                completeLogin()
             } else if (res.login.state === 'error') {
                 setError(res.login.error)
             }
         } catch (err) {
             setError(errorText(err))
         }
+    }
+
+    function completeLogin() {
+        setLoginState({ state: 'idle' })
+        setShowReauth(false)
+        onDone()
     }
 
     async function handleStart() {
@@ -83,7 +88,8 @@ export function TelegramLoginCard({
         try {
             const res = await telegramSubmitCode({ data: { code } })
             setLoginState(res.login)
-            if (res.login.state === 'error') setError(res.login.error)
+            if (res.login.state === 'done') completeLogin()
+            else if (res.login.state === 'error') setError(res.login.error)
             setCode('')
         } catch (err) {
             setError(errorText(err))

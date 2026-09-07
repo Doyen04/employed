@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { listActionLogs } from '../../server/actionLogs'
 import { Panel } from '../../components/dashboard/Panel'
+import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerActionLog } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -38,6 +39,8 @@ function ActionLogsPage() {
     void load(true)
   }, [])
 
+  if (loading) return <PageSkeleton label="Loading action logs" />
+
   return (
     <Panel
       title="Action logs"
@@ -45,9 +48,7 @@ function ActionLogsPage() {
     >
       {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
 
-      {loading ? (
-        <p className="text-sm text-[var(--sea-ink-soft)]">Loading action logs…</p>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <p className="text-sm text-[var(--sea-ink-soft)]">No actions dispatched yet.</p>
       ) : (
         <>
