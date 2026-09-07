@@ -5,7 +5,7 @@ export function NotFound() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-md mx-auto space-y-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--lagoon)]/15 text-[var(--sea-ink)] dark:text-[var(--lagoon)] border border-[var(--lagoon)]/30 shadow-sm">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--lagoon)]/15 text-[var(--sea-ink)] dark:text-(--lagoon) border border-(--lagoon)/30">
           <Compass className="w-8 h-8 animate-pulse text-[var(--sea-ink)] dark:text-[var(--lagoon)]" />
         </div>
 
@@ -24,14 +24,14 @@ export function NotFound() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
           <Link
             to="/dashboard"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--lagoon-deep)] text-white dark:bg-[var(--lagoon)] dark:text-[#4F3D35] font-medium text-sm transition-all hover:opacity-90 shadow-sm"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--lagoon-deep)] text-white dark:bg-(--lagoon) dark:text-[#4F3D35] font-medium text-sm transition-all hover:opacity-90"
           >
             <Home className="w-4 h-4" />
             Go to Dashboard
           </Link>
           <Link
             to="/"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-strong)] border border-[var(--line)] text-[var(--sea-ink)] dark:text-zinc-200 font-medium text-sm hover:bg-white/60 dark:hover:bg-zinc-800/60 transition-all"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-strong)] border border-[var(--line)] text-(--sea-ink) dark:text-zinc-200 font-medium text-sm hover:bg-white/60 dark:hover:bg-zinc-800/60 transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             Landing Page

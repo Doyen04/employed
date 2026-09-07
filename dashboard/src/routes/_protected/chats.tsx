@@ -128,7 +128,7 @@ function ChatsPage() {
                     </p>
                     <Link
                         to="/telegram"
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:opacity-90"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90"
                     >
                         <Zap className="h-3.5 w-3.5" />
                         Connect Telegram Account

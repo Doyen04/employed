@@ -236,11 +236,11 @@ export function TelegramLoginCard({
     return (
         <div className="flex flex-col h-full gap-6">
             {/* Wizard Header Stepper */}
-            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-4 shadow-sm">
+            <div className="rounded-2xl border border-(--line) bg-(--surface-strong) p-4">
                 <div className="flex items-center justify-between text-xs font-semibold">
                     {/* Step 1 */}
                     <div
-                        className={`flex items-center gap-2 ${stepIndex >= 1 ? 'text-[var(--sea-ink)] dark:text-zinc-100' : 'text-zinc-400'
+                        className={`flex items-center gap-2 ${stepIndex >= 1 ? 'text-(--sea-ink) dark:text-zinc-100' : 'text-zinc-400'
                             }`}
                     >
                         <div
@@ -359,7 +359,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleStart}
                                 disabled={busy || !phone.trim()}
-                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                             >
                                 {busy ? (
                                     <>
@@ -415,7 +415,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleSubmitCode}
                                 disabled={busy || !code.trim()}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                             >
                                 {busy ? 'Verifying Code…' : 'Submit Code'}
                             </button>
@@ -462,7 +462,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleSubmitPassword}
                                 disabled={busy || !password.trim()}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                             >
                                 {busy ? 'Authenticating…' : 'Submit Password'}
                             </button>

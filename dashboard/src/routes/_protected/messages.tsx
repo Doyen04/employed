@@ -163,14 +163,14 @@ function MessagesPage() {
                 </div>
             </div>
 
-            {error && <p className="border-b border-[var(--line)] px-5 py-2 text-sm text-red-500">{error}</p>}
+            {error && <p className="border-b border-(--line) px-5 py-2 text-sm text-red-500">{error}</p>}
 
             {!telegramLoggedIn ? (
                 <div className="flex flex-col items-center justify-center p-10 text-center">
-                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--lagoon)]/15 text-[var(--sea-ink)] dark:text-[var(--lagoon)]">
+                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
                         <Radio className="h-6 w-6" />
                     </div>
-                    <h3 className="font-semibold text-sm text-[var(--sea-ink)] dark:text-zinc-100">
+                    <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
                         Telegram Disconnected
                     </h3>
                     <p className="mt-1 max-w-sm text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400">
@@ -178,7 +178,7 @@ function MessagesPage() {
                     </p>
                     <Link
                         to="/telegram"
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--lagoon-deep)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 dark:bg-[var(--lagoon)] dark:text-[#4F3D35]"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--lagoon-deep)] px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 dark:bg-[var(--lagoon)] dark:text-[#4F3D35]"
                     >
                         <Zap className="h-3.5 w-3.5" />
                         Connect Telegram Account
