@@ -25,7 +25,7 @@ export function TelegramLoginCard({
     onDone,
     onDisconnect,
 }: {
-    loggedIn: boolean
+    loggedIn: boolean | null
     onDone: () => void
     onDisconnect: () => void
 }) {
@@ -144,6 +144,17 @@ export function TelegramLoginCard({
         }
     }
 
+    // Session status still loading — show a neutral placeholder so the connect flow never flashes
+    if (loggedIn === null && phase === 'idle') {
+        return (
+            <div className="flex flex-col h-full gap-6">
+                <div className="flex h-48 items-center justify-center rounded-2xl border border-(--line) bg-(--surface-strong)">
+                    <RefreshCw className="h-6 w-6 animate-spin text-(--sea-ink-soft)" />
+                </div>
+            </div>
+        )
+    }
+
     // Active connected view
     if (loggedIn && !showReauth && phase === 'idle') {
         return (
@@ -245,10 +256,10 @@ export function TelegramLoginCard({
                     >
                         <div
                             className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${stepIndex > 1
-                                    ? 'bg-(--lagoon) text-[#4F3D35]'
-                                    : stepIndex === 1
-                                        ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
-                                        : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
+                                ? 'bg-(--lagoon) text-[#4F3D35]'
+                                : stepIndex === 1
+                                    ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
+                                    : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
                                 }`}
                         >
                             {stepIndex > 1 ? <CheckCircle2 className="h-4 w-4" /> : '1'}
@@ -265,10 +276,10 @@ export function TelegramLoginCard({
                     >
                         <div
                             className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${stepIndex > 2
-                                    ? 'bg-(--lagoon) text-[#4F3D35]'
-                                    : stepIndex === 2
-                                        ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
-                                        : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
+                                ? 'bg-(--lagoon) text-[#4F3D35]'
+                                : stepIndex === 2
+                                    ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
+                                    : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
                                 }`}
                         >
                             {stepIndex > 2 ? <CheckCircle2 className="h-4 w-4" /> : '2'}
@@ -285,8 +296,8 @@ export function TelegramLoginCard({
                     >
                         <div
                             className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${stepIndex === 3
-                                    ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
-                                    : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
+                                ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
+                                : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
                                 }`}
                         >
                             3
@@ -483,7 +494,7 @@ export function TelegramLoginCard({
 }
 
 export function useTelegramLoggedIn() {
-    const [loggedIn, setLoggedIn] = useState(false)
+    const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
 
     useEffect(() => {
         let alive = true
@@ -492,7 +503,8 @@ export function useTelegramLoggedIn() {
                 const status = await getTelegramStatus()
                 if (alive) setLoggedIn(status.loggedIn)
             } catch {
-                // worker unreachable — leave as not logged in
+                // worker unreachable — treat as not logged in
+                if (alive) setLoggedIn(false)
             }
         }
         void load()
