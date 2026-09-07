@@ -74,19 +74,21 @@ function MessagesPage() {
 
     if (loading) return <PageSkeleton label="Loading messages" />
 
+    const monitoredChats = chats.filter((chat) => chat.isMonitored)
+
     return (
         <Panel
             title="Messages"
             description="Every message persisted from the monitored chats, newest first."
             action={
-                chats.length > 0 ? (
+                monitoredChats.length > 0 ? (
                     <select
                         value={chatId ?? ''}
                         onChange={(event) => setChatId(event.target.value || undefined)}
                         className="rounded-xl border border-[var(--line)] bg-[var(--header-bg)] px-3 py-1.5 text-xs font-semibold text-[var(--sea-ink)] dark:text-zinc-200 outline-none transition focus:border-[var(--lagoon)]"
                     >
                         <option value="">All monitored chats</option>
-                        {chats.map((chat) => (
+                        {monitoredChats.map((chat) => (
                             <option key={chat.id} value={chat.id}>
                                 {chat.title}
                             </option>
