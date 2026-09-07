@@ -152,20 +152,20 @@ export function TelegramLoginCard({
                 <div className="relative overflow-hidden rounded-2xl border border-[rgba(236,185,20,0.35)] bg-[rgba(236,185,20,0.07)] p-6 backdrop-blur-sm">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-3.5">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(236,185,20,0.2)] text-[var(--lagoon-deep)] border border-[rgba(236,185,20,0.3)]">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) border border-[rgba(236,185,20,0.3)]">
                                 <ShieldCheck className="h-6 w-6" />
                             </div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-[var(--sea-ink)] dark:text-zinc-100 text-lg">
+                                    <h3 className="font-semibold text-(--sea-ink) dark:text-zinc-100 text-lg">
                                         Telegram Connected
                                     </h3>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(236,185,20,0.18)] px-2.5 py-0.5 text-xs font-semibold text-[var(--lagoon-deep)] border border-[rgba(236,185,20,0.28)]">
-                                        <span className="h-2 w-2 rounded-full bg-[var(--lagoon)] animate-pulse" />
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(236,185,20,0.18)] px-2.5 py-0.5 text-xs font-semibold text-(--lagoon-deep) border border-[rgba(236,185,20,0.28)]">
+                                        <span className="h-2 w-2 rounded-full bg-(--lagoon) animate-pulse" />
                                         Active Session
                                     </span>
                                 </div>
-                                <p className="mt-0.5 text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400">
+                                <p className="mt-0.5 text-xs text-(--sea-ink-soft) dark:text-zinc-400">
                                     MTProto session active &amp; encrypted via AES-256-GCM. Realtime message ingestion enabled.
                                 </p>
                             </div>
@@ -173,23 +173,23 @@ export function TelegramLoginCard({
                     </div>
 
                     <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3">
-                            <span className="text-[var(--sea-ink-soft)] dark:text-zinc-400 block font-medium">Protocol</span>
-                            <span className="font-semibold text-[var(--sea-ink)] dark:text-zinc-200 mt-0.5 block">Teleproto (MTProto Layer 229)</span>
+                        <div className="rounded-xl border border-(--line) bg-(--surface) p-3">
+                            <span className="text-(--sea-ink-soft) dark:text-zinc-400 block font-medium">Protocol</span>
+                            <span className="font-semibold text-(--sea-ink) dark:text-zinc-200 mt-0.5 block">Teleproto (MTProto Layer 229)</span>
                         </div>
-                        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3">
-                            <span className="text-[var(--sea-ink-soft)] dark:text-zinc-400 block font-medium">Listener State</span>
-                            <span className="font-semibold text-[var(--lagoon-deep)] dark:text-[var(--lagoon)] mt-0.5 block">Listening for Monitored Chats</span>
+                        <div className="rounded-xl border border-(--line) bg-(--surface) p-3">
+                            <span className="text-(--sea-ink-soft) dark:text-zinc-400 block font-medium">Listener State</span>
+                            <span className="font-semibold text-(--lagoon-deep) dark:text-(--lagoon) mt-0.5 block">Listening for Monitored Chats</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="mt-auto pt-4 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-3">
+                <div className="mt-auto pt-4 border-t border-(--line) flex flex-wrap items-center justify-between gap-3">
                     <button
                         type="button"
                         onClick={() => setShowReauth(true)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] px-4 py-2.5 text-xs font-semibold text-[var(--sea-ink)] dark:text-zinc-200 hover:bg-white/80 dark:hover:bg-zinc-800 transition"
+                        className="inline-flex items-center gap-2 rounded-xl border border-(--line) bg-(--surface-strong) px-4 py-2.5 text-xs font-semibold text-(--sea-ink) dark:text-zinc-200 hover:bg-white/80 dark:hover:bg-zinc-800 transition"
                     >
                         <RefreshCw className="h-3.5 w-3.5" />
                         Switch Account / Re-authenticate
@@ -218,7 +218,7 @@ export function TelegramLoginCard({
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmDisconnect(false)}
-                                className="rounded-lg border border-[var(--line)] px-2.5 py-1.5 text-xs font-medium text-[var(--sea-ink-soft)] dark:text-zinc-400 hover:bg-white/40"
+                                className="rounded-lg border border-(--line) px-2.5 py-1.5 text-xs font-medium text-(--sea-ink-soft) dark:text-zinc-400 hover:bg-white/40"
                             >
                                 Cancel
                             </button>
@@ -245,9 +245,9 @@ export function TelegramLoginCard({
                     >
                         <div
                             className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${stepIndex > 1
-                                    ? 'bg-[var(--lagoon)] text-[#4F3D35]'
+                                    ? 'bg-(--lagoon) text-[#4F3D35]'
                                     : stepIndex === 1
-                                        ? 'bg-[var(--sea-ink)] text-white dark:bg-[var(--lagoon)] dark:text-[#4F3D35]'
+                                        ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
                                         : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
                                 }`}
                         >
@@ -256,18 +256,18 @@ export function TelegramLoginCard({
                         <span>Phone Number</span>
                     </div>
 
-                    <div className="h-0.5 flex-1 mx-3 bg-[var(--line)]" />
+                    <div className="h-0.5 flex-1 mx-3 bg-(--line)" />
 
                     {/* Step 2 */}
                     <div
-                        className={`flex items-center gap-2 ${stepIndex >= 2 ? 'text-[var(--sea-ink)] dark:text-zinc-100' : 'text-zinc-400'
+                        className={`flex items-center gap-2 ${stepIndex >= 2 ? 'text-(--sea-ink) dark:text-zinc-100' : 'text-zinc-400'
                             }`}
                     >
                         <div
                             className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${stepIndex > 2
-                                    ? 'bg-[var(--lagoon)] text-[#4F3D35]'
+                                    ? 'bg-(--lagoon) text-[#4F3D35]'
                                     : stepIndex === 2
-                                        ? 'bg-[var(--sea-ink)] text-white dark:bg-[var(--lagoon)] dark:text-[#4F3D35]'
+                                        ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
                                         : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
                                 }`}
                         >
@@ -276,16 +276,16 @@ export function TelegramLoginCard({
                         <span>OTP Code</span>
                     </div>
 
-                    <div className="h-0.5 flex-1 mx-3 bg-[var(--line)]" />
+                    <div className="h-0.5 flex-1 mx-3 bg-(--line)" />
 
                     {/* Step 3 */}
                     <div
-                        className={`flex items-center gap-2 ${stepIndex === 3 ? 'text-[var(--sea-ink)] dark:text-zinc-100' : 'text-zinc-400'
+                        className={`flex items-center gap-2 ${stepIndex === 3 ? 'text-(--sea-ink) dark:text-zinc-100' : 'text-zinc-400'
                             }`}
                     >
                         <div
                             className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${stepIndex === 3
-                                    ? 'bg-[var(--sea-ink)] text-white dark:bg-[var(--lagoon)] dark:text-[#4F3D35]'
+                                    ? 'bg-(--sea-ink) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
                                     : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800'
                                 }`}
                         >
@@ -298,8 +298,8 @@ export function TelegramLoginCard({
 
             {/* Success banner if just completed */}
             {phase === 'done' && (
-                <div className="flex items-center gap-3 rounded-xl border border-[rgba(236,185,20,0.35)] bg-[rgba(236,185,20,0.12)] p-4 text-sm text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]">
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--lagoon-deep)]" />
+                <div className="flex items-center gap-3 rounded-xl border border-[rgba(236,185,20,0.35)] bg-[rgba(236,185,20,0.12)] p-4 text-sm text-(--lagoon-deep) dark:text-(--lagoon)">
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-(--lagoon-deep)" />
                     <div>
                         <p className="font-semibold">Authentication Successful!</p>
                         <p className="text-xs opacity-90">Telegram session saved. The worker is now listening for incoming messages.</p>
@@ -323,11 +323,11 @@ export function TelegramLoginCard({
                 {/* Waiting for started */}
                 {phase === 'started' && (
                     <div className="flex flex-col items-center justify-center text-center p-6 space-y-3">
-                        <RefreshCw className="h-8 w-8 text-[var(--lagoon-deep)] dark:text-[var(--lagoon)] animate-spin" />
-                        <p className="text-sm font-medium text-[var(--sea-ink)] dark:text-zinc-200">
+                        <RefreshCw className="h-8 w-8 text-(--lagoon-deep) dark:text-(--lagoon) animate-spin" />
+                        <p className="text-sm font-medium text-(--sea-ink) dark:text-zinc-200">
                             Connecting to Telegram servers…
                         </p>
-                        <p className="text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400 max-w-xs">
+                        <p className="text-xs text-(--sea-ink-soft) dark:text-zinc-400 max-w-xs">
                             Sending login request for {phone}. Telegram will send an official authentication code to your Telegram app shortly.
                         </p>
                     </div>
@@ -337,7 +337,7 @@ export function TelegramLoginCard({
                 {(phase === 'idle' || phase === 'error') && (
                     <div className="flex flex-col gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-[var(--sea-ink)] dark:text-zinc-200 uppercase tracking-wider mb-2">
+                            <label className="block text-xs font-semibold text-(--sea-ink) dark:text-zinc-200 uppercase tracking-wider mb-2">
                                 Telegram Phone Number
                             </label>
                             <div className="relative">
@@ -346,11 +346,11 @@ export function TelegramLoginCard({
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
                                     placeholder="+15551234567"
-                                    className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--lagoon)] focus:ring-2 focus:ring-[var(--lagoon)]/20 dark:text-zinc-100"
+                                    className="w-full rounded-xl border border-(--line) bg-(--surface) px-4 py-3 text-sm font-medium outline-none transition focus:border-(--lagoon) focus:ring-2 focus:ring-(--lagoon)/20 dark:text-zinc-100"
                                 />
                             </div>
-                            <p className="mt-2 text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400 leading-relaxed">
-                                Include country code prefix (e.g. <code className="px-1.5 py-0.5 rounded bg-[var(--line)] text-xs">+1</code> or <code className="px-1.5 py-0.5 rounded bg-[var(--line)] text-xs">+44</code>). You will receive an official login code in your Telegram app.
+                            <p className="mt-2 text-xs text-(--sea-ink-soft) dark:text-zinc-400 leading-relaxed">
+                                Include country code prefix (e.g. <code className="px-1.5 py-0.5 rounded bg-(--line) text-xs">+1</code> or <code className="px-1.5 py-0.5 rounded bg-(--line) text-xs">+44</code>). You will receive an official login code in your Telegram app.
                             </p>
                         </div>
 
@@ -359,7 +359,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleStart}
                                 disabled={busy || !phone.trim()}
-                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-(--lagoon-deep) dark:bg-(--lagoon) dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                             >
                                 {busy ? (
                                     <>
@@ -377,7 +377,7 @@ export function TelegramLoginCard({
                                 <button
                                     type="button"
                                     onClick={() => setShowReauth(false)}
-                                    className="rounded-xl border border-[var(--line)] px-4 py-3 text-xs font-semibold text-[var(--sea-ink-soft)] hover:bg-white/50"
+                                    className="rounded-xl border border-(--line) px-4 py-3 text-xs font-semibold text-(--sea-ink-soft) hover:bg-white/50"
                                 >
                                     Cancel
                                 </button>
@@ -389,15 +389,15 @@ export function TelegramLoginCard({
                 {/* Step 2: Verification Code */}
                 {phase === 'awaitingCode' && (
                     <div className="flex flex-col gap-4">
-                        <div className="rounded-xl bg-[rgba(236,185,20,0.12)] border border-[rgba(236,185,20,0.25)] p-3.5 text-xs text-[var(--sea-ink)] dark:text-zinc-200">
+                        <div className="rounded-xl bg-[rgba(236,185,20,0.12)] border border-[rgba(236,185,20,0.25)] p-3.5 text-xs text-(--sea-ink) dark:text-zinc-200">
                             <p className="font-semibold">Code sent to Telegram!</p>
-                            <p className="mt-0.5 text-[var(--sea-ink-soft)] dark:text-zinc-400">
+                            <p className="mt-0.5 text-(--sea-ink-soft) dark:text-zinc-400">
                                 Check your active Telegram session on your phone or computer.
                             </p>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-[var(--sea-ink)] dark:text-zinc-200 uppercase tracking-wider mb-2">
+                            <label className="block text-xs font-semibold text-(--sea-ink) dark:text-zinc-200 uppercase tracking-wider mb-2">
                                 5-Digit Telegram Code
                             </label>
                             <input
@@ -406,7 +406,7 @@ export function TelegramLoginCard({
                                 onChange={(e) => setCode(e.target.value)}
                                 placeholder="12345"
                                 autoFocus
-                                className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-center text-lg font-mono tracking-widest outline-none transition focus:border-[var(--lagoon)] focus:ring-2 focus:ring-[var(--lagoon)]/20 dark:text-zinc-100"
+                                className="w-full rounded-xl border border-(--line) bg-(--surface) px-4 py-3 text-center text-lg font-mono tracking-widest outline-none transition focus:border-(--lagoon) focus:ring-2 focus:ring-(--lagoon)/20 dark:text-zinc-100"
                             />
                         </div>
 
@@ -415,7 +415,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleSubmitCode}
                                 disabled={busy || !code.trim()}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-(--lagoon-deep) dark:bg-(--lagoon) dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                             >
                                 {busy ? 'Verifying Code…' : 'Submit Code'}
                             </button>
@@ -423,7 +423,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleAbort}
                                 disabled={busy}
-                                className="rounded-xl border border-[var(--line)] px-4 py-3 text-xs font-semibold text-[var(--sea-ink-soft)] dark:text-zinc-400 hover:bg-white/50"
+                                className="rounded-xl border border-(--line) px-4 py-3 text-xs font-semibold text-(--sea-ink-soft) dark:text-zinc-400 hover:bg-white/50"
                             >
                                 Cancel
                             </button>
@@ -444,7 +444,7 @@ export function TelegramLoginCard({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-[var(--sea-ink)] dark:text-zinc-200 uppercase tracking-wider mb-2">
+                            <label className="block text-xs font-semibold text-(--sea-ink) dark:text-zinc-200 uppercase tracking-wider mb-2">
                                 2FA Password
                             </label>
                             <input
@@ -453,7 +453,7 @@ export function TelegramLoginCard({
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 autoFocus
-                                className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm outline-none transition focus:border-[var(--lagoon)] focus:ring-2 focus:ring-[var(--lagoon)]/20 dark:text-zinc-100"
+                                className="w-full rounded-xl border border-(--line) bg-(--surface) px-4 py-3 text-sm outline-none transition focus:border-(--lagoon) focus:ring-2 focus:ring-(--lagoon)/20 dark:text-zinc-100"
                             />
                         </div>
 
@@ -462,7 +462,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleSubmitPassword}
                                 disabled={busy || !password.trim()}
-                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--lagoon-deep)] dark:bg-[var(--lagoon)] dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-(--lagoon-deep) dark:bg-(--lagoon) dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                             >
                                 {busy ? 'Authenticating…' : 'Submit Password'}
                             </button>
@@ -470,7 +470,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleAbort}
                                 disabled={busy}
-                                className="rounded-xl border border-[var(--line)] px-4 py-3 text-xs font-semibold text-[var(--sea-ink-soft)] dark:text-zinc-400 hover:bg-white/50"
+                                className="rounded-xl border border-(--line) px-4 py-3 text-xs font-semibold text-(--sea-ink-soft) dark:text-zinc-400 hover:bg-white/50"
                             >
                                 Cancel
                             </button>

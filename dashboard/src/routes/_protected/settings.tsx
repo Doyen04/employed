@@ -95,24 +95,24 @@ function ConfigList({
   rows: { key: string; name: string; active: boolean; meta: string }[]
 }) {
   if (rows.length === 0) {
-    return <p className="m-0 text-sm text-[var(--sea-ink-soft)]">{empty}</p>
+    return <p className="m-0 text-sm text-(--sea-ink-soft)">{empty}</p>
   }
   return (
     <ul className="m-0 flex flex-col gap-2">
       {rows.map((row) => (
         <li
           key={row.key}
-          className="flex items-center justify-between gap-3 rounded-xl border border-(--line) bg-[var(--header-bg)] px-4 py-2.5"
+          className="flex items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--header-bg) px-4 py-2.5"
         >
           <div className="min-w-0">
-            <p className="m-0 truncate text-sm font-semibold text-[var(--sea-ink)]">{row.name}</p>
-            <p className="m-0 truncate text-xs text-[var(--sea-ink-soft)]">{row.meta}</p>
+            <p className="m-0 truncate text-sm font-semibold text-(--sea-ink)">{row.name}</p>
+            <p className="m-0 truncate text-xs text-(--sea-ink-soft)">{row.meta}</p>
           </div>
           <span
             className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
               row.active
-                ? 'bg-[rgba(236,185,20,0.18)] text-[var(--lagoon-deep)]'
-                : 'bg-[rgba(79,61,53,0.08)] text-[var(--sea-ink-soft)]'
+                ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
+                : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)'
             }`}
           >
             {row.active ? 'ACTIVE' : 'PAUSED'}

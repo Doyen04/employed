@@ -137,15 +137,15 @@ function MessagesPage() {
 
     return (
         <section className="island-shell overflow-hidden rounded-2xl p-0">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--line)] px-5 py-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--line) px-5 py-4">
                 <div>
-                    <h2 className="m-0 text-base font-semibold text-[var(--sea-ink)]">Messages</h2>
-                    <p className="m-0 mt-0.5 text-sm text-[var(--sea-ink-soft)]">
+                    <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Messages</h2>
+                    <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
                         Every message from your monitored chats — pick one on the left to focus its thread.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--sea-ink-soft)]">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-(--sea-ink-soft)">
                         <span className="relative flex h-2 w-2">
                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -173,12 +173,12 @@ function MessagesPage() {
                     <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
                         Telegram Disconnected
                     </h3>
-                    <p className="mt-1 max-w-sm text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400">
+                    <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
                         Your Telegram session is not connected. Connect your account to import and monitor your groups, channels, and chats.
                     </p>
                     <Link
                         to="/telegram"
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[var(--lagoon-deep)] px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 dark:bg-[var(--lagoon)] dark:text-[#4F3D35]"
+                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-(--lagoon-deep) px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 dark:bg-(--lagoon) dark:text-[#4F3D35]"
                     >
                         <Zap className="h-3.5 w-3.5" />
                         Connect Telegram Account
@@ -187,28 +187,28 @@ function MessagesPage() {
                 </div>
             ) : summaries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-10 text-center">
-                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--lagoon)]/15 text-[var(--sea-ink)] dark:text-[var(--lagoon)]">
+                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
                         <Inbox className="h-6 w-6" />
                     </div>
-                    <h3 className="font-semibold text-sm text-[var(--sea-ink)] dark:text-zinc-100">
+                    <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
                         No Monitored Chats
                     </h3>
-                    <p className="mt-1 max-w-sm text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400">
+                    <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
                         Mark chats as "Monitored" on the Chats page to start persisting their messages here.
                     </p>
                 </div>
             ) : (
                 <div className="lg:grid lg:h-[min(42rem,calc(100vh-15rem))] lg:grid-cols-[18rem_minmax(0,1fr)] lg:overflow-hidden">
-                    <aside className="hidden min-h-0 flex-col border-r border-[var(--line)] bg-[var(--surface)] lg:flex">
-                        <div className="relative border-b border-[var(--line)] p-3">
-                            <Search className="absolute left-6 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--sea-ink-soft)]" aria-hidden="true" />
+                    <aside className="hidden min-h-0 flex-col border-r border-(--line) bg-(--surface) lg:flex">
+                        <div className="relative border-b border-(--line) p-3">
+                            <Search className="absolute left-6 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
                             <input
                                 type="search"
                                 value={query}
                                 onChange={(event) => setQuery(event.target.value)}
                                 placeholder="Search chats…"
                                 aria-label="Search chats"
-                                className="w-full rounded-full border border-[var(--line)] bg-[var(--surface-strong)] py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-[var(--lagoon)] dark:text-zinc-100"
+                                className="w-full rounded-full border border-(--line) bg-(--surface-strong) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
                             />
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -218,24 +218,24 @@ function MessagesPage() {
                                 className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
                                     chatId === undefined
                                         ? 'bg-[rgba(236,185,20,0.14)] ring-1 ring-[rgba(236,185,20,0.4)]'
-                                        : 'hover:bg-[var(--surface-strong)]'
+                                        : 'hover:bg-(--surface-strong)'
                                 }`}
                             >
-                                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[rgba(236,185,20,0.18)] text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]">
+                                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)">
                                     <Inbox className="h-4 w-4" aria-hidden="true" />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-sm font-semibold text-[var(--sea-ink)] dark:text-zinc-100">
+                                    <span className="block truncate text-sm font-semibold text-(--sea-ink) dark:text-zinc-100">
                                         Inbox
                                     </span>
-                                    <span className="block truncate text-xs text-[var(--sea-ink-soft)]">
+                                    <span className="block truncate text-xs text-(--sea-ink-soft)">
                                         {totalMessages.toLocaleString()} messages
                                     </span>
                                 </span>
                             </button>
 
                             {filtered.length === 0 && (
-                                <p className="px-2.5 py-6 text-center text-xs text-[var(--sea-ink-soft)]">
+                                <p className="px-2.5 py-6 text-center text-xs text-(--sea-ink-soft)">
                                     No chats match {query ? `"${query}"` : ''}.
                                 </p>
                             )}
@@ -250,32 +250,32 @@ function MessagesPage() {
                                         className={`mb-0.5 flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
                                             active
                                                 ? 'bg-[rgba(236,185,20,0.14)] ring-1 ring-[rgba(236,185,20,0.4)]'
-                                                : 'hover:bg-[var(--surface-strong)]'
+                                                : 'hover:bg-(--surface-strong)'
                                         }`}
                                     >
-                                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[rgba(236,185,20,0.18)] text-xs font-bold text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]">
+                                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
                                             {initials(row.title)}
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span
                                                 className={`block truncate text-sm ${
                                                     active
-                                                        ? 'font-semibold text-[var(--sea-ink)] dark:text-zinc-100'
-                                                        : 'font-medium text-[var(--sea-ink)] dark:text-zinc-200'
+                                                        ? 'font-semibold text-(--sea-ink) dark:text-zinc-100'
+                                                        : 'font-medium text-(--sea-ink) dark:text-zinc-200'
                                                 }`}
                                             >
                                                 {row.title}
                                             </span>
-                                            <span className="block truncate text-xs text-[var(--sea-ink-soft)]">
+                                            <span className="block truncate text-xs text-(--sea-ink-soft)">
                                                 {row.lastText ?? 'No messages yet'}
                                             </span>
                                         </span>
                                         <span className="flex shrink-0 flex-col items-end gap-1">
-                                            <span className="text-[10px] text-[var(--sea-ink-soft)]">
+                                            <span className="text-[10px] text-(--sea-ink-soft)">
                                                 {relativeTime(row.lastReceivedAt)}
                                             </span>
                                             {row.messageCount > 0 && (
-                                                <span className="rounded-full bg-[rgba(236,185,20,0.2)] px-1.5 text-[10px] font-bold text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]">
+                                                <span className="rounded-full bg-[rgba(236,185,20,0.2)] px-1.5 text-[10px] font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
                                                     {row.messageCount.toLocaleString()}
                                                 </span>
                                             )}
@@ -287,12 +287,12 @@ function MessagesPage() {
                     </aside>
 
                     <section className="flex min-h-0 flex-col">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--line) px-4 py-3">
                             <div>
-                                <h3 className="m-0 text-sm font-semibold text-[var(--sea-ink)] dark:text-zinc-100">
+                                <h3 className="m-0 text-sm font-semibold text-(--sea-ink) dark:text-zinc-100">
                                     {selectedChat ? selectedChat.title : 'All chats'}
                                 </h3>
-                                <p className="m-0 text-xs text-[var(--sea-ink-soft)]">
+                                <p className="m-0 text-xs text-(--sea-ink-soft)">
                                     {selectedChat
                                         ? `${selectedChat.messageCount.toLocaleString()} messages`
                                         : `Newest first · ${totalMessages.toLocaleString()} total`}
@@ -302,7 +302,7 @@ function MessagesPage() {
                                 aria-label="Choose chat"
                                 value={chatId ?? ''}
                                 onChange={(event) => setChatId(event.target.value || undefined)}
-                                className="rounded-xl border border-[var(--line)] bg-[var(--header-bg)] px-3 py-1.5 text-xs font-semibold text-[var(--sea-ink)] outline-none transition focus:border-[var(--lagoon)] dark:text-zinc-200 lg:hidden"
+                                className="rounded-xl border border-(--line) bg-(--header-bg) px-3 py-1.5 text-xs font-semibold text-(--sea-ink) outline-none transition focus:border-(--lagoon) dark:text-zinc-200 lg:hidden"
                             >
                                 <option value="">All chats</option>
                                 {summaries.map((row) => (
@@ -315,18 +315,18 @@ function MessagesPage() {
 
                         <div ref={threadRef} className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
                             {loading ? (
-                                <div className="flex items-center justify-center py-16 text-xs text-[var(--sea-ink-soft)]">
+                                <div className="flex items-center justify-center py-16 text-xs text-(--sea-ink-soft)">
                                     Loading messages…
                                 </div>
                             ) : items.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center p-8 text-center">
-                                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--lagoon)]/15 text-[var(--sea-ink)] dark:text-[var(--lagoon)]">
+                                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
                                         <MessageSquare className="h-6 w-6" />
                                     </div>
-                                    <h4 className="font-semibold text-sm text-[var(--sea-ink)] dark:text-zinc-100">
+                                    <h4 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
                                         {selectedChat ? 'No messages in this chat yet' : 'No Ingested Messages'}
                                     </h4>
-                                    <p className="mt-1 max-w-sm text-xs text-[var(--sea-ink-soft)] dark:text-zinc-400">
+                                    <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
                                         {selectedChat
                                             ? 'Messages from this monitored chat will appear here the moment they are received.'
                                             : 'No messages received from monitored chats yet. They will appear here in real time.'}
@@ -344,7 +344,7 @@ function MessagesPage() {
                                                 rows.push(
                                                     <li
                                                         key={`day-${dayKey}`}
-                                                        className="sticky top-0 z-10 my-1 self-center rounded-full border border-[var(--line)] bg-[var(--header-bg)] px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--sea-ink-soft)]"
+                                                        className="sticky top-0 z-10 my-1 self-center rounded-full border border-(--line) bg-(--header-bg) px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)"
                                                     >
                                                         {dayLabel(message.receivedAt)}
                                                     </li>,
@@ -355,24 +355,24 @@ function MessagesPage() {
                                                     <div
                                                         className={`max-w-[85%] min-w-0 rounded-2xl rounded-tl-sm px-3.5 py-2.5 transition ${
                                                             newHeads.includes(message.id)
-                                                                ? 'ring-2 ring-[var(--lagoon)]'
-                                                                : 'border border-[var(--line)]'
-                                                        } bg-[var(--header-bg)]`}
+                                                                ? 'ring-2 ring-(--lagoon)'
+                                                                : 'border border-(--line)'
+                                                        } bg-(--header-bg)`}
                                                     >
                                                         <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-xs">
-                                                            <span className="font-semibold text-[var(--lagoon-deep)] dark:text-[var(--lagoon)]">
+                                                            <span className="font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
                                                                 {message.senderName ?? 'Unknown'}
                                                             </span>
                                                             {chatId === undefined && (
-                                                                <span className="font-medium text-[var(--sea-ink-soft)]">
+                                                                <span className="font-medium text-(--sea-ink-soft)">
                                                                     {message.chat.title}
                                                                 </span>
                                                             )}
-                                                            <span className="ml-auto text-[10px] text-[var(--sea-ink-soft)]">
+                                                            <span className="ml-auto text-[10px] text-(--sea-ink-soft)">
                                                                 {formatTime(message.receivedAt)}
                                                             </span>
                                                         </p>
-                                                        <p className="m-0 mt-0.5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--sea-ink)] dark:text-zinc-200">
+                                                        <p className="m-0 mt-0.5 whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
                                                             {message.text}
                                                         </p>
                                                     </div>
@@ -388,7 +388,7 @@ function MessagesPage() {
                                 <div className="mt-4 flex justify-center">
                                     <button
                                         onClick={() => void load(false)}
-                                        className="rounded-full border border-[var(--line)] bg-[var(--surface-strong)] px-5 py-2 text-xs font-semibold text-[var(--sea-ink)] transition hover:border-[var(--lagoon)] dark:text-zinc-200"
+                                        className="rounded-full border border-(--line) bg-(--surface-strong) px-5 py-2 text-xs font-semibold text-(--sea-ink) transition hover:border-(--lagoon) dark:text-zinc-200"
                                     >
                                         Load older
                                     </button>

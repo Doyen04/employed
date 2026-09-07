@@ -49,23 +49,23 @@ function ActionLogsPage() {
       {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
 
       {items.length === 0 ? (
-        <p className="text-sm text-[var(--sea-ink-soft)]">No actions dispatched yet.</p>
+        <p className="text-sm text-(--sea-ink-soft)">No actions dispatched yet.</p>
       ) : (
         <>
           <ul className="m-0 flex flex-col gap-2">
             {items.map((log) => (
               <li
                 key={log.id}
-                className="rounded-xl border border-(--line) bg-[var(--header-bg)] px-4 py-2.5"
+                className="rounded-xl border border-(--line) bg-(--header-bg) px-4 py-2.5"
               >
-                <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-[var(--sea-ink)]">
+                <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-(--sea-ink)">
                   <StatusBadge status={log.status} />
                   <span className="font-semibold">{log.notifier.name}</span>
-                  <span className="text-[var(--sea-ink-soft)]">
+                  <span className="text-(--sea-ink-soft)">
                     {log.analysis.analysisConfigName} · {formatTime(log.analysis.analyzedAt)}
                   </span>
                 </p>
-                <p className="m-0 mt-0.5 text-xs text-[var(--sea-ink-soft)]">
+                <p className="m-0 mt-0.5 text-xs text-(--sea-ink-soft)">
                   {log.analysis.message.chat.title}: “{truncate(log.analysis.message.text, 160)}”
                 </p>
                 {log.status === 'failed' && log.errorDetail && (
@@ -77,7 +77,7 @@ function ActionLogsPage() {
           {hasMore && (
             <button
               onClick={() => void load(false)}
-              className="mt-4 rounded-full border border-[var(--line)] bg-[var(--header-bg)] px-5 py-2 text-sm font-semibold text-[var(--sea-ink)] transition hover:border-[var(--lagoon)]"
+              className="mt-4 rounded-full border border-(--line) bg-(--header-bg) px-5 py-2 text-sm font-semibold text-(--sea-ink) transition hover:border-(--lagoon)"
             >
               Load more
             </button>
@@ -90,7 +90,7 @@ function ActionLogsPage() {
 
 function StatusBadge({ status }: { status: WorkerActionLog['status'] }) {
   const styles: Record<WorkerActionLog['status'], string> = {
-    sent: 'bg-[rgba(236,185,20,0.18)] text-[var(--lagoon-deep)]',
+    sent: 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)',
     pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     failed: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
   }

@@ -17,9 +17,9 @@ export function Panel({
     <section className={`island-shell rounded-2xl p-6 ${className ?? ''}`.trim()}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="m-0 text-base font-semibold text-[var(--sea-ink)]">{title}</h2>
+          <h2 className="m-0 text-base font-semibold text-(--sea-ink)">{title}</h2>
           {description ? (
-            <p className="m-0 mt-0.5 text-sm text-[var(--sea-ink-soft)]">{description}</p>
+            <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">{description}</p>
           ) : null}
         </div>
         {action}
