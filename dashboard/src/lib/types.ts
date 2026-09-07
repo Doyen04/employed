@@ -27,6 +27,15 @@ export interface WorkerMessage {
   chat: ChatRef
 }
 
+export interface WorkerMessageSummary {
+  chatId: string
+  title: string
+  telegramChatId: string
+  messageCount: number
+  lastText: string | null
+  lastReceivedAt: string | null
+}
+
 export interface WorkerAnalysisConfig {
   id: string
   name: string

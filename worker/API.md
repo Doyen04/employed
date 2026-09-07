@@ -23,6 +23,7 @@ defaults to `WORKER_API_KEY`. Events:
 
 | Event | Payload |
 |---|---|
+| `message:stored` | `{ message, chat }` after any monitored message is persisted (live or backfill) |
 | `message:new` | `{ message, chat, analysis, analysisConfigName }` after a monitored message is analysed |
 | `chat:update` | `{ id, telegramChatId, title, isMonitored, addedAt }` |
 
@@ -95,12 +96,17 @@ most five records and uses the same `Message` shape documented below.
 ### Messages
 
 | Method | Path | Query | Response |
-|---|---|---|---|
+|---|---|---:|---|
 | GET | `/messages` | `chatId?`, `limit?` (1–200, default 50), `cursor?` | `200 { items: Message[], nextCursor: string\|null, hasMore: boolean }` |
+| GET | `/messages/summary` | — | `200 { items: MessageSummary[] }` |
 
 `Message` shape:
 `{ id, chatId, telegramMessageId, senderName: string\|null, text, receivedAt: ISO,
    chat: { id, title, telegramChatId } }`
+
+`MessageSummary` shape (monitored chats only, newest message first by `lastReceivedAt`):
+`{ chatId, title, telegramChatId: string, messageCount: number,
+   lastText: string|null, lastReceivedAt: ISO|null }`
 
 Order: newest first. `cursor` is a `Message.id`; pass `nextCursor` for the next page.
 

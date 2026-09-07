@@ -21,6 +21,40 @@ function serializeMessage(message: Message & { chat: { id: string; title: string
     }
 }
 
+messagesRouter.get('/summary', async (_req, res) => {
+    const chats = await prisma.chat.findMany({
+        where: { isMonitored: true },
+        include: {
+            _count: { select: { messages: true } },
+            messages: {
+                orderBy: [{ receivedAt: 'desc' }, { id: 'desc' }],
+                take: 1,
+                select: { text: true, receivedAt: true },
+            },
+        },
+    })
+
+    const rows = chats.map((chat) => ({
+        chatId: chat.id,
+        title: chat.title,
+        telegramChatId: chat.telegramChatId.toString(),
+        messageCount: chat._count.messages,
+        lastText: chat.messages[0]?.text ?? null,
+        lastReceivedAt: chat.messages[0]?.receivedAt.toISOString() ?? null,
+    }))
+
+    rows.sort((a, b) => {
+        if (a.lastReceivedAt && b.lastReceivedAt) {
+            return b.lastReceivedAt.localeCompare(a.lastReceivedAt)
+        }
+        if (a.lastReceivedAt) return -1
+        if (b.lastReceivedAt) return 1
+        return a.title.localeCompare(b.title)
+    })
+
+    res.json({ items: rows })
+})
+
 messagesRouter.get('/', async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit ?? 50), 1), 200)
     const chatId = typeof req.query.chatId === 'string' ? req.query.chatId : undefined

@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 
-import type { Paged, WorkerMessage } from '../lib/types'
+import type { Paged, WorkerMessage, WorkerMessageSummary } from '../lib/types'
 import { requireAuthed } from './auth'
 import { workerFetch } from './worker'
 
@@ -14,3 +14,9 @@ export const listMessages = createServerFn()
     if (data.cursor) params.set('cursor', data.cursor)
     return workerFetch<Paged<WorkerMessage>>(`/messages?${params.toString()}`)
   })
+
+export const messageSummary = createServerFn().handler(async () => {
+  await requireAuthed()
+  const result = await workerFetch<{ items: WorkerMessageSummary[] }>('/messages/summary')
+  return result.items
+})
