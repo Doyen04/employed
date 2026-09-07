@@ -38,6 +38,10 @@ export function emitMessageNew(payload: unknown): void {
     io?.emit('message:new', payload)
 }
 
+export function emitMessageStored(payload: unknown): void {
+    io?.emit('message:stored', payload)
+}
+
 export function emitChatUpdate(payload: unknown): void {
     io?.emit('chat:update', payload)
 }

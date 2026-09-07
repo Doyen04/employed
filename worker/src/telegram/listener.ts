@@ -13,7 +13,7 @@ import { runAnalysis } from '../llm/analyze'
 import { matchesCondition } from '../actions/resolver'
 import { dispatchAction } from '../actions/dispatch'
 import { toJsonValue } from '../types/json'
-import { emitMessageNew } from '../socket/server'
+import { emitMessageNew, emitMessageStored } from '../socket/server'
 
 const LAST_SEEN_PREFIX = 'tg.lastMsg:'
 
@@ -109,7 +109,10 @@ async function ingestMessage(
     }
 
     await setLastSeen(telegramChatId, telegramMessageId)
-    if (message) await processMessage(message, chat)
+    if (message) {
+        emitMessageStored(serializeStored(chat, message))
+        await processMessage(message, chat)
+    }
 }
 
 interface MessageRow {
@@ -119,6 +122,29 @@ interface MessageRow {
     senderName: string | null
     text: string
     receivedAt: Date
+}
+
+function serializeStored(
+    chat: { id: string; title: string; telegramChatId: bigint },
+    message: MessageRow,
+) {
+    const chatRef = {
+        id: chat.id,
+        title: chat.title,
+        telegramChatId: chat.telegramChatId.toString(),
+    }
+    return {
+        message: {
+            id: message.id,
+            chatId: message.chatId,
+            telegramMessageId: message.telegramMessageId,
+            senderName: message.senderName,
+            text: message.text,
+            receivedAt: message.receivedAt.toISOString(),
+            chat: chatRef,
+        },
+        chat: chatRef,
+    }
 }
 
 async function processMessage(
@@ -222,7 +248,10 @@ async function backfillMonitoredChats(client: TelegramClient): Promise<void> {
                 }
 
                 await setLastSeen(chat.telegramChatId, msg.id)
-                if (created) await processMessage(created, chat)
+                if (created) {
+                    emitMessageStored(serializeStored(chat, created))
+                    await processMessage(created, chat)
+                }
             }
         } catch (error) {
             console.error(`[listener] backfill failed for chat ${chat.id}:`, (error as Error).message)

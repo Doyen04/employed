@@ -5,6 +5,7 @@ let socket: Socket | null = null
 
 export interface RealtimeHandlers {
   onMessageNew?: (payload: unknown) => void
+  onMessageStored?: (payload: unknown) => void
   onChatUpdate?: (payload: unknown) => void
 }
 
@@ -31,11 +32,13 @@ export function connectRealtime(handlers: RealtimeHandlers = {}): () => void {
   }
 
   if (handlers.onMessageNew) socket.on('message:new', handlers.onMessageNew)
+  if (handlers.onMessageStored) socket.on('message:stored', handlers.onMessageStored)
   if (handlers.onChatUpdate) socket.on('chat:update', handlers.onChatUpdate)
 
   return () => {
     if (!socket) return
     if (handlers.onMessageNew) socket.off('message:new', handlers.onMessageNew)
+    if (handlers.onMessageStored) socket.off('message:stored', handlers.onMessageStored)
     if (handlers.onChatUpdate) socket.off('chat:update', handlers.onChatUpdate)
   }
 }

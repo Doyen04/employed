@@ -152,6 +152,11 @@ export interface RealtimeMessageNew {
   analysisConfigName: string
 }
 
+export interface RealtimeMessageStored {
+  message: WorkerMessage
+  chat: ChatRef
+}
+
 export interface RealtimeChatUpdate {
   id: string
   telegramChatId: string

@@ -5,14 +5,16 @@ import { ArrowRight, MessageSquare, Zap } from 'lucide-react'
 import { listChats } from '../../server/chats'
 import { listMessages } from '../../server/messages'
 import { getTelegramStatus } from '../../server/telegram'
+import { connectRealtime } from '../../client/socket'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
-import type { WorkerChat, WorkerMessage } from '../../lib/types'
+import type { RealtimeMessageStored, WorkerChat, WorkerMessage } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/messages')({ component: MessagesPage })
 
 const PAGE_SIZE = 50
+const MAX_ITEMS = 200
 
 function MessagesPage() {
     const [chats, setChats] = useState<WorkerChat[]>([])
@@ -35,7 +37,15 @@ function MessagesPage() {
                     cursor: reset ? undefined : (cursor ?? undefined),
                 },
             })
-            setItems((previous) => (reset ? result.items : [...previous, ...result.items]))
+            setItems((previous) => {
+                const next = (reset ? result.items : [...previous, ...result.items]).slice(0, MAX_ITEMS)
+                const seen = new Set<string>()
+                return next.filter((message) => {
+                    if (seen.has(message.id)) return false
+                    seen.add(message.id)
+                    return true
+                })
+            })
             setCursor(result.nextCursor)
             setHasMore(result.hasMore)
         } catch (err) {
@@ -70,6 +80,21 @@ function MessagesPage() {
 
     useEffect(() => {
         void load(true)
+    }, [chatId])
+
+    useEffect(() => {
+        const unsubscribe = connectRealtime({
+            onMessageStored: (payload) => {
+                const event = payload as RealtimeMessageStored
+                if (chatId && event.message.chatId !== chatId) return
+                setItems((previous) => {
+                    if (previous.some((message) => message.id === event.message.id)) return previous
+                    return [event.message, ...previous].slice(0, MAX_ITEMS)
+                })
+                setHasMore(true)
+            },
+        })
+        return unsubscribe
     }, [chatId])
 
     if (loading) return <PageSkeleton label="Loading messages" />
