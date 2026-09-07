@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactElement } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, Inbox, MessageSquare, Radio, RefreshCw, Search, Zap } from 'lucide-react'
 
@@ -20,6 +21,7 @@ function MessagesPage() {
     const [items, setItems] = useState<WorkerMessage[]>([])
     const [newHeads, setNewHeads] = useState<string[]>([])
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
+    const [booting, setBooting] = useState(true)
     const [cursor, setCursor] = useState<string | null>(null)
     const [hasMore, setHasMore] = useState(false)
     const [loading, setLoading] = useState(true)
@@ -73,19 +75,17 @@ function MessagesPage() {
             if (!alive) return
             if (sumRes.status === 'fulfilled') setSummaries(sumRes.value)
             if (statusRes.status === 'fulfilled') setTelegramLoggedIn(statusRes.value.loggedIn)
-            setLoading(false)
+            setBooting(false)
         }
         void init()
         void load(true)
         return () => {
             alive = false
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
         void load(true)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [chatId])
 
     useEffect(() => {
@@ -133,7 +133,7 @@ function MessagesPage() {
     const selectedChat = summaries.find((row) => row.chatId === chatId)
     const totalMessages = summaries.reduce((sum, row) => sum + row.messageCount, 0)
 
-    if (loading) return <PageSkeleton label="Loading messages" />
+    if (booting) return <PageSkeleton label="Loading messages" />
 
     return (
         <section className="island-shell overflow-hidden rounded-2xl p-0">
@@ -314,7 +314,11 @@ function MessagesPage() {
                         </div>
 
                         <div ref={threadRef} className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-                            {items.length === 0 ? (
+                            {loading ? (
+                                <div className="flex items-center justify-center py-16 text-xs text-[var(--sea-ink-soft)]">
+                                    Loading messages…
+                                </div>
+                            ) : items.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center p-8 text-center">
                                     <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--lagoon)]/15 text-[var(--sea-ink)] dark:text-[var(--lagoon)]">
                                         <MessageSquare className="h-6 w-6" />
@@ -331,7 +335,7 @@ function MessagesPage() {
                             ) : (
                                 <ul className="m-0 flex flex-col gap-2">
                                     {(() => {
-                                        const rows: JSX.Element[] = []
+                                        const rows: ReactElement[] = []
                                         let lastDayKey: string | null = null
                                         for (const message of items) {
                                             const dayKey = dayKeyOf(message.receivedAt)
