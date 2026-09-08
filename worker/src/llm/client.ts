@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk'
+import OpenAI from 'openai'
 
 import { config } from '../config'
 
@@ -6,16 +6,19 @@ export interface LlmProvider {
     completeJson(prompt: string): Promise<string>
 }
 
-class GroqProvider implements LlmProvider {
-    private client: Groq
+class OpenAiProvider implements LlmProvider {
+    private client: OpenAI
     private model: string
 
     constructor() {
         if (!config.LLM_API_KEY) {
             throw new Error('LLM_API_KEY is required to enable message analysis')
         }
-        this.client = new Groq({ apiKey: config.LLM_API_KEY })
-        this.model = config.LLM_MODEL ?? 'llama-3.3-70b-versatile'
+        this.client = new OpenAI({
+            apiKey: config.LLM_API_KEY,
+            baseURL: config.LLM_BASE_URL,
+        })
+        this.model = config.LLM_MODEL ?? 'openai/gpt-4o-mini'
     }
 
     async completeJson(prompt: string): Promise<string> {
@@ -39,13 +42,5 @@ class GroqProvider implements LlmProvider {
 
 export function createLlmProvider(): LlmProvider | null {
     if (!config.LLM_API_KEY) return null
-
-    switch (config.LLM_PROVIDER) {
-        case 'groq':
-            return new GroqProvider()
-        case 'openrouter':
-            throw new Error(
-                'openrouter provider is not wired yet — install the openai SDK and set LLM_PROVIDER=openrouter',
-            )
-    }
+    return new OpenAiProvider()
 }
