@@ -15,7 +15,9 @@ import {
 import { listActionLogs } from '../../server/actionLogs'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
-import type { WorkerActionLog, Json } from '../../lib/types'
+import { LogTable } from '../../components/dashboard/LogTable'
+import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
+import type { WorkerActionLog } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/action-logs')({ component: ActionLogsPage })
@@ -58,21 +60,13 @@ function ActionLogsPage() {
         void load(true)
     }, [])
 
-    useEffect(() => {
-        if (!selected) return
-        function onKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Escape') setSelected(null)
-        }
-        document.addEventListener('keydown', onKeyDown)
-        return () => document.removeEventListener('keydown', onKeyDown)
-    }, [selected])
-
     const filtered = useMemo(() => {
         const needle = query.trim().toLowerCase()
         return items.filter((log) => {
             if (statusFilter !== 'all' && log.status !== statusFilter) return false
             if (!needle) return true
             return (
+                (log.recipient ?? '').toLowerCase().includes(needle) ||
                 log.notifier.name.toLowerCase().includes(needle) ||
                 log.analysis.analysisConfigName.toLowerCase().includes(needle) ||
                 log.analysis.message.chat.title.toLowerCase().includes(needle) ||
@@ -174,52 +168,68 @@ function ActionLogsPage() {
                             <p className="text-sm text-(--sea-ink-soft)">No action logs match this filter.</p>
                         ) : (
                             <>
-                                <div className="overflow-x-auto rounded-xl border border-(--line)">
-                                    <table className="w-full border-collapse text-sm">
-                                        <thead>
-                                            <tr className="text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
-                                                <th className="px-3 py-2.5 font-semibold">Status</th>
-                                                <th className="px-3 py-2.5 font-semibold">Notifier</th>
-                                                <th className="px-3 py-2.5 font-semibold">Config</th>
-                                                <th className="px-3 py-2.5 font-semibold">Chat</th>
-                                                <th className="px-3 py-2.5 font-semibold">Message</th>
-                                                <th className="px-3 py-2.5 text-right font-semibold">Time</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filtered.map((log) => (
-                                                <tr
-                                                    key={log.id}
-                                                    onClick={() => setSelected(log)}
-                                                    className="cursor-pointer border-t border-(--line)/70 transition hover:bg-white/50 dark:hover:bg-zinc-800/60"
-                                                    aria-label="Open action log details"
-                                                >
-                                                    <td className="px-3 py-2.5">
-                                                        <StatusBadge status={log.status} />
-                                                    </td>
-                                                    <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-(--sea-ink)">
-                                                        {log.notifier.name}
-                                                        <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wider text-(--sea-ink-soft)">
-                                                            {log.notifier.type}
-                                                        </span>
-                                                    </td>
-                                                    <td className="whitespace-nowrap px-3 py-2.5 text-(--sea-ink)">
-                                                        {log.analysis.analysisConfigName}
-                                                    </td>
-                                                    <td className="whitespace-nowrap px-3 py-2.5 text-(--sea-ink)">
-                                                        {log.analysis.message.chat.title}
-                                                    </td>
-                                                    <td className="max-w-60 truncate px-3 py-2.5 text-(--sea-ink-soft)">
-                                                        “{log.analysis.message.text}”
-                                                    </td>
-                                                    <td className="whitespace-nowrap px-3 py-2.5 text-right text-xs text-(--sea-ink-soft)">
-                                                        {relativeTime(log.sentAt ?? log.analysis.analyzedAt)}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <LogTable<WorkerActionLog>
+                                    rows={filtered}
+                                    rowKey={(log) => log.id}
+                                    onRowClick={setSelected}
+                                    rowAriaLabel={() => 'Open action log details'}
+                                    columns={[
+                                        { header: 'Status', cell: (log) => <StatusBadge status={log.status} /> },
+                                        {
+                                            header: 'Sent to',
+                                            cell: (log) => (
+                                                <span className="block max-w-40 truncate whitespace-nowrap text-(--sea-ink)">
+                                                    {log.recipient ?? '—'}
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            header: 'Notifier',
+                                            cell: (log) => (
+                                                <span className="whitespace-nowrap font-semibold text-(--sea-ink)">
+                                                    {log.notifier.name}
+                                                    <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wider text-(--sea-ink-soft)">
+                                                        {log.notifier.type}
+                                                    </span>
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            header: 'Config',
+                                            cell: (log) => (
+                                                <span className="whitespace-nowrap text-(--sea-ink)">
+                                                    {log.analysis.analysisConfigName}
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            header: 'Chat',
+                                            cell: (log) => (
+                                                <span className="whitespace-nowrap text-(--sea-ink)">
+                                                    {log.analysis.message.chat.title}
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            header: 'Message',
+                                            hiddenOnMobile: true,
+                                            cell: (log) => (
+                                                <span className="block max-w-48 truncate text-(--sea-ink-soft)">
+                                                    “{log.analysis.message.text}”
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            header: 'Time',
+                                            align: 'right',
+                                            cell: (log) => (
+                                                <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">
+                                                    {relativeTime(log.sentAt ?? log.analysis.analyzedAt)}
+                                                </span>
+                                            ),
+                                        },
+                                    ]}
+                                />
                                 {hasMore && (
                                     <button
                                         onClick={() => void load(false)}
@@ -284,50 +294,38 @@ function ActionLogsPage() {
                                 </p>
                             )}
 
-                            <SideSection title="Message">
-                                <p className="m-0 text-[11px] font-semibold text-(--lagoon-deep)">
-                                    {selected.analysis.message.chat.title}
-                                    {selected.analysis.message.senderName
-                                        ? ` · ${selected.analysis.message.senderName}`
-                                        : ''}
-                                </p>
-                                <p className="m-0 mt-1 whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink)">
-                                    {selected.analysis.message.text}
+                            <SideSection title="Sent to">
+                                <p className="m-0 flex items-center gap-1.5 rounded-xl border border-(--line) bg-(--surface) px-3 py-2 text-sm font-semibold text-(--sea-ink)">
+                                    <Send className="h-3.5 w-3.5 shrink-0 text-(--lagoon-deep)" aria-hidden="true" />
+                                    {selected.recipient ?? 'Unknown'}
                                 </p>
                             </SideSection>
 
-                            <SideSection title="LLM verdict">
-                                <p className="mb-1.5 m-0 flex items-center gap-1.5 text-xs text-(--sea-ink)">
-                                    <Bot className="h-3.5 w-3.5 text-(--lagoon-deep)" aria-hidden="true" />
-                                    {selected.analysis.analysisConfigName}
-                                </p>
-                                {verdictEntries(selected.analysis.rawResponse).length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {verdictEntries(selected.analysis.rawResponse).map(([key, value]) => (
-                                            <span
-                                                key={key}
-                                                className="rounded-md border border-(--line) bg-(--surface) px-2 py-1 font-mono text-[11px] text-(--sea-ink)"
-                                            >
-                                                <span className="text-(--sea-ink-soft)">{key}</span>{' '}
-                                                <span className="font-semibold">{value}</span>
-                                            </span>
-                                        ))}
-                                    </div>
+                            <SideSection title="What was sent">
+                                {selected.body ? (
+                                    <pre className="m-0 max-h-72 overflow-auto rounded-xl border border-(--line) bg-(--surface) px-3 py-2 font-mono text-[11px] leading-relaxed text-(--sea-ink)">
+                                        {selected.body}
+                                    </pre>
                                 ) : (
-                                    <p className="m-0 font-mono text-[11px] text-(--sea-ink)">
-                                        {typeof selected.analysis.rawResponse === 'string'
-                                            ? selected.analysis.rawResponse
-                                            : JSON.stringify(selected.analysis.rawResponse)}
+                                    <p className="m-0 text-xs text-(--sea-ink-soft)">
+                                        No payload captured for this dispatch.
                                     </p>
                                 )}
-                                <details className="mt-2 overflow-hidden rounded-xl border border-(--line)">
-                                    <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-(--sea-ink-soft)">
-                                        Raw JSON
-                                    </summary>
-                                    <pre className="m-0 max-h-64 overflow-auto border-t border-(--line) bg-(--surface) px-3 py-2 font-mono text-[11px] leading-relaxed text-(--sea-ink-soft)">
-                                        {JSON.stringify(selected.analysis.rawResponse, null, 2)}
-                                    </pre>
-                                </details>
+                            </SideSection>
+
+                            <SideSection title="Trigger">
+                                <p className="m-0 flex items-center gap-1.5 text-xs text-(--sea-ink)">
+                                    <Bot className="h-3.5 w-3.5 shrink-0 text-(--lagoon-deep)" aria-hidden="true" />
+                                    <span className="font-semibold text-(--lagoon-deep)">
+                                        {selected.analysis.message.chat.title}
+                                    </span>
+                                    <span className="text-(--sea-ink-soft)">·</span>
+                                    <span>{selected.analysis.analysisConfigName}</span>
+                                    <span className="text-(--sea-ink-soft)">·</span>
+                                    <span className="text-(--sea-ink-soft)">
+                                        {formatTime(selected.analysis.analyzedAt)}
+                                    </span>
+                                </p>
                             </SideSection>
                         </div>
                     </aside>
@@ -391,14 +389,6 @@ function StatusBadge({ status }: { status: WorkerActionLog['status'] }) {
             {status.toUpperCase()}
         </span>
     )
-}
-
-function verdictEntries(json: Json): [string, string][] {
-    if (json === null || Array.isArray(json) || typeof json !== 'object') return []
-    return Object.entries(json as Record<string, unknown>).map(([key, val]) => [
-        key,
-        typeof val === 'object' ? JSON.stringify(val) : String(val),
-    ])
 }
 
 function relativeTime(iso: string): string {

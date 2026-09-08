@@ -158,9 +158,14 @@ preserved when `config` is omitted on PATCH. The dashboard re-asks for secrets w
 
 `ActionLog` item shape:
 `{ id, status: 'pending'\|'sent'\|'failed', retryCount, sentAt: ISO\|null, errorDetail: string\|null,
+   body: string\|null, recipient: string\|null,
    notifier: { id, name, type },
    analysis: { id, analyzedAt, rawResponse, analysisConfigName,
      message: { id, text, senderName, receivedAt, chat: { id, title, telegramChatId } } } }`
+
+`body` is the exact notification text the notifier delivered (empty before dispatch completes for
+old rows); `recipient` is the resolved destination at dispatch time — the chat title for telegram
+(falling back to the peer id), the `to` address for email, or the webhook `url`.
 
 ### Analyses
 

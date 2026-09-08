@@ -3,6 +3,7 @@ import pRetry from 'p-retry'
 import { prisma } from '../prisma'
 import { notifierRegistry } from './registry'
 import { decryptNotifierConfig } from './notifiers/telegram'
+import { buildNotificationText } from './notifiers/format'
 import type { NotificationPayload } from './types'
 import type { ActionLog, ActionRule, Analysis, Chat, Message, Notifier } from '../generated/prisma/client'
 
@@ -29,12 +30,17 @@ export async function dispatchAction(
         analysis: analysis.rawResponse as unknown as Record<string, unknown>,
     }
 
+    const config = decryptNotifierConfig(rule.notifier.config)
+    const recipient = await resolveRecipient(rule.notifier.type, config)
+
     const log = await prisma.actionLog.create({
         data: {
             analysisId: analysis.id,
             notifierId: rule.notifierId,
             status: 'pending',
             retryCount: 0,
+            body: buildNotificationText(payload),
+            recipient,
         },
     })
 
@@ -43,7 +49,6 @@ export async function dispatchAction(
         return
     }
 
-    const config = decryptNotifierConfig(rule.notifier.config)
     let attempts = 0
 
     try {
@@ -73,4 +78,37 @@ async function failLog(log: ActionLog, error: string, retryCount = 0): Promise<v
         where: { id: log.id },
         data: { status: 'failed', errorDetail: error, retryCount },
     })
+}
+
+async function resolveRecipient(
+    type: string,
+    config: Record<string, unknown>,
+): Promise<string | null> {
+    switch (type) {
+        case 'telegram': {
+            const target = String(config.targetChatId ?? '').trim()
+            if (!target) return null
+            try {
+                const chat = await prisma.chat.findFirst({
+                    where: { telegramChatId: BigInt(target) },
+                    select: { title: true },
+                })
+                return chat?.title ?? target
+            } catch {
+                return target
+            }
+        }
+        case 'email': {
+            const to = String(config.to ?? '').trim()
+            return to || null
+        }
+        case 'webhook': {
+            const url = String(config.url ?? '').trim()
+            return url || null
+        }
+        default: {
+            const value = config.recipient
+            return typeof value === 'string' && value.trim() ? value.trim() : null
+        }
+    }
 }

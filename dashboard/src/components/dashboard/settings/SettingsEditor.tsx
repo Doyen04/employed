@@ -407,24 +407,28 @@ function JsonEditor({
             setMode('kv')
         } catch {
             setJsonError('Invalid JSON — fix it before switching to key/value mode.')
+            return
         }
     }
 
     function onJsonChange(text: string) {
         setJsonText(text)
-        setJsonError(null)
         const trimmed = text.trim()
         if (trimmed === '') {
+            setJsonError(null)
             onChange({})
             return
         }
         try {
             const parsed = JSON.parse(trimmed) as Json
-            if (parsed !== null && !Array.isArray(parsed) && typeof parsed === 'object') {
-                onChange(parsed)
+            if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
+                setJsonError('JSON must be a single object of key/value pairs.')
+                return
             }
+            onChange(parsed)
+            setJsonError(null)
         } catch {
-            // invalid mid-edit: keep the last valid value, surface the error inline
+            setJsonError('Invalid JSON — check the text above.')
         }
     }
 
@@ -467,7 +471,7 @@ function JsonEditor({
                             }`}
                     >
                         {jsonError ??
-                            'Valid JSON is applied live; while the text is invalid, the last valid value is kept.'}
+                            'Valid JSON is applied live; the field is flagged as you type when the text is invalid.'}
                     </span>
                 </>
             )}

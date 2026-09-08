@@ -108,6 +108,8 @@ model ActionLog {
   sentAt      DateTime?
   errorDetail String?
   retryCount  Int          @default(0)
+  body        String?
+  recipient   String?
   analysis    Analysis     @relation(fields: [analysisId], references: [id])
   notifier    Notifier     @relation(fields: [notifierId], references: [id])
 }

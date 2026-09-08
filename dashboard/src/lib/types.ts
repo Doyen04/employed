@@ -79,6 +79,8 @@ export interface WorkerActionLog {
   retryCount: number
   sentAt: string | null
   errorDetail: string | null
+  body: string | null
+  recipient: string | null
   notifier: { id: string; name: string; type: NotifierType }
   analysis: {
     id: string
