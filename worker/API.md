@@ -139,7 +139,7 @@ Order: newest first. `cursor` is a `Message.id`; pass `nextCursor` for the next 
 Shapes:
 
 - `AnalysisConfig`: `{ id, name, promptTemplate, outputSchema, isActive, createdAt, allowedChatIds: string[] }`
-- `Notifier` (secrets never read back): `{ id, type, name, isActive, configConfigured: true }`
+- `Notifier` (secrets never read back): `{ id, type, name, isActive, configConfigured: true, telegramTargetChatId }` — the only field echoed back is the non-secret Telegram destination chat id (for the selector UI); all other config stays write-only.
 - `ActionRule`: `{ id, analysisConfigId, condition, notifierId, notifierName, notifierType, isActive }`
 
 `allowedChatIds` is a **chat allowlist**: an empty array (the default) means the config applies

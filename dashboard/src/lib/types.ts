@@ -52,6 +52,7 @@ export interface WorkerNotifier {
   name: string
   isActive: boolean
   configConfigured: boolean
+  telegramTargetChatId?: string | null
 }
 
 export interface WorkerActionRule {

@@ -164,11 +164,11 @@ function Checkbox({
 }
 
 function ChatMultiSelect({
-    chats,
+    chats = [],
     selected,
     onChange,
 }: {
-    chats: WorkerChat[]
+    chats?: WorkerChat[]
     selected: string[]
     onChange: (selected: string[]) => void
 }) {
@@ -195,8 +195,8 @@ function ChatMultiSelect({
         selected.length === 0
             ? 'All chats'
             : selected.length === 1
-              ? (chats.find((chat) => chat.id === selected[0])?.title ?? '1 chat')
-              : `${selected.length} chats`
+                ? (chats.find((chat) => chat.id === selected[0])?.title ?? '1 chat')
+                : `${selected.length} chats`
 
     function toggle(chatId: string, checked: boolean) {
         onChange(checked ? [...selected, chatId] : selected.filter((id) => id !== chatId))
@@ -239,11 +239,10 @@ function ChatMultiSelect({
                                             className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/50 dark:hover:bg-zinc-800"
                                         >
                                             <span
-                                                className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition ${
-                                                    active
+                                                className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition ${active
                                                         ? 'border-(--lagoon) bg-(--lagoon) text-white'
                                                         : 'border-(--line)'
-                                                }`}
+                                                    }`}
                                             >
                                                 {active ? <Check className="h-3 w-3" /> : null}
                                             </span>
@@ -258,6 +257,214 @@ function ChatMultiSelect({
                     )}
                 </div>
             ) : null}
+        </div>
+    )
+}
+
+function ChatSelect({
+    chats = [],
+    value,
+    onChange,
+}: {
+    chats?: WorkerChat[]
+    value: string
+    onChange: (chatId: string) => void
+}) {
+    const [open, setOpen] = useState(false)
+    const rootRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (!open) return
+        function onPointerDown(event: MouseEvent) {
+            if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false)
+        }
+        function onKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') setOpen(false)
+        }
+        document.addEventListener('mousedown', onPointerDown)
+        document.addEventListener('keydown', onKeyDown)
+        return () => {
+            document.removeEventListener('mousedown', onPointerDown)
+            document.removeEventListener('keydown', onKeyDown)
+        }
+    }, [open])
+
+    const selected = chats.find((chat) => chat.telegramChatId === value)
+
+    return (
+        <div className="relative" ref={rootRef}>
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                className={`${inputClass} flex items-center justify-between gap-2`}
+            >
+                <span className={!value ? 'text-(--sea-ink-soft)' : ''}>
+                    {selected ? selected.title : 'Choose a chat…'}
+                </span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
+            </button>
+            {open ? (
+                <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-(--line) bg-(--surface-strong) shadow-lg">
+                    {chats.length === 0 ? (
+                        <p className="px-3 py-2.5 text-xs text-(--sea-ink-soft)">
+                            No chats yet — chats appear here once the worker scans Telegram dialogs.
+                        </p>
+                    ) : (
+                        <div className="max-h-48 overflow-y-auto p-1">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    onChange('')
+                                    setOpen(false)
+                                }}
+                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/50 dark:hover:bg-zinc-800"
+                            >
+                                <span
+                                    className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition ${!value ? 'border-(--lagoon) bg-(--lagoon) text-white' : 'border-(--line)'
+                                        }`}
+                                >
+                                    {!value ? <Check className="h-3 w-3" /> : null}
+                                </span>
+                                <span className="truncate text-xs font-semibold text-(--sea-ink-soft)">
+                                    Not configured
+                                </span>
+                            </button>
+                            {chats.map((chat) => {
+                                const active = value === chat.telegramChatId
+                                return (
+                                    <button
+                                        type="button"
+                                        key={chat.id}
+                                        onClick={() => {
+                                            onChange(chat.telegramChatId)
+                                            setOpen(false)
+                                        }}
+                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/50 dark:hover:bg-zinc-800"
+                                    >
+                                        <span
+                                            className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition ${active ? 'border-(--lagoon) bg-(--lagoon) text-white' : 'border-(--line)'
+                                                }`}
+                                        >
+                                            {active ? <Check className="h-3 w-3" /> : null}
+                                        </span>
+                                        <span className="truncate text-xs font-semibold text-(--sea-ink) dark:text-zinc-100">
+                                            {chat.title}
+                                        </span>
+                                        {chat.isMonitored ? (
+                                            <span className="ml-auto rounded-full bg-[rgba(236,185,20,0.18)] px-1.5 py-0.5 text-[10px] font-bold text-(--lagoon-deep)">
+                                                MONITORED
+                                            </span>
+                                        ) : null}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
+function JsonEditor({
+    value,
+    onChange,
+}: {
+    value: Json
+    onChange: (value: Json) => void
+}) {
+    const [mode, setMode] = useState<'kv' | 'json'>('kv')
+    const [jsonText, setJsonText] = useState('')
+    const [jsonError, setJsonError] = useState<string | null>(null)
+
+    function switchToJson() {
+        setJsonText(
+            value === null || Array.isArray(value) || typeof value !== 'object'
+                ? '{}'
+                : JSON.stringify(value, null, 2),
+        )
+        setJsonError(null)
+        setMode('json')
+    }
+
+    function switchToKv() {
+        const trimmed = jsonText.trim()
+        if (trimmed === '') {
+            onChange({})
+            setJsonError(null)
+            setMode('kv')
+            return
+        }
+        try {
+            const parsed = JSON.parse(trimmed) as Json
+            if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
+                setJsonError('JSON must be a single object of key/value pairs.')
+                return
+            }
+            onChange(parsed)
+            setJsonError(null)
+            setMode('kv')
+        } catch {
+            setJsonError('Invalid JSON — fix it before switching to key/value mode.')
+        }
+    }
+
+    function onJsonChange(text: string) {
+        setJsonText(text)
+        setJsonError(null)
+        const trimmed = text.trim()
+        if (trimmed === '') {
+            onChange({})
+            return
+        }
+        try {
+            const parsed = JSON.parse(trimmed) as Json
+            if (parsed !== null && !Array.isArray(parsed) && typeof parsed === 'object') {
+                onChange(parsed)
+            }
+        } catch {
+            // invalid mid-edit: keep the last valid value, surface the error inline
+        }
+    }
+
+    const tabClass = (active: boolean) =>
+        `rounded-md px-2.5 py-1 text-xs font-semibold transition ${active
+            ? 'bg-(--lagoon) text-white'
+            : 'text-(--sea-ink-soft) hover:bg-white/50 dark:hover:bg-zinc-800'
+        }`
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="inline-flex w-fit rounded-lg border border-(--line) p-0.5">
+                <button type="button" onClick={() => setMode('kv')} className={tabClass(mode === 'kv')}>
+                    Key/value
+                </button>
+                <button type="button" onClick={switchToJson} className={tabClass(mode === 'json')}>
+                    Raw JSON
+                </button>
+            </div>
+            {mode === 'kv' ? (
+                <KVEditor rows={rowsFromObject(value)} onChange={(rows) => onChange(objectFromRows(rows))} />
+            ) : (
+                <>
+                    <textarea
+                        value={jsonText}
+                        onChange={(e) => onJsonChange(e.target.value)}
+                        rows={6}
+                        spellCheck={false}
+                        className={`${inputClass} resize-y font-mono text-xs leading-relaxed ${jsonError ? 'border-red-400 focus:border-red-500' : ''
+                            }`}
+                    />
+                    <span
+                        className={`text-xs ${jsonError ? 'font-semibold text-red-500' : 'text-(--sea-ink-soft)'
+                            }`}
+                    >
+                        {jsonError ??
+                            'Valid JSON is applied live; while the text is invalid, the last valid value is kept.'}
+                    </span>
+                </>
+            )}
         </div>
     )
 }
@@ -482,11 +689,11 @@ function ItemList({
 
 function AnalysisConfigsSection({
     configs,
-    chats,
+    chats = [],
     onChanged,
 }: {
     configs: WorkerAnalysisConfig[]
-    chats: WorkerChat[]
+    chats?: WorkerChat[]
     onChanged: () => Promise<void>
 }) {
     const [editing, setEditing] = useState<
@@ -494,7 +701,7 @@ function AnalysisConfigsSection({
     >(null)
     const [name, setName] = useState('')
     const [promptTemplate, setPromptTemplate] = useState('')
-    const [schema, setSchema] = useState<KVRow[]>([])
+    const [schema, setSchema] = useState<Json>({})
     const [allowedChatIds, setAllowedChatIds] = useState<string[]>([])
     const [isActive, setIsActive] = useState(true)
     const [busy, setBusy] = useState(false)
@@ -506,7 +713,7 @@ function AnalysisConfigsSection({
     function openCreate() {
         setName('')
         setPromptTemplate('')
-        setSchema([])
+        setSchema({})
         setAllowedChatIds([])
         setIsActive(true)
         setError(null)
@@ -516,7 +723,7 @@ function AnalysisConfigsSection({
     function openEdit(item: WorkerAnalysisConfig) {
         setName(item.name)
         setPromptTemplate(item.promptTemplate)
-        setSchema(rowsFromObject(item.outputSchema))
+        setSchema(item.outputSchema)
         setAllowedChatIds(item.allowedChatIds)
         setIsActive(item.isActive)
         setError(null)
@@ -530,7 +737,7 @@ function AnalysisConfigsSection({
             const payload = {
                 name: name.trim(),
                 promptTemplate: promptTemplate.trim(),
-                outputSchema: objectFromRows(schema),
+                outputSchema: schema,
                 isActive,
                 allowedChatIds: allowedChatIds.filter((id) => chats.some((chat) => chat.id === id)),
             }
@@ -591,9 +798,13 @@ function AnalysisConfigsSection({
                     </Field>
                     <Field
                         label="Output schema"
-                        hint="Keys must match the keys the LLM replies with. Values may be JSON (e.g. string, number, boolean)."
+                        hint="Keys must match the keys the LLM replies with. Uses the key/value editor or raw JSON."
                     >
-                        <KVEditor rows={schema} onChange={setSchema} />
+                        <JsonEditor
+                            key={editing.mode === 'create' ? 'create' : editing.item.id}
+                            value={schema}
+                            onChange={setSchema}
+                        />
                     </Field>
                     <Field
                         label="Apply to chats"
@@ -635,27 +846,34 @@ function AnalysisConfigsSection({
 
 function NotifiersSection({
     notifiers,
+    chats = [],
     onChanged,
 }: {
     notifiers: WorkerNotifier[]
+    chats?: WorkerChat[]
     onChanged: () => Promise<void>
 }) {
     const [editing, setEditing] = useState<
         { mode: 'create' } | { mode: 'edit'; item: WorkerNotifier } | null
     >(null)
     const [name, setName] = useState('')
-    const [type, setType] = useState<NotifierType>('webhook')
-    const [config, setConfig] = useState<KVRow[]>([])
+    const [type, setType] = useState<NotifierType>('telegram')
+    const [config, setConfig] = useState<Json>({})
     const [configDirty, setConfigDirty] = useState(false)
     const [isActive, setIsActive] = useState(true)
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
+    const targetChatId =
+        config !== null && !Array.isArray(config) && typeof config === 'object'
+            ? String((config as Record<string, unknown>).targetChatId ?? '')
+            : ''
+
     function openCreate() {
         setName('')
-        setType('webhook')
-        setConfig([])
+        setType('telegram')
+        setConfig({})
         setConfigDirty(false)
         setIsActive(true)
         setError(null)
@@ -665,7 +883,7 @@ function NotifiersSection({
     function openEdit(item: WorkerNotifier) {
         setName(item.name)
         setType(item.type)
-        setConfig([])
+        setConfig(item.telegramTargetChatId ? { targetChatId: item.telegramTargetChatId } : {})
         setConfigDirty(false)
         setIsActive(item.isActive)
         setError(null)
@@ -678,13 +896,13 @@ function NotifiersSection({
         try {
             const base = { name: name.trim(), type, isActive }
             if (editing?.mode === 'create') {
-                await createNotifier({ data: { ...base, config: objectFromRows(config) } })
+                await createNotifier({ data: { ...base, config } })
             } else if (editing?.mode === 'edit') {
                 const patch: { id: string; name: string; type: NotifierType; isActive: boolean; config?: Json } = {
                     id: editing.item.id,
                     ...base,
                 }
-                if (configDirty) patch.config = objectFromRows(config)
+                if (configDirty) patch.config = config
                 await updateNotifier({ data: patch })
             }
             await onChanged()
@@ -737,22 +955,39 @@ function NotifiersSection({
                             ))}
                         </Select>
                     </Field>
-                    <Field
-                        label="Config"
-                        hint={
-                            editing.mode === 'create'
-                                ? 'Type-specific options as flat key/value pairs. Values may be JSON.'
-                                : 'Stored config is encrypted and hidden — leave empty to keep the current value, or add rows to replace it.'
-                        }
-                    >
-                        <KVEditor
-                            rows={config}
-                            onChange={(rows) => {
-                                setConfigDirty(true)
-                                setConfig(rows)
-                            }}
-                        />
-                    </Field>
+                    {type === 'telegram' ? (
+                        <Field
+                            label="Destination chat"
+                            hint="The Telegram chat the notification is sent to. Shows every known dialog."
+                        >
+                            <ChatSelect
+                                chats={chats}
+                                value={targetChatId}
+                                onChange={(chatId) => {
+                                    setConfigDirty(true)
+                                    setConfig({ targetChatId: chatId })
+                                }}
+                            />
+                        </Field>
+                    ) : (
+                        <Field
+                            label="Config"
+                            hint={
+                                editing.mode === 'create'
+                                    ? 'Type-specific options as key/value pairs or raw JSON. e.g. url for webhook.'
+                                    : 'Stored config is encrypted and hidden — the current value is shown below. Editing replaces it on save.'
+                            }
+                        >
+                            <JsonEditor
+                                key={editing.mode === 'create' ? 'create' : editing.item.id}
+                                value={config}
+                                onChange={(next) => {
+                                    setConfigDirty(true)
+                                    setConfig(next)
+                                }}
+                            />
+                        </Field>
+                    )}
                     <Checkbox label="Active" checked={isActive} onChange={setIsActive} />
                 </FormShell>
             ) : null}
@@ -761,7 +996,15 @@ function NotifiersSection({
                 rows={notifiers.map((notifier) => ({
                     id: notifier.id,
                     name: notifier.name,
-                    meta: `${notifier.type.toUpperCase()}${notifier.configConfigured ? '' : ' · not configured'}`,
+                    meta:
+                        notifier.type === 'telegram'
+                            ? `TELEGRAM${notifier.telegramTargetChatId
+                                ? ` → ${chats.find((chat) => chat.telegramChatId === notifier.telegramTargetChatId)
+                                    ?.title ?? notifier.telegramTargetChatId
+                                }`
+                                : ' · not configured'
+                            }`
+                            : `${notifier.type.toUpperCase()}${notifier.configConfigured ? '' : ' · not configured'}`,
                     status: notifier.isActive,
                 }))}
                 confirmingId={confirmingId}
@@ -794,7 +1037,7 @@ function ActionRulesSection({
     >(null)
     const [analysisConfigId, setAnalysisConfigId] = useState('')
     const [notifierId, setNotifierId] = useState('')
-    const [condition, setCondition] = useState<KVRow[]>([])
+    const [condition, setCondition] = useState<Json>({})
     const [isActive, setIsActive] = useState(true)
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -803,7 +1046,7 @@ function ActionRulesSection({
     function openCreate() {
         setAnalysisConfigId(configs[0]?.id ?? '')
         setNotifierId(notifiers[0]?.id ?? '')
-        setCondition([])
+        setCondition({})
         setIsActive(true)
         setError(null)
         setEditing({ mode: 'create' })
@@ -812,7 +1055,7 @@ function ActionRulesSection({
     function openEdit(item: WorkerActionRule) {
         setAnalysisConfigId(item.analysisConfigId)
         setNotifierId(item.notifierId)
-        setCondition(rowsFromObject(item.condition))
+        setCondition(item.condition)
         setIsActive(item.isActive)
         setError(null)
         setEditing({ mode: 'edit', item })
@@ -825,7 +1068,7 @@ function ActionRulesSection({
             const payload = {
                 analysisConfigId,
                 notifierId,
-                condition: objectFromRows(condition),
+                condition,
                 isActive,
             }
             if (editing?.mode === 'create') {
@@ -903,9 +1146,13 @@ function ActionRulesSection({
                     </Field>
                     <Field
                         label="Condition"
-                        hint="Flat key/value pairs the LLM output must match for this rule to fire."
+                        hint="Flat key/value pairs the LLM output must match for this rule to fire. Use the key/value editor or raw JSON."
                     >
-                        <KVEditor rows={condition} onChange={setCondition} />
+                        <JsonEditor
+                            key={editing.mode === 'create' ? 'create' : editing.item.id}
+                            value={condition}
+                            onChange={setCondition}
+                        />
                     </Field>
                     <Checkbox label="Active" checked={isActive} onChange={setIsActive} />
                 </FormShell>
@@ -948,7 +1195,7 @@ export function SettingsEditor({
                 chats={chats}
                 onChanged={onChanged}
             />
-            <NotifiersSection notifiers={settings.notifiers} onChanged={onChanged} />
+            <NotifiersSection notifiers={settings.notifiers} chats={chats} onChanged={onChanged} />
             <ActionRulesSection
                 rules={settings.actionRules}
                 configs={settings.analysisConfigs}

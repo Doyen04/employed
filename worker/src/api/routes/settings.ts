@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { z } from 'zod'
 
 import { prisma } from '../../prisma'
-import { encryptSecret } from '../../crypto'
+import { decryptSecret, encryptSecret } from '../../crypto'
 import { toJsonValue } from '../../types/json'
 import type { ActionRule, AnalysisConfig, Notifier } from '../../generated/prisma/client'
 
@@ -23,13 +23,23 @@ function serializeConfig(config: AnalysisConfig & { allowedChats?: { id: string 
 }
 
 function serializeNotifier(notifier: Notifier) {
-    return {
-        id: notifier.id,
-        type: notifier.type,
-        name: notifier.name,
-        isActive: notifier.isActive,
-        configConfigured: true,
+  let telegramTargetChatId: string | null = null
+  if (notifier.type === 'telegram' && typeof notifier.config === 'string') {
+    try {
+      const decrypted = JSON.parse(decryptSecret(notifier.config)) as { targetChatId?: unknown }
+      if (typeof decrypted.targetChatId === 'string') telegramTargetChatId = decrypted.targetChatId
+    } catch (error) {
+      console.error('[settings] failed to read telegram notifier config:', error)
     }
+  }
+  return {
+    id: notifier.id,
+    type: notifier.type,
+    name: notifier.name,
+    isActive: notifier.isActive,
+    configConfigured: true,
+    telegramTargetChatId,
+  }
 }
 
 function serializeRule(rule: ActionRule & { notifier: { id: string; name: string; type: string } }) {
