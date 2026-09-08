@@ -20,7 +20,6 @@ const envSchema = z.object({
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
     SMTP_FROM: z.string().optional(),
-    SOCKET_TOKEN: z.string().optional(),
     CORS_ORIGIN: z.string().default('*'),
 })
 
@@ -28,7 +27,6 @@ const parsed = envSchema.parse(process.env)
 
 export const config = {
     ...parsed,
-    socketToken: parsed.SOCKET_TOKEN ?? parsed.WORKER_API_KEY,
 }
 
 export type Config = typeof config

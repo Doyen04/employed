@@ -39,6 +39,8 @@ query the database here, the correct move is to add/extend a Worker API endpoint
 
 - Server-only envs (`WORKER_URL`, `WORKER_API_KEY`, `AUTH_SECRET`, `DASHBOARD_ADMIN_PASSWORD_HASH`)
   are read from `process.env` in server functions (dev: Vite/Nitro, prod: Vercel project settings).
-- Browser envs are `VITE_*` (`VITE_WORKER_SOCKET_URL`, `VITE_WORKER_SOCKET_TOKEN`). Generate a
-  fresh bcrypt hash with `node -e "console.log(require('bcryptjs').hashSync('...', 10))"`.
+- Browser envs are `VITE_*` (`VITE_WORKER_SOCKET_URL`). The socket handshake reuses the worker's
+  `WORKER_API_KEY`: the browser fetches it at runtime from the authed `getRealtimeToken` server
+  function, so no token is baked into the client bundle. Generate a fresh bcrypt hash with
+  `node -e "console.log(require('bcryptjs').hashSync('...', 10))"`.
 - See the root `../AGENTS.md` for the full two-codebase ruleset and the worker contract.

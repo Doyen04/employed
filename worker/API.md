@@ -18,8 +18,8 @@ are stored as integers and returned as numbers.
 ## Socket.io (realtime)
 
 Browser → worker, bypassing the dashboard server. Connect with
-`io('wss://worker-host', { auth: { token: <SOCKET_TOKEN> } })`, where `SOCKET_TOKEN`
-defaults to `WORKER_API_KEY`. Events:
+`io('wss://worker-host', { auth: { token: <WORKER_API_KEY> } })` — the socket handshake
+and the HTTP API share the same `WORKER_API_KEY` token. Events:
 
 | Event | Payload |
 | --- | --- |

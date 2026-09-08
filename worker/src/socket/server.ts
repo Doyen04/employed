@@ -19,7 +19,7 @@ export function attachSocketIo(httpServer: HttpServer): Server {
             (auth?.token as string | undefined) ??
             (socket.handshake.query.token as string | undefined)
 
-        if (!token || token !== config.socketToken) {
+        if (!token || token !== config.WORKER_API_KEY) {
             next(new Error('unauthorized'))
             return
         }
