@@ -12,6 +12,7 @@ const envSchema = z.object({
     TELEGRAM_API_HASH: z.string().optional(),
     LLM_API_KEY: z.string().optional(),
     LLM_MODEL: z.string().optional(),
+    LLM_MODELS: z.string().optional(),
     LLM_BASE_URL: z.string().default('https://openrouter.ai/api/v1'),
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.coerce.number().optional(),

@@ -2,13 +2,23 @@ import OpenAI from 'openai'
 
 import { config } from '../config'
 
+const DEFAULT_MODEL = 'openrouter/free'
+
 export interface LlmProvider {
     completeJson(prompt: string): Promise<string>
 }
 
+function resolveModels(): string[] {
+    const raw = config.LLM_MODELS || config.LLM_MODEL || DEFAULT_MODEL
+    return raw
+        .split(',')
+        .map((model) => model.trim())
+        .filter(Boolean)
+}
+
 class OpenAiProvider implements LlmProvider {
     private client: OpenAI
-    private model: string
+    private models: string[]
 
     constructor() {
         if (!config.LLM_API_KEY) {
@@ -18,12 +28,15 @@ class OpenAiProvider implements LlmProvider {
             apiKey: config.LLM_API_KEY,
             baseURL: config.LLM_BASE_URL,
         })
-        this.model = config.LLM_MODEL ?? 'openai/gpt-4o-mini'
+        this.models = resolveModels()
     }
 
     async completeJson(prompt: string): Promise<string> {
+        const primary = this.models[0] ?? DEFAULT_MODEL
+        const fallbacks = this.models.slice(1)
+
         const response = await this.client.chat.completions.create({
-            model: this.model,
+            model: primary,
             temperature: 0,
             messages: [
                 {
@@ -34,7 +47,8 @@ class OpenAiProvider implements LlmProvider {
                 { role: 'user', content: prompt },
             ],
             response_format: { type: 'json_object' },
-        })
+            ...(fallbacks.length > 0 ? { models: fallbacks } : {}),
+        } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming)
 
         return response.choices[0]?.message.content ?? ''
     }
