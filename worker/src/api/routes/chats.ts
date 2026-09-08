@@ -47,6 +47,6 @@ chatsRouter.post('/refresh', async (_req, res) => {
         const count = await refreshChats()
         res.json({ ok: true, chats: count })
     } catch (error) {
-        res.status(400).json({ error: (error as Error).message })
+        res.status(400).json({ ok: false, error: (error as Error).message })
     }
 })

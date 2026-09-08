@@ -17,6 +17,16 @@ import { toJsonValue } from '../types/json'
 import { emitMessageNew, emitMessageStored } from '../socket/server'
 
 const LAST_SEEN_PREFIX = 'tg.lastMsg:'
+const HEALTH_CHECK_INTERVAL_MS = 60_000
+
+async function purgeRevokedSession(reason: string): Promise<void> {
+    console.warn(`[listener] ${reason} — purging chat data`)
+    try {
+        await clearSession()
+    } catch (purgeError) {
+        console.error('[listener] failed to purge chat data:', (purgeError as Error).message)
+    }
+}
 
 function lastSeenKey(telegramChatId: bigint): string {
     return `${LAST_SEEN_PREFIX}${telegramChatId.toString()}`
@@ -314,12 +324,17 @@ export async function startTelegramListener(): Promise<boolean> {
         await client.connect()
     } catch (error) {
         if (error instanceof UnauthorizedError) {
-            console.warn('[listener] telegram session rejected — purging chat data')
-            try {
-                await clearSession()
-            } catch (purgeError) {
-                console.error('[listener] failed to purge chat data:', (purgeError as Error).message)
-            }
+            await purgeRevokedSession('telegram session rejected')
+            return false
+        }
+        throw error
+    }
+
+    try {
+        await client.getMe()
+    } catch (error) {
+        if (error instanceof UnauthorizedError) {
+            await purgeRevokedSession('telegram auth key is not registered (revoked or expired)')
             return false
         }
         throw error
@@ -342,5 +357,18 @@ export async function startTelegramListener(): Promise<boolean> {
     client.addEventHandler(onNewMessage(client), new NewMessage({ incoming: true }))
 
     console.log('[listener] telegram listener started')
+
+    const healthCheck = setInterval(async () => {
+        try {
+            await client.getMe()
+        } catch (error) {
+            if (!(error instanceof UnauthorizedError)) return
+            clearInterval(healthCheck)
+            resetTelegramClient()
+            client.disconnect().catch(() => { })
+            await purgeRevokedSession('telegram auth key was revoked while running (AuthKeyUnregistered)')
+        }
+    }, HEALTH_CHECK_INTERVAL_MS)
+
     return true
 }

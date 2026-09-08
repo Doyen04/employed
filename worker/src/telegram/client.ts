@@ -1,8 +1,12 @@
 import { TelegramClient } from 'teleproto'
 import { StringSession } from 'teleproto/sessions'
+import { UnauthorizedError } from 'teleproto/errors'
 
 import { config } from '../config'
 import { getSessionString } from './sessionStore'
+import { withTimeout } from '../utils/withTimeout'
+
+const CONNECT_TIMEOUT_MS = 20_000
 
 export function buildClient(session: string): TelegramClient {
     return new TelegramClient(
@@ -27,8 +31,19 @@ export async function requireTelegramClient(): Promise<TelegramClient> {
         throw new Error('Telegram session not authenticated — run `npm run login` first')
     }
 
-    client = buildClient(session)
-    await client.connect()
+    const candidate = buildClient(session)
+    try {
+        await withTimeout(candidate.connect(), CONNECT_TIMEOUT_MS, 'telegram connection timed out')
+        await withTimeout(candidate.getMe(), CONNECT_TIMEOUT_MS, 'telegram session check timed out')
+    } catch (error) {
+        candidate.disconnect().catch(() => { })
+        if (error instanceof UnauthorizedError) {
+            throw new Error('Telegram session is invalid or has been revoked — re-login required')
+        }
+        throw error
+    }
+
+    client = candidate
     return client
 }
 
