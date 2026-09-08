@@ -126,8 +126,30 @@ const notifierSchema = z.object({
     isActive: z.boolean().default(true),
 })
 
+async function assertNotifierAllowed(
+    candidate: { type: string; config: Record<string, unknown> },
+): Promise<string | null> {
+    if (candidate.type !== 'telegram') return null
+    const raw = candidate.config.targetChatId
+    if (typeof raw !== 'string' || !raw.trim()) return null
+
+    try {
+        const chat = await prisma.chat.findUnique({ where: { telegramChatId: BigInt(raw.trim()) } })
+        if (chat?.isMonitored) {
+            return `telegram notifier cannot target monitored chat "${chat.title}" — notifications there would re-trigger analysis (infinite loop). Use a non-monitored channel or another chat.`
+        }
+    } catch {
+        // not a tracked chat id — sending is safe (unmonitored chats are ignored by the listener)
+    }
+    return null
+}
+
 settingsRouter.post('/notifiers', async (req, res) => {
     const body = notifierSchema.parse(req.body ?? {})
+    const disallowed = await assertNotifierAllowed(body)
+    if (disallowed) {
+        return res.status(400).json({ ok: false, error: disallowed })
+    }
     const notifier = await prisma.notifier.create({
         data: {
             type: body.type,
@@ -141,6 +163,19 @@ settingsRouter.post('/notifiers', async (req, res) => {
 
 settingsRouter.patch('/notifiers/:id', async (req, res) => {
     const body = notifierSchema.partial().parse(req.body ?? {})
+    const notifier = await prisma.notifier.findUnique({ where: { id: req.params.id } })
+    if (!notifier) return res.status(404).json({ ok: false, error: 'notifier not found' })
+
+    if (body.config !== undefined) {
+        const disallowed = await assertNotifierAllowed({
+            type: body.type ?? notifier.type,
+            config: body.config,
+        })
+        if (disallowed) {
+            return res.status(400).json({ ok: false, error: disallowed })
+        }
+    }
+
     const data: Record<string, unknown> = {}
     if (body.name !== undefined) data.name = body.name
     if (body.isActive !== undefined) data.isActive = body.isActive
@@ -148,11 +183,11 @@ settingsRouter.patch('/notifiers/:id', async (req, res) => {
     if (body.config !== undefined) {
         data.config = encryptSecret(JSON.stringify(body.config))
     }
-    const notifier = await prisma.notifier.update({
+    const updated = await prisma.notifier.update({
         where: { id: req.params.id },
         data: data as Parameters<typeof prisma.notifier.update>[0]['data'],
     })
-    res.json(serializeNotifier(notifier))
+    res.json(serializeNotifier(updated))
 })
 
 settingsRouter.delete('/notifiers/:id', async (req, res) => {

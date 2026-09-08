@@ -265,10 +265,12 @@ function ChatSelect({
     chats = [],
     value,
     onChange,
+    blockMonitored = false,
 }: {
     chats?: WorkerChat[]
     value: string
     onChange: (chatId: string) => void
+    blockMonitored?: boolean
 }) {
     const [open, setOpen] = useState(false)
     const rootRef = useRef<HTMLDivElement>(null)
@@ -332,15 +334,24 @@ function ChatSelect({
                             </button>
                             {chats.map((chat) => {
                                 const active = value === chat.telegramChatId
+                                const blocked = blockMonitored && chat.isMonitored
                                 return (
                                     <button
                                         type="button"
                                         key={chat.id}
-                                        onClick={() => {
-                                            onChange(chat.telegramChatId)
-                                            setOpen(false)
-                                        }}
-                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/50 dark:hover:bg-zinc-800"
+                                        disabled={blocked}
+                                        onClick={
+                                            blocked
+                                                ? undefined
+                                                : () => {
+                                                      onChange(chat.telegramChatId)
+                                                      setOpen(false)
+                                                  }
+                                        }
+                                        className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/50 dark:hover:bg-zinc-800 ${blocked
+                                            ? 'cursor-not-allowed opacity-70 hover:bg-transparent dark:hover:bg-transparent'
+                                            : ''
+                                            }`}
                                     >
                                         <span
                                             className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition ${active ? 'border-(--lagoon) bg-(--lagoon) text-white' : 'border-(--line)'
@@ -352,8 +363,13 @@ function ChatSelect({
                                             {chat.title}
                                         </span>
                                         {chat.isMonitored ? (
-                                            <span className="ml-auto rounded-full bg-[rgba(236,185,20,0.18)] px-1.5 py-0.5 text-[10px] font-bold text-(--lagoon-deep)">
-                                                MONITORED
+                                            <span
+                                                className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold ${blocked
+                                                    ? 'bg-[rgba(244,63,94,0.15)] text-[#f43f5e]'
+                                                    : 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
+                                                    }`}
+                                            >
+                                                {blocked ? 'monitored — not allowed' : 'MONITORED'}
                                             </span>
                                         ) : null}
                                     </button>
@@ -880,6 +896,12 @@ function NotifiersSection({
             ? String((config as Record<string, unknown>).targetChatId ?? '')
             : ''
 
+    const blockedNotificationTarget =
+        targetChatId && type === 'telegram'
+            ? (chats.find((chat) => chat.isMonitored && chat.telegramChatId === targetChatId)?.title ??
+              null)
+            : null
+
     function openCreate() {
         setName('')
         setType('telegram')
@@ -968,16 +990,24 @@ function NotifiersSection({
                     {type === 'telegram' ? (
                         <Field
                             label="Destination chat"
-                            hint="The Telegram chat the notification is sent to. Shows every known dialog."
+                            hint="The Telegram chat the notification is sent to. Monitored chats are blocked here — a notification sent into a monitored chat would re-trigger analysis and loop forever."
                         >
                             <ChatSelect
                                 chats={chats}
                                 value={targetChatId}
+                                blockMonitored
                                 onChange={(chatId) => {
                                     setConfigDirty(true)
                                     setConfig({ targetChatId: chatId })
                                 }}
                             />
+                            {blockedNotificationTarget ? (
+                                <p className="mt-1.5 text-xs font-medium text-[#f43f5e]">
+                                    {blockedNotificationTarget} is monitored — notifications sent there
+                                    would re-trigger analysis (infinite loop). Choose a non-monitored
+                                    channel instead.
+                                </p>
+                            ) : null}
                         </Field>
                     ) : (
                         <Field

@@ -150,6 +150,12 @@ When a monitored message arrives in a chat the config isn't scoped to, the confi
 (AES-256-GCM); a `config` value sent on create/update is encrypted, and existing secrets are
 preserved when `config` is omitted on PATCH. The dashboard re-asks for secrets when editing.
 
+**Loop guard (telegram notifiers):** a telegram notifier whose `config.targetChatId` refers to a
+chat currently marked `isMonitored` is rejected with `400 { ok: false, error }` on create/update,
+and at dispatch time the notifier refuses to send into any chat that became monitored since it was
+saved (recorded as a failed `ActionLog`). Notifications must land in a non-monitored channel,
+otherwise the sent message would be ingested, analyzed, and re-notified forever.
+
 ### Action logs
 
 | Method | Path | Query | Response |

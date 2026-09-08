@@ -11,6 +11,11 @@ export const telegramNotifier: Notifier = {
             return { status: 'failed', error: 'telegram notifier requires config.targetChatId' }
         }
 
+        const blocked = await monitoredChatRefusal(target)
+        if (blocked) {
+            return { status: 'failed', error: blocked }
+        }
+
         const { tryTelegramClient } = await import('../../telegram/client')
         const client = await tryTelegramClient()
         if (!client) {
@@ -24,6 +29,19 @@ export const telegramNotifier: Notifier = {
             return { status: 'failed', error: (error as Error).message }
         }
     },
+}
+
+async function monitoredChatRefusal(target: string): Promise<string | null> {
+    try {
+        const { prisma } = await import('../../prisma')
+        const chat = await prisma.chat.findUnique({ where: { telegramChatId: BigInt(target) } })
+        if (chat?.isMonitored) {
+            return `refusing to send into monitored chat "${chat.title}" — notifications there would re-trigger analysis (infinite loop). Use a non-monitored channel or another chat.`
+        }
+    } catch {
+        // not a tracked chat id — sending is safe (unmonitored chats are ignored by the listener)
+    }
+    return null
 }
 
 export function decryptNotifierConfig(encryptedConfig: unknown): Record<string, unknown> {
