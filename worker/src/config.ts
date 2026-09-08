@@ -13,6 +13,12 @@ const envSchema = z.object({
     LLM_PROVIDER: z.enum(['groq', 'openrouter']).default('groq'),
     LLM_API_KEY: z.string().optional(),
     LLM_MODEL: z.string().optional(),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().optional(),
+    SMTP_SECURE: z.enum(['true', 'false']).optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().optional(),
     SOCKET_TOKEN: z.string().optional(),
     CORS_ORIGIN: z.string().default('*'),
 })
