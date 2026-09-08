@@ -3,122 +3,146 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { getSettings } from '../../server/settings'
 import { Panel } from '../../components/dashboard/Panel'
-import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerSettings } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/settings')({ component: SettingsPage })
 
 function SettingsPage() {
-  const [settings, setSettings] = useState<WorkerSettings | null>(null)
-  const [error, setError] = useState<string | null>(null)
+    const [settings, setSettings] = useState<WorkerSettings | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let alive = true
-    async function load() {
-      try {
-        const result = await getSettings()
-        if (alive) setSettings(result)
-      } catch (err) {
-        if (alive) setError(errorText(err))
-      }
-    }
-    void load()
-    return () => {
-      alive = false
-    }
-  }, [])
+    useEffect(() => {
+        let alive = true
+        async function load() {
+            try {
+                const result = await getSettings()
+                if (alive) setSettings(result)
+            } catch (err) {
+                if (alive) setError(errorText(err))
+            }
+        }
+        void load()
+        return () => {
+            alive = false
+        }
+    }, [])
 
-  if (error) {
+    if (error) {
+        return (
+            <Panel title="Settings">
+                <p role="alert" className="m-0 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+                    {error}
+                </p>
+            </Panel>
+        )
+    }
+
+    if (!settings) {
+        return <SettingsSkeleton />
+    }
+
     return (
-      <Panel title="Settings">
-        <p role="alert" className="m-0 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-600">
-          {error}
-        </p>
-      </Panel>
+        <div className="flex flex-col gap-4">
+            <Panel
+                title="Analysis prompts"
+                description="Each active config runs against every incoming monitored message."
+            >
+                <ConfigList
+                    empty="No analysis configs yet."
+                    rows={settings.analysisConfigs.map((config) => ({
+                        key: config.id,
+                        name: config.name,
+                        active: config.isActive,
+                        meta: config.promptTemplate,
+                    }))}
+                />
+            </Panel>
+
+            <Panel title="Notifiers" description="Where resolved actions are dispatched.">
+                <ConfigList
+                    empty="No notifiers configured."
+                    rows={settings.notifiers.map((notifier) => ({
+                        key: notifier.id,
+                        name: notifier.name,
+                        active: notifier.isActive,
+                        meta: `${notifier.type.toUpperCase()}${notifier.configConfigured ? '' : ' · not configured'}`,
+                    }))}
+                />
+            </Panel>
+
+            <Panel title="Action rules" description="Flat key/value conditions matched against LLM output.">
+                <ConfigList
+                    empty="No action rules yet."
+                    rows={settings.actionRules.map((rule) => ({
+                        key: rule.id,
+                        name: `${rule.notifierName} (${rule.notifierType.toUpperCase()})`,
+                        active: rule.isActive,
+                        meta: JSON.stringify(rule.condition),
+                    }))}
+                />
+            </Panel>
+        </div>
     )
-  }
+}
 
-  if (!settings) {
-    return <PageSkeleton label="Loading settings" />
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Panel
-        title="Analysis prompts"
-        description="Each active config runs against every incoming monitored message."
-      >
-        <ConfigList
-          empty="No analysis configs yet."
-          rows={settings.analysisConfigs.map((config) => ({
-            key: config.id,
-            name: config.name,
-            active: config.isActive,
-            meta: config.promptTemplate,
-          }))}
-        />
-      </Panel>
-
-      <Panel title="Notifiers" description="Where resolved actions are dispatched.">
-        <ConfigList
-          empty="No notifiers configured."
-          rows={settings.notifiers.map((notifier) => ({
-            key: notifier.id,
-            name: notifier.name,
-            active: notifier.isActive,
-            meta: `${notifier.type.toUpperCase()}${notifier.configConfigured ? '' : ' · not configured'}`,
-          }))}
-        />
-      </Panel>
-
-      <Panel title="Action rules" description="Flat key/value conditions matched against LLM output.">
-        <ConfigList
-          empty="No action rules yet."
-          rows={settings.actionRules.map((rule) => ({
-            key: rule.id,
-            name: `${rule.notifierName} (${rule.notifierType.toUpperCase()})`,
-            active: rule.isActive,
-            meta: JSON.stringify(rule.condition),
-          }))}
-        />
-      </Panel>
-    </div>
-  )
+function SettingsSkeleton() {
+    return (
+        <div className="flex flex-col gap-4" role="status" aria-label="Loading automation">
+            {[0, 1, 2].map((panel) => (
+                <div key={panel} className="island-shell rounded-2xl p-6">
+                    <div className="mb-4 flex flex-col gap-2">
+                        <div
+                            className="skeleton-line"
+                            style={{ width: panel === 1 ? '6.5rem' : panel === 2 ? '7.5rem' : '8.5rem' }}
+                        />
+                        <div
+                            className="skeleton-line"
+                            style={{ width: panel === 1 ? '14rem' : panel === 2 ? '17rem' : '19rem' }}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        {[0, 1].map((row) => (
+                            <div key={row} className="h-14 rounded-xl bg-[rgba(236,185,20,0.12)]" />
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 function ConfigList({
-  empty,
-  rows,
+    empty,
+    rows,
 }: {
-  empty: string
-  rows: { key: string; name: string; active: boolean; meta: string }[]
+    empty: string
+    rows: { key: string; name: string; active: boolean; meta: string }[]
 }) {
-  if (rows.length === 0) {
-    return <p className="m-0 text-sm text-(--sea-ink-soft)">{empty}</p>
-  }
-  return (
-    <ul className="m-0 flex flex-col gap-2">
-      {rows.map((row) => (
-        <li
-          key={row.key}
-          className="flex items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--header-bg) px-4 py-2.5"
-        >
-          <div className="min-w-0">
-            <p className="m-0 truncate text-sm font-semibold text-(--sea-ink)">{row.name}</p>
-            <p className="m-0 truncate text-xs text-(--sea-ink-soft)">{row.meta}</p>
-          </div>
-          <span
-            className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              row.active
-                ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
-                : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)'
-            }`}
-          >
-            {row.active ? 'ACTIVE' : 'PAUSED'}
-          </span>
-        </li>
-      ))}
-    </ul>
-  )
+    if (rows.length === 0) {
+        return <p className="m-0 text-sm text-(--sea-ink-soft)">{empty}</p>
+    }
+    return (
+        <ul className="m-0 flex flex-col gap-2">
+            {rows.map((row) => (
+                <li
+                    key={row.key}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--header-bg) px-4 py-2.5"
+                >
+                    <div className="min-w-0">
+                        <p className="m-0 truncate text-sm font-semibold text-(--sea-ink)">{row.name}</p>
+                        <p className="m-0 truncate text-xs text-(--sea-ink-soft)">{row.meta}</p>
+                    </div>
+                    <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${row.active
+                                ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
+                                : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)'
+                            }`}
+                    >
+                        {row.active ? 'ACTIVE' : 'PAUSED'}
+                    </span>
+                </li>
+            ))}
+        </ul>
+    )
 }
