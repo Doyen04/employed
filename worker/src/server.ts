@@ -10,7 +10,7 @@ export function startServer() {
 
     attachSocketIo(httpServer)
 
-    httpServer.listen(config.PORT, () => {
+    httpServer.listen(config.PORT, '0.0.0.0', () => {
         console.log(`[worker] listening on :${config.PORT}`)
     })
 
