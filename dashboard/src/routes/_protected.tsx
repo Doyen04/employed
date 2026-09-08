@@ -7,6 +7,7 @@ import {
     LogOut,
     MessageSquare,
     Radio,
+    ScanSearch,
     Send,
     Settings2,
     Zap,
@@ -17,11 +18,12 @@ import { getSession, logout } from '../server/auth'
 import { WorkerStatusPill } from '../components/dashboard/WorkerStatusPill'
 import ThemeToggle from '../components/ThemeToggle'
 
-type AppPath = '/dashboard' | '/chats' | '/messages' | '/telegram' | '/action-logs' | '/settings'
+type AppPath = '/dashboard' | '/messages' | '/analyses' | '/chats' | '/telegram' | '/action-logs' | '/settings'
 
 const NAV: { to: AppPath; label: string; description: string; icon: LucideIcon }[] = [
     { to: '/dashboard', label: 'Overview', description: 'System pulse', icon: LayoutDashboard },
     { to: '/messages', label: 'Messages', description: 'Intelligence inbox', icon: MessageSquare },
+    { to: '/analyses', label: 'Analyses', description: 'LLM verdicts', icon: ScanSearch },
     { to: '/chats', label: 'Chats', description: 'Monitored sources', icon: Radio },
     { to: '/telegram', label: 'Telegram', description: 'Account connection', icon: Send },
     { to: '/settings', label: 'Automation', description: 'Analyses & rules', icon: Bot },

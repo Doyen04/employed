@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProtectedActionLogsRouteImport } from './routes/_protected/action-logs'
+import { Route as ProtectedAnalysesRouteImport } from './routes/_protected/analyses'
 import { Route as ProtectedChatsRouteImport } from './routes/_protected/chats'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedMessagesRouteImport } from './routes/_protected/messages'
@@ -36,6 +37,11 @@ const LoginRoute = LoginRouteImport.update({
 const ProtectedActionLogsRoute = ProtectedActionLogsRouteImport.update({
   id: '/action-logs',
   path: '/action-logs',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedAnalysesRoute = ProtectedAnalysesRouteImport.update({
+  id: '/analyses',
+  path: '/analyses',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedChatsRoute = ProtectedChatsRouteImport.update({
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/action-logs': typeof ProtectedActionLogsRoute
+  '/analyses': typeof ProtectedAnalysesRoute
   '/chats': typeof ProtectedChatsRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/messages': typeof ProtectedMessagesRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/action-logs': typeof ProtectedActionLogsRoute
+  '/analyses': typeof ProtectedAnalysesRoute
   '/chats': typeof ProtectedChatsRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/messages': typeof ProtectedMessagesRoute
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedRouteWithChildren
   '/login': typeof LoginRoute
   '/_protected/action-logs': typeof ProtectedActionLogsRoute
+  '/_protected/analyses': typeof ProtectedAnalysesRoute
   '/_protected/chats': typeof ProtectedChatsRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/messages': typeof ProtectedMessagesRoute
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/action-logs'
+    | '/analyses'
     | '/chats'
     | '/dashboard'
     | '/messages'
@@ -112,6 +122,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/action-logs'
+    | '/analyses'
     | '/chats'
     | '/dashboard'
     | '/messages'
@@ -123,6 +134,7 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/login'
     | '/_protected/action-logs'
+    | '/_protected/analyses'
     | '/_protected/chats'
     | '/_protected/dashboard'
     | '/_protected/messages'
@@ -166,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedActionLogsRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/analyses': {
+      id: '/_protected/analyses'
+      path: '/analyses'
+      fullPath: '/analyses'
+      preLoaderRoute: typeof ProtectedAnalysesRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/chats': {
       id: '/_protected/chats'
       path: '/chats'
@@ -206,6 +225,7 @@ declare module '@tanstack/react-router' {
 
 interface ProtectedRouteChildren {
   ProtectedActionLogsRoute: typeof ProtectedActionLogsRoute
+  ProtectedAnalysesRoute: typeof ProtectedAnalysesRoute
   ProtectedChatsRoute: typeof ProtectedChatsRoute
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedMessagesRoute: typeof ProtectedMessagesRoute
@@ -215,6 +235,7 @@ interface ProtectedRouteChildren {
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedActionLogsRoute: ProtectedActionLogsRoute,
+  ProtectedAnalysesRoute: ProtectedAnalysesRoute,
   ProtectedChatsRoute: ProtectedChatsRoute,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedMessagesRoute: ProtectedMessagesRoute,

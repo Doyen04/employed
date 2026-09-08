@@ -93,6 +93,29 @@ export interface WorkerActionLog {
   }
 }
 
+export interface WorkerAnalysis {
+  id: string
+  analyzedAt: string
+  rawResponse: Json
+  analysisConfigName: string
+  fired: boolean
+  message: {
+    id: string
+    text: string
+    senderName: string | null
+    receivedAt: string
+    chat: ChatRef
+  }
+  actions: {
+    id: string
+    status: ActionLogStatus
+    retryCount: number
+    sentAt: string | null
+    errorDetail: string | null
+    notifier: { id: string; name: string; type: NotifierType }
+  }[]
+}
+
 export interface Paged<T> {
   items: T[]
   nextCursor: string | null

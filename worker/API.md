@@ -147,6 +147,23 @@ preserved when `config` is omitted on PATCH. The dashboard re-asks for secrets w
    analysis: { id, analyzedAt, rawResponse, analysisConfigName,
      message: { id, text, senderName, receivedAt, chat: { id, title, telegramChatId } } } }`
 
+### Analyses
+
+| Method | Path | Query | Response |
+|---|---|---|---|
+| GET | `/analyses` | `limit?`, `cursor?` | `200 { items: Analysis[], nextCursor, hasMore }` |
+
+`Analysis` item shape:
+`{ id, analyzedAt: ISO, rawResponse, analysisConfigName: string, fired: boolean,
+   message: { id, text, senderName: string\|null, receivedAt: ISO,
+     chat: { id, title, telegramChatId } },
+   actions: { id, status: 'pending'\|'sent'\|'failed', retryCount, sentAt: ISO\|null,
+     errorDetail: string\|null, notifier: { id, name, type } }[] }`
+
+Every stored analysis (matched or not) is listed, newest first. `fired` is true when at least
+one action rule matched and `actions` reflects the dispatch attempts on matching rules; it is
+empty for analyses whose verdict matched no rule.
+
 ### Telegram session
 
 | Method | Path | Body | Response |

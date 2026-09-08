@@ -7,6 +7,7 @@ import { chatsRouter } from './routes/chats'
 import { messagesRouter } from './routes/messages'
 import { settingsRouter } from './routes/settings'
 import { actionLogsRouter } from './routes/actionLogs'
+import { analysesRouter } from './routes/analyses'
 import { telegramRouter } from './routes/telegram'
 import { overviewRouter } from './routes/overview'
 
@@ -30,6 +31,7 @@ export function createApp() {
     app.use('/messages', messagesRouter)
     app.use('/settings', settingsRouter)
     app.use('/action-logs', actionLogsRouter)
+    app.use('/analyses', analysesRouter)
     app.use('/telegram', telegramRouter)
 
     return app
