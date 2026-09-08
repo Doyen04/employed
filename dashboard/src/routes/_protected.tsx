@@ -60,12 +60,6 @@ function AppShell() {
                     </Link>
                 </div>
 
-                <div className="sidebar-workspace">
-                    <span className="sidebar-workspace-avatar">E</span>
-                    <span><b>My workspace</b><small>Private automation</small></span>
-                    <ChevronRight aria-hidden="true" />
-                </div>
-
                 <nav className="app-sidebar-nav" aria-label="Dashboard navigation">
                     <p>Monitor</p>
                     {NAV.slice(0, 4).map((item) => <SidebarLink key={item.to} item={item} />)}
