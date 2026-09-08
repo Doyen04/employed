@@ -5,6 +5,7 @@ import { config } from '../config'
 import { setSessionString } from './sessionStore'
 import { resetTelegramClient } from './client'
 import { startTelegramListener } from './listener'
+import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
 
 export type TelegramLoginStatus =
     | { state: 'idle' }
@@ -43,6 +44,7 @@ class TelegramLoginFlow {
             throw new Error('TELEGRAM_API_ID and TELEGRAM_API_HASH are required in worker/.env')
         }
 
+        clearDiagnostic('login.flow').catch(() => { })
         this.status = { state: 'started' }
         void this.run(phone)
         return this.status
@@ -80,6 +82,7 @@ class TelegramLoginFlow {
                 password: async (hint) => this.waitForPrompt('password', hint),
                 onError: async (error) => {
                     this.status = { state: 'error', error: error.message }
+                    reportDiagnostic('login.flow', 'error', `Login failed: ${error.message}`).catch(() => { })
                     throw error
                 },
             })
@@ -106,6 +109,7 @@ class TelegramLoginFlow {
         }
 
         if (this.status.state === 'done') {
+            clearDiagnostic('login.flow').catch(() => { })
             startTelegramListener().catch((error) =>
                 console.error('[authFlow] failed to start telegram listener:', (error as Error).message),
             )
@@ -130,6 +134,7 @@ class TelegramLoginFlow {
 
     private fail(message: string): void {
         this.status = { state: 'error', error: message }
+        reportDiagnostic('login.flow', 'error', `Login failed: ${message}`).catch(() => { })
         if (this.promptReject) {
             const reject = this.promptReject
             this.clearPrompt()

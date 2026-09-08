@@ -64,8 +64,9 @@ and the HTTP API share the same `WORKER_API_KEY` token. Events:
     latestActionAt: ISO|null
   },
   diagnostics: {
-    status: 'ok'|'warning'|'error',
-    message: string|null,
+    status: 'ok'|'warning'|'error' (worst issue severity),
+    issues: [{ key, severity: 'warning'|'error', message, updatedAt: ISO, context|null }],
+    message: string|null (worst issue's message),
     updatedAt: ISO|null,
     context: { chatTitle, messageText }|null
   },
@@ -79,10 +80,23 @@ when there are no completed actions. `latestActionAt` is the newest action's ana
 timestamp because `ActionLog` has no creation timestamp. `recentMessages` contains at
 most five records and uses the same `Message` shape documented below.
 
-`diagnostics` surfaces the last analysis outcome and persists why the worker stopped
-analyzing (e.g. `LLM_API_KEY` missing, LLM error, or no active analysis configs). It is
-`status: 'ok'` with `message: null` after a clean run; `context` carries the chat title
-and (truncated) message that triggered the last warning/error.
+`diagnostics` is the app-wide health surface. It aggregates **all** failure modes the
+worker can hit, each as an entry in `issues` keyed by source:
+
+- `system.startup` — telegram listener failed to boot
+- `db.connection` — database unreachable
+- `telegram.session` — no session, rejected, revoked/expired auth key, or re-login required
+- `telegram.listener` — connection lost mid-run, connect failures, backfill gaps
+- `telegram.scan` — chat refresh (`POST /chats/refresh`) failed or timed out
+- `login.flow` — Telegram sign-in errors in the web login flow
+- `llm.analyze` — LLM call failed or returned non-JSON
+- `analysis.config` — no active configs, or a message arrived in a chat the active configs don't cover
+- `notifier.dispatch` — a notifier send failed (or unknown notifier type)
+
+`status`/`message`/`updatedAt`/`context` mirror the **worst** current issue (errors beat
+warnings, then newest). Issues are self-clearing: the reporter for each source resolves
+its own key on success (e.g. a successful dispatch removes `notifier.dispatch`), so the
+banner shows every live problem at once instead of just the last one.
 
 `OverviewAction` shape:
 `{ id, status: 'pending'|'sent'|'failed', retryCount, sentAt: ISO|null,

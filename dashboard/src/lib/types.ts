@@ -147,8 +147,17 @@ export interface WorkerOverviewAction {
 
 export type DiagnosticsStatus = 'ok' | 'warning' | 'error'
 
+export interface WorkerDiagnosticIssue {
+  key: string
+  severity: 'warning' | 'error'
+  message: string
+  updatedAt: string
+  context: { chatTitle: string; messageText: string } | null
+}
+
 export interface WorkerDiagnostics {
   status: DiagnosticsStatus
+  issues: WorkerDiagnosticIssue[]
   message: string | null
   updatedAt: string | null
   context: { chatTitle: string; messageText: string } | null

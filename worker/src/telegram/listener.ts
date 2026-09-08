@@ -12,7 +12,7 @@ import { clearSession, getSessionString } from './sessionStore'
 import { runAnalysis } from '../llm/analyze'
 import { matchesCondition } from '../actions/resolver'
 import { dispatchAction } from '../actions/dispatch'
-import { updateDiagnosticsState } from '../diagnostics'
+import { reportDiagnostic, clearDiagnostic } from '../diagnostics'
 import { toJsonValue } from '../types/json'
 import { emitMessageNew, emitMessageStored } from '../socket/server'
 
@@ -174,12 +174,12 @@ async function processMessage(
     })
 
     if (configs.length === 0) {
-        await updateDiagnosticsState({
-            status: 'warning',
-            message: 'No active analysis configs — message was not analyzed.',
-            updatedAt: new Date().toISOString(),
-            context: { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
-        })
+        await reportDiagnostic(
+            'analysis.config',
+            'warning',
+            'No active analysis configs — messages are not being analyzed.',
+            { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
+        )
         return
     }
 
@@ -188,12 +188,12 @@ async function processMessage(
     )
 
     if (scoped.length === 0) {
-        await updateDiagnosticsState({
-            status: 'warning',
-            message: 'No active analysis config covers this chat — message was not analyzed.',
-            updatedAt: new Date().toISOString(),
-            context: { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
-        })
+        await reportDiagnostic(
+            'analysis.config',
+            'warning',
+            'No active analysis config covers this chat — message was not analyzed.',
+            { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
+        )
         return
     }
 
@@ -207,11 +207,9 @@ async function processMessage(
             const errorMessage = (error as Error).message || String(error)
             allOk = false
             console.error('[listener] analysis failed:', errorMessage)
-            await updateDiagnosticsState({
-                status: 'error',
-                message: errorMessage,
-                updatedAt: new Date().toISOString(),
-                context: { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
+            await reportDiagnostic('llm.analyze', 'error', errorMessage, {
+                chatTitle: chat.title,
+                messageText: message.text.slice(0, 200),
             })
             continue
         }
@@ -254,12 +252,8 @@ async function processMessage(
     }
 
     if (allOk) {
-        await updateDiagnosticsState({
-            status: 'ok',
-            message: null,
-            updatedAt: new Date().toISOString(),
-            context: null,
-        })
+        await clearDiagnostic('llm.analyze')
+        await clearDiagnostic('analysis.config')
     }
 }
 
@@ -310,6 +304,11 @@ async function backfillMonitoredChats(client: TelegramClient): Promise<void> {
             }
         } catch (error) {
             console.error(`[listener] backfill failed for chat ${chat.id}:`, (error as Error).message)
+            reportDiagnostic(
+                'telegram.listener',
+                'warning',
+                'Backfill of monitored chats failed — some recent messages may be missing.',
+            ).catch(() => { })
         }
     }
 }
@@ -324,9 +323,15 @@ export async function startTelegramListener(): Promise<boolean> {
         await client.connect()
     } catch (error) {
         if (error instanceof UnauthorizedError) {
+            await reportDiagnostic(
+                'telegram.session',
+                'error',
+                'Telegram session rejected by Telegram — re-login required.',
+            )
             await purgeRevokedSession('telegram session rejected')
             return false
         }
+        await reportDiagnostic('telegram.listener', 'error', `telegram connect failed: ${(error as Error).message}`)
         throw error
     }
 
@@ -334,6 +339,11 @@ export async function startTelegramListener(): Promise<boolean> {
         await client.getMe()
     } catch (error) {
         if (error instanceof UnauthorizedError) {
+            await reportDiagnostic(
+                'telegram.session',
+                'error',
+                'Telegram auth key is not registered (revoked or expired) — re-login required.',
+            )
             await purgeRevokedSession('telegram auth key is not registered (revoked or expired)')
             return false
         }
@@ -344,6 +354,11 @@ export async function startTelegramListener(): Promise<boolean> {
         (update: UpdateConnectionState) => {
             if (update.state !== UpdateConnectionState.broken) return
             console.warn('[listener] telegram connection lost — purging chat data')
+            reportDiagnostic(
+                'telegram.listener',
+                'error',
+                'Telegram connection lost — new messages are not being processed.',
+            ).catch(() => { })
             resetTelegramClient()
             clearSession().catch((purgeError) =>
                 console.error('[listener] failed to purge chat data:', (purgeError as Error).message),
@@ -358,6 +373,9 @@ export async function startTelegramListener(): Promise<boolean> {
 
     console.log('[listener] telegram listener started')
 
+    await clearDiagnostic('telegram.session')
+    await clearDiagnostic('telegram.listener')
+
     const healthCheck = setInterval(async () => {
         try {
             await client.getMe()
@@ -366,6 +384,11 @@ export async function startTelegramListener(): Promise<boolean> {
             clearInterval(healthCheck)
             resetTelegramClient()
             client.disconnect().catch(() => { })
+            await reportDiagnostic(
+                'telegram.session',
+                'error',
+                'Telegram auth key was revoked while running — re-login required.',
+            )
             await purgeRevokedSession('telegram auth key was revoked while running (AuthKeyUnregistered)')
         }
     }, HEALTH_CHECK_INTERVAL_MS)
