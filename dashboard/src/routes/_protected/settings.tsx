@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { getSettings } from '../../server/settings'
 import { Panel } from '../../components/dashboard/Panel'
+import { SettingsEditor } from '../../components/dashboard/settings/SettingsEditor'
 import type { WorkerSettings } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -28,12 +29,27 @@ function SettingsPage() {
         }
     }, [])
 
+    async function reload() {
+        const result = await getSettings()
+        setSettings(result)
+    }
+
     if (error) {
         return (
             <Panel title="Settings">
                 <p role="alert" className="m-0 rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-600">
                     {error}
                 </p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setError(null)
+                        void reload().catch((err) => setError(errorText(err)))
+                    }}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-(--lagoon-deep) px-3.5 py-2 text-xs font-semibold text-white transition hover:opacity-90 dark:bg-(--lagoon) dark:text-[#4F3D35]"
+                >
+                    Retry
+                </button>
             </Panel>
         )
     }
@@ -42,48 +58,7 @@ function SettingsPage() {
         return <SettingsSkeleton />
     }
 
-    return (
-        <div className="flex flex-col gap-4">
-            <Panel
-                title="Analysis prompts"
-                description="Each active config runs against every incoming monitored message."
-            >
-                <ConfigList
-                    empty="No analysis configs yet."
-                    rows={settings.analysisConfigs.map((config) => ({
-                        key: config.id,
-                        name: config.name,
-                        active: config.isActive,
-                        meta: config.promptTemplate,
-                    }))}
-                />
-            </Panel>
-
-            <Panel title="Notifiers" description="Where resolved actions are dispatched.">
-                <ConfigList
-                    empty="No notifiers configured."
-                    rows={settings.notifiers.map((notifier) => ({
-                        key: notifier.id,
-                        name: notifier.name,
-                        active: notifier.isActive,
-                        meta: `${notifier.type.toUpperCase()}${notifier.configConfigured ? '' : ' · not configured'}`,
-                    }))}
-                />
-            </Panel>
-
-            <Panel title="Action rules" description="Flat key/value conditions matched against LLM output.">
-                <ConfigList
-                    empty="No action rules yet."
-                    rows={settings.actionRules.map((rule) => ({
-                        key: rule.id,
-                        name: `${rule.notifierName} (${rule.notifierType.toUpperCase()})`,
-                        active: rule.isActive,
-                        meta: JSON.stringify(rule.condition),
-                    }))}
-                />
-            </Panel>
-        </div>
-    )
+    return <SettingsEditor settings={settings} onChanged={reload} />
 }
 
 function SettingsSkeleton() {
@@ -103,46 +78,11 @@ function SettingsSkeleton() {
                     </div>
                     <div className="flex flex-col gap-2">
                         {[0, 1].map((row) => (
-                            <div key={row} className="h-14 rounded-xl bg-[rgba(236,185,20,0.12)]" />
+                            <div key={row} className="h-8 rounded-xl bg-[rgba(236,185,20,0.12)]" />
                         ))}
                     </div>
                 </div>
             ))}
         </div>
-    )
-}
-
-function ConfigList({
-    empty,
-    rows,
-}: {
-    empty: string
-    rows: { key: string; name: string; active: boolean; meta: string }[]
-}) {
-    if (rows.length === 0) {
-        return <p className="m-0 text-sm text-(--sea-ink-soft)">{empty}</p>
-    }
-    return (
-        <ul className="m-0 flex flex-col gap-2">
-            {rows.map((row) => (
-                <li
-                    key={row.key}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--header-bg) px-4 py-2.5"
-                >
-                    <div className="min-w-0">
-                        <p className="m-0 truncate text-sm font-semibold text-(--sea-ink)">{row.name}</p>
-                        <p className="m-0 truncate text-xs text-(--sea-ink-soft)">{row.meta}</p>
-                    </div>
-                    <span
-                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${row.active
-                                ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
-                                : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)'
-                            }`}
-                    >
-                        {row.active ? 'ACTIVE' : 'PAUSED'}
-                    </span>
-                </li>
-            ))}
-        </ul>
     )
 }
