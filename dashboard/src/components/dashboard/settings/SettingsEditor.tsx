@@ -532,7 +532,7 @@ function AnalysisConfigsSection({
                 promptTemplate: promptTemplate.trim(),
                 outputSchema: objectFromRows(schema),
                 isActive,
-                allowedChatIds,
+                allowedChatIds: allowedChatIds.filter((id) => chats.some((chat) => chat.id === id)),
             }
             if (editing?.mode === 'create') {
                 await createAnalysisConfig({ data: payload })
