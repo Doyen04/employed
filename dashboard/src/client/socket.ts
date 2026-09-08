@@ -20,7 +20,7 @@ interface Listener {
 
 function url(): string {
     return (
-        (import.meta.env.VITE_WORKER_SOCKET_URL as string | undefined) ??
+        (import.meta.env.WORKER_URL as string | undefined) ??
         (import.meta.env.VITE_WORKER_URL as string | undefined) ??
         ''
     )
