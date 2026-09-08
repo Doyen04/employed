@@ -1,6 +1,7 @@
 import { Router } from 'express'
 
 import { prisma } from '../../prisma'
+import { getDiagnosticsState } from '../../diagnostics'
 
 export const overviewRouter = Router()
 
@@ -22,6 +23,7 @@ overviewRouter.get('/', async (_req, res) => {
             failedActions,
             pendingActions,
             recentActions,
+            diagnostics,
         ] = await Promise.all([
             prisma.chat.count(),
             prisma.chat.count({ where: { isMonitored: true } }),
@@ -70,6 +72,7 @@ overviewRouter.get('/', async (_req, res) => {
                     },
                 },
             }),
+            getDiagnosticsState(),
         ])
 
         const completedActions = sentActions + failedActions
@@ -93,6 +96,7 @@ overviewRouter.get('/', async (_req, res) => {
                 latestAnalysisAt: latestAnalysis?.analyzedAt ? latestAnalysis.analyzedAt.toISOString() : null,
                 latestActionAt: recentActions[0]?.analysis?.analyzedAt ? recentActions[0].analysis.analyzedAt.toISOString() : null,
             },
+            diagnostics,
             recentMessages: recentMessages.map((message) => ({
                 id: message.id,
                 chatId: message.chatId,

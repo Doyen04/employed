@@ -141,6 +141,15 @@ export interface WorkerOverviewAction {
   }
 }
 
+export type DiagnosticsStatus = 'ok' | 'warning' | 'error'
+
+export interface WorkerDiagnostics {
+  status: DiagnosticsStatus
+  message: string | null
+  updatedAt: string | null
+  context: { chatTitle: string; messageText: string } | null
+}
+
 export interface WorkerOverview {
   counts: {
     chats: { total: number; monitored: number }
@@ -160,6 +169,7 @@ export interface WorkerOverview {
     latestAnalysisAt: string | null
     latestActionAt: string | null
   }
+  diagnostics: WorkerDiagnostics
   recentMessages: WorkerMessage[]
   recentActions: WorkerOverviewAction[]
 }

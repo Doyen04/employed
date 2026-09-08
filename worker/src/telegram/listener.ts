@@ -12,6 +12,7 @@ import { clearSession, getSessionString } from './sessionStore'
 import { runAnalysis } from '../llm/analyze'
 import { matchesCondition } from '../actions/resolver'
 import { dispatchAction } from '../actions/dispatch'
+import { updateDiagnosticsState } from '../diagnostics'
 import { toJsonValue } from '../types/json'
 import { emitMessageNew, emitMessageStored } from '../socket/server'
 
@@ -161,50 +162,79 @@ async function processMessage(
         },
     })
 
-    if (configs.length === 0) return
+    if (configs.length === 0) {
+        await updateDiagnosticsState({
+            status: 'warning',
+            message: 'No active analysis configs — message was not analyzed.',
+            updatedAt: new Date().toISOString(),
+            context: { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
+        })
+        return
+    }
+
+    let allOk = true
 
     for (const cfg of configs) {
+        let output: Record<string, unknown>
         try {
-            const output = await runAnalysis(cfg, message.text)
-            const analysis = await prisma.analysis.create({
-                data: {
-                    messageId: message.id,
-                    analysisConfigId: cfg.id,
-                    rawResponse: toJsonValue(output),
-                },
+            output = await runAnalysis(cfg, message.text)
+        } catch (error) {
+            const errorMessage = (error as Error).message || String(error)
+            allOk = false
+            console.error('[listener] analysis failed:', errorMessage)
+            await updateDiagnosticsState({
+                status: 'error',
+                message: errorMessage,
+                updatedAt: new Date().toISOString(),
+                context: { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
             })
+            continue
+        }
+        const analysis = await prisma.analysis.create({
+            data: {
+                messageId: message.id,
+                analysisConfigId: cfg.id,
+                rawResponse: toJsonValue(output),
+            },
+        })
 
-            for (const rule of cfg.actionRules) {
-                if (!matchesCondition(rule.condition, output)) continue
-                await dispatchAction(rule, analysis, {
-                    message,
-                    chat,
-                    analysisConfigName: cfg.name,
-                })
-            }
-
-            const chatPayload = {
-                id: chat.id,
-                title: chat.title,
-                telegramChatId: chat.telegramChatId.toString(),
-            }
-            emitMessageNew({
-                message: {
-                    id: message.id,
-                    chatId: message.chatId,
-                    telegramMessageId: message.telegramMessageId,
-                    senderName: message.senderName,
-                    text: message.text,
-                    receivedAt: message.receivedAt.toISOString(),
-                    chat: chatPayload,
-                },
-                chat: chatPayload,
-                analysis: toJsonValue(output),
+        for (const rule of cfg.actionRules) {
+            if (!matchesCondition(rule.condition, output)) continue
+            await dispatchAction(rule, analysis, {
+                message,
+                chat,
                 analysisConfigName: cfg.name,
             })
-        } catch (error) {
-            console.error('[listener] analysis failed:', (error as Error).message)
         }
+
+        const chatPayload = {
+            id: chat.id,
+            title: chat.title,
+            telegramChatId: chat.telegramChatId.toString(),
+        }
+        emitMessageNew({
+            message: {
+                id: message.id,
+                chatId: message.chatId,
+                telegramMessageId: message.telegramMessageId,
+                senderName: message.senderName,
+                text: message.text,
+                receivedAt: message.receivedAt.toISOString(),
+                chat: chatPayload,
+            },
+            chat: chatPayload,
+            analysis: toJsonValue(output),
+            analysisConfigName: cfg.name,
+        })
+    }
+
+    if (allOk) {
+        await updateDiagnosticsState({
+            status: 'ok',
+            message: null,
+            updatedAt: new Date().toISOString(),
+            context: null,
+        })
     }
 }
 

@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { listAnalyses } from '../../server/analyses'
+import { getOverview } from '../../server/overview'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
-import type { WorkerAnalysis } from '../../lib/types'
+import { DiagnosticsBanner } from '../../components/dashboard/DiagnosticsBanner'
+import type { WorkerAnalysis, WorkerDiagnostics } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/analyses')({ component: AnalysesPage })
@@ -13,6 +15,7 @@ const PAGE_SIZE = 50
 
 function AnalysesPage() {
   const [items, setItems] = useState<WorkerAnalysis[]>([])
+  const [diagnostics, setDiagnostics] = useState<WorkerDiagnostics | null>(null)
   const [cursor, setCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -22,10 +25,14 @@ function AnalysesPage() {
     if (reset) setLoading(true)
     setError(null)
     try {
-      const result = await listAnalyses({
-        data: { limit: PAGE_SIZE, cursor: reset ? undefined : (cursor ?? undefined) },
-      })
+      const [result, overview] = await Promise.all([
+        listAnalyses({
+          data: { limit: PAGE_SIZE, cursor: reset ? undefined : (cursor ?? undefined) },
+        }),
+        getOverview(),
+      ])
       setItems((previous) => (reset ? result.items : [...previous, ...result.items]))
+      setDiagnostics(overview.diagnostics)
       setCursor(result.nextCursor)
       setHasMore(result.hasMore)
     } catch (err) {
@@ -46,6 +53,8 @@ function AnalysesPage() {
       title="Analyses"
       description="Every LLM verdict the worker has produced, whether or not it fired an action."
     >
+      <DiagnosticsBanner diagnostics={diagnostics} />
+
       {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
 
       {items.length === 0 ? (

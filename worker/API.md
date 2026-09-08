@@ -63,6 +63,12 @@ defaults to `WORKER_API_KEY`. Events:
     latestAnalysisAt: ISO|null,
     latestActionAt: ISO|null
   },
+  diagnostics: {
+    status: 'ok'|'warning'|'error',
+    message: string|null,
+    updatedAt: ISO|null,
+    context: { chatTitle, messageText }|null
+  },
   recentMessages: Message[],
   recentActions: OverviewAction[]
 }
@@ -72,6 +78,11 @@ defaults to `WORKER_API_KEY`. Events:
 when there are no completed actions. `latestActionAt` is the newest action's analysis
 timestamp because `ActionLog` has no creation timestamp. `recentMessages` contains at
 most five records and uses the same `Message` shape documented below.
+
+`diagnostics` surfaces the last analysis outcome and persists why the worker stopped
+analyzing (e.g. `LLM_API_KEY` missing, LLM error, or no active analysis configs). It is
+`status: 'ok'` with `message: null` after a clean run; `context` carries the chat title
+and (truncated) message that triggered the last warning/error.
 
 `OverviewAction` shape:
 `{ id, status: 'pending'|'sent'|'failed', retryCount, sentAt: ISO|null,
