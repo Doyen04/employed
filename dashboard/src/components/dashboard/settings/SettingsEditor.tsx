@@ -437,7 +437,13 @@ function JsonEditor({
     return (
         <div className="flex flex-col gap-1.5">
             <div className="inline-flex w-fit rounded-lg border border-(--line) p-0.5">
-                <button type="button" onClick={() => setMode('kv')} className={tabClass(mode === 'kv')}>
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (mode === 'json') switchToKv()
+                    }}
+                    className={tabClass(mode === 'kv')}
+                >
                     Key/value
                 </button>
                 <button type="button" onClick={switchToJson} className={tabClass(mode === 'json')}>
