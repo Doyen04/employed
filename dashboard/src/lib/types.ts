@@ -43,6 +43,7 @@ export interface WorkerAnalysisConfig {
   outputSchema: Json
   isActive: boolean
   createdAt: string
+  allowedChatIds: string[]
 }
 
 export interface WorkerNotifier {

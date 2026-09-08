@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react'
+import { Check, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react'
 
 import { Panel } from '../Panel'
 import {
@@ -19,6 +19,7 @@ import type {
     NotifierType,
     WorkerActionRule,
     WorkerAnalysisConfig,
+    WorkerChat,
     WorkerNotifier,
     WorkerSettings,
 } from '../../../lib/types'
@@ -159,6 +160,105 @@ function Checkbox({
             />
             <span className="text-xs font-semibold text-(--sea-ink)">{label}</span>
         </label>
+    )
+}
+
+function ChatMultiSelect({
+    chats,
+    selected,
+    onChange,
+}: {
+    chats: WorkerChat[]
+    selected: string[]
+    onChange: (selected: string[]) => void
+}) {
+    const [open, setOpen] = useState(false)
+    const rootRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (!open) return
+        function onPointerDown(event: MouseEvent) {
+            if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false)
+        }
+        function onKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') setOpen(false)
+        }
+        document.addEventListener('mousedown', onPointerDown)
+        document.addEventListener('keydown', onKeyDown)
+        return () => {
+            document.removeEventListener('mousedown', onPointerDown)
+            document.removeEventListener('keydown', onKeyDown)
+        }
+    }, [open])
+
+    const summary =
+        selected.length === 0
+            ? 'All chats'
+            : selected.length === 1
+              ? (chats.find((chat) => chat.id === selected[0])?.title ?? '1 chat')
+              : `${selected.length} chats`
+
+    function toggle(chatId: string, checked: boolean) {
+        onChange(checked ? [...selected, chatId] : selected.filter((id) => id !== chatId))
+    }
+
+    return (
+        <div className="relative" ref={rootRef}>
+            <button
+                type="button"
+                onClick={() => setOpen((value) => !value)}
+                aria-expanded={open}
+                className={`${inputClass} flex items-center justify-between gap-2`}
+            >
+                <span className={selected.length === 0 ? 'text-(--sea-ink-soft)' : ''}>{summary}</span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition ${open ? 'rotate-180' : ''}`} />
+            </button>
+            {open ? (
+                <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-(--line) bg-(--surface-strong) shadow-lg">
+                    {chats.length === 0 ? (
+                        <p className="px-3 py-2.5 text-xs text-(--sea-ink-soft)">No monitored chats yet.</p>
+                    ) : (
+                        <>
+                            {selected.length > 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onChange([])}
+                                    className="w-full border-b border-(--line) px-3 py-2 text-left text-xs font-semibold text-(--lagoon-deep) transition hover:bg-white/50 dark:text-(--lagoon) dark:hover:bg-zinc-800"
+                                >
+                                    Clear selection (apply to all chats)
+                                </button>
+                            ) : null}
+                            <div className="max-h-48 overflow-y-auto p-1">
+                                {chats.map((chat) => {
+                                    const active = selected.includes(chat.id)
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={chat.id}
+                                            onClick={() => toggle(chat.id, !active)}
+                                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/50 dark:hover:bg-zinc-800"
+                                        >
+                                            <span
+                                                className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition ${
+                                                    active
+                                                        ? 'border-(--lagoon) bg-(--lagoon) text-white'
+                                                        : 'border-(--line)'
+                                                }`}
+                                            >
+                                                {active ? <Check className="h-3 w-3" /> : null}
+                                            </span>
+                                            <span className="truncate text-xs font-semibold text-(--sea-ink) dark:text-zinc-100">
+                                                {chat.title}
+                                            </span>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </>
+                    )}
+                </div>
+            ) : null}
+        </div>
     )
 }
 
@@ -319,8 +419,8 @@ function ItemList({
                             {row.name}
                             <span
                                 className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${row.status
-                                        ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
-                                        : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)'
+                                    ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
+                                    : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)'
                                     }`}
                             >
                                 {row.status ? 'ACTIVE' : 'PAUSED'}
@@ -382,9 +482,11 @@ function ItemList({
 
 function AnalysisConfigsSection({
     configs,
+    chats,
     onChanged,
 }: {
     configs: WorkerAnalysisConfig[]
+    chats: WorkerChat[]
     onChanged: () => Promise<void>
 }) {
     const [editing, setEditing] = useState<
@@ -393,15 +495,19 @@ function AnalysisConfigsSection({
     const [name, setName] = useState('')
     const [promptTemplate, setPromptTemplate] = useState('')
     const [schema, setSchema] = useState<KVRow[]>([])
+    const [allowedChatIds, setAllowedChatIds] = useState<string[]>([])
     const [isActive, setIsActive] = useState(true)
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
+    const monitoredChats = chats.filter((chat) => chat.isMonitored)
+
     function openCreate() {
         setName('')
         setPromptTemplate('')
         setSchema([])
+        setAllowedChatIds([])
         setIsActive(true)
         setError(null)
         setEditing({ mode: 'create' })
@@ -411,6 +517,7 @@ function AnalysisConfigsSection({
         setName(item.name)
         setPromptTemplate(item.promptTemplate)
         setSchema(rowsFromObject(item.outputSchema))
+        setAllowedChatIds(item.allowedChatIds)
         setIsActive(item.isActive)
         setError(null)
         setEditing({ mode: 'edit', item })
@@ -425,6 +532,7 @@ function AnalysisConfigsSection({
                 promptTemplate: promptTemplate.trim(),
                 outputSchema: objectFromRows(schema),
                 isActive,
+                allowedChatIds,
             }
             if (editing?.mode === 'create') {
                 await createAnalysisConfig({ data: payload })
@@ -457,7 +565,7 @@ function AnalysisConfigsSection({
     return (
         <Panel
             title="Analysis prompts"
-            description="Each active config runs against every incoming monitored message."
+            description="Each active config runs against incoming messages from the chats it's scoped to (every monitored chat when unset)."
             action={<AddButton label="Add config" onClick={openCreate} />}
         >
             {editing ? (
@@ -487,6 +595,16 @@ function AnalysisConfigsSection({
                     >
                         <KVEditor rows={schema} onChange={setSchema} />
                     </Field>
+                    <Field
+                        label="Apply to chats"
+                        hint="Scopes this config to specific monitored chats. Leave empty to apply it to all monitored chats."
+                    >
+                        <ChatMultiSelect
+                            chats={monitoredChats}
+                            selected={allowedChatIds}
+                            onChange={setAllowedChatIds}
+                        />
+                    </Field>
                     <Checkbox label="Active" checked={isActive} onChange={setIsActive} />
                 </FormShell>
             ) : null}
@@ -495,7 +613,10 @@ function AnalysisConfigsSection({
                 rows={configs.map((config) => ({
                     id: config.id,
                     name: config.name,
-                    meta: config.promptTemplate,
+                    meta: `${config.allowedChatIds.length === 0
+                        ? 'All chats'
+                        : `${config.allowedChatIds.length} chat${config.allowedChatIds.length === 1 ? '' : 's'} scoped`
+                        } · ${config.promptTemplate}`,
                     status: config.isActive,
                 }))}
                 confirmingId={confirmingId}
@@ -813,14 +934,20 @@ function ActionRulesSection({
 
 export function SettingsEditor({
     settings,
+    chats,
     onChanged,
 }: {
     settings: WorkerSettings
+    chats: WorkerChat[]
     onChanged: () => Promise<void>
 }) {
     return (
         <div className="flex flex-col gap-4">
-            <AnalysisConfigsSection configs={settings.analysisConfigs} onChanged={onChanged} />
+            <AnalysisConfigsSection
+                configs={settings.analysisConfigs}
+                chats={chats}
+                onChanged={onChanged}
+            />
             <NotifiersSection notifiers={settings.notifiers} onChanged={onChanged} />
             <ActionRulesSection
                 rules={settings.actionRules}

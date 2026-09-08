@@ -2,23 +2,28 @@ import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { getSettings } from '../../server/settings'
+import { listChats } from '../../server/chats'
 import { Panel } from '../../components/dashboard/Panel'
 import { SettingsEditor } from '../../components/dashboard/settings/SettingsEditor'
-import type { WorkerSettings } from '../../lib/types'
+import type { WorkerChat, WorkerSettings } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/settings')({ component: SettingsPage })
 
 function SettingsPage() {
     const [settings, setSettings] = useState<WorkerSettings | null>(null)
+    const [chats, setChats] = useState<WorkerChat[]>([])
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         let alive = true
         async function load() {
             try {
-                const result = await getSettings()
-                if (alive) setSettings(result)
+                const [result, chatResult] = await Promise.all([getSettings(), listChats()])
+                if (alive) {
+                    setSettings(result)
+                    setChats(chatResult.items)
+                }
             } catch (err) {
                 if (alive) setError(errorText(err))
             }
@@ -30,8 +35,9 @@ function SettingsPage() {
     }, [])
 
     async function reload() {
-        const result = await getSettings()
+        const [result, chatResult] = await Promise.all([getSettings(), listChats()])
         setSettings(result)
+        setChats(chatResult.items)
     }
 
     if (error) {
@@ -58,7 +64,7 @@ function SettingsPage() {
         return <SettingsSkeleton />
     }
 
-    return <SettingsEditor settings={settings} onChanged={reload} />
+    return <SettingsEditor settings={settings} chats={chats} onChanged={reload} />
 }
 
 function SettingsSkeleton() {

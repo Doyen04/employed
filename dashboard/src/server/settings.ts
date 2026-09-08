@@ -18,8 +18,13 @@ export const getSettings = createServerFn().handler(async () => {
 
 export const createAnalysisConfig = createServerFn({ method: 'POST' })
   .validator(
-    (input: { name: string; promptTemplate: string; outputSchema: Json; isActive?: boolean }) =>
-      input,
+    (input: {
+      name: string
+      promptTemplate: string
+      outputSchema: Json
+      isActive?: boolean
+      allowedChatIds?: string[]
+    }) => input,
   )
   .handler(async ({ data }) => {
     await requireAuthed()
@@ -37,6 +42,7 @@ export const updateAnalysisConfig = createServerFn({ method: 'POST' })
       promptTemplate?: string
       outputSchema?: Json
       isActive?: boolean
+      allowedChatIds?: string[]
     }) => input,
   )
   .handler(async ({ data }) => {

@@ -22,7 +22,7 @@ Browser → worker, bypassing the dashboard server. Connect with
 defaults to `WORKER_API_KEY`. Events:
 
 | Event | Payload |
-|---|---|
+| --- | --- |
 | `message:stored` | `{ message, chat }` after any monitored message is persisted (live or backfill) |
 | `message:new` | `{ message, chat, analysis, analysisConfigName }` after a monitored message is analysed |
 | `chat:update` | `{ id, telegramChatId, title, isMonitored, addedAt }` |
@@ -97,7 +97,7 @@ and (truncated) message that triggered the last warning/error.
 ### Chats
 
 | Method | Path | Body/Query | Response |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/chats` | — | `200 { items: Chat[] }` |
 | PATCH | `/chats/:id` | `{ title?: string, isMonitored?: boolean }` (at least one) | `200 Chat` |
 | POST | `/chats/refresh` | — | `200 { ok: true, chats: number }` or `400 { error }` |
@@ -107,7 +107,7 @@ and (truncated) message that triggered the last warning/error.
 ### Messages
 
 | Method | Path | Query | Response |
-|---|---|---:|---|
+| --- | --- | ---: | --- |
 | GET | `/messages` | `chatId?`, `limit?` (1–200, default 50), `cursor?` | `200 { items: Message[], nextCursor: string\|null, hasMore: boolean }` |
 | GET | `/messages/summary` | — | `200 { items: MessageSummary[] }` |
 
@@ -124,9 +124,9 @@ Order: newest first. `cursor` is a `Message.id`; pass `nextCursor` for the next 
 ### Settings
 
 | Method | Path | Body | Response |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/settings` | — | `200 { analysisConfigs[], actionRules[], notifiers[] }` |
-| POST | `/settings/analysis-configs` | `{ name, promptTemplate, outputSchema, isActive }` | `201 AnalysisConfig` |
+| POST | `/settings/analysis-configs` | `{ name, promptTemplate, outputSchema, isActive, allowedChatIds? }` | `201 AnalysisConfig` |
 | PATCH | `/settings/analysis-configs/:id` | partial `AnalysisConfig` | `200 AnalysisConfig` |
 | DELETE | `/settings/analysis-configs/:id` | — | `204` |
 | POST | `/settings/notifiers` | `{ type, name, config, isActive }` | `201 Notifier` |
@@ -138,9 +138,13 @@ Order: newest first. `cursor` is a `Message.id`; pass `nextCursor` for the next 
 
 Shapes:
 
-- `AnalysisConfig`: `{ id, name, promptTemplate, outputSchema, isActive, createdAt }`
+- `AnalysisConfig`: `{ id, name, promptTemplate, outputSchema, isActive, createdAt, allowedChatIds: string[] }`
 - `Notifier` (secrets never read back): `{ id, type, name, isActive, configConfigured: true }`
 - `ActionRule`: `{ id, analysisConfigId, condition, notifierId, notifierName, notifierType, isActive }`
+
+`allowedChatIds` is a **chat allowlist**: an empty array (the default) means the config applies
+to every monitored chat; a non-empty array restricts it to exactly those chats (by `Chat.id`).
+When a monitored message arrives in a chat the config isn't scoped to, the config is skipped.
 
 `notifier.type` ∈ `telegram | email | webhook | push | slack`. Secrets are encrypted at rest
 (AES-256-GCM); a `config` value sent on create/update is encrypted, and existing secrets are
@@ -178,7 +182,7 @@ empty for analyses whose verdict matched no rule.
 ### Telegram session
 
 | Method | Path | Body | Response |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/telegram/status` | — | `200 { loggedIn: boolean, login: LoginStatus }` |
 | GET | `/telegram/login` | — | `200 { login: LoginStatus }` |
 | POST | `/telegram/login/start` | `{ phoneNumber }` | `202 { login: LoginStatus }` or `409 { error }` when a flow is already running |

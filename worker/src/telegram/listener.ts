@@ -155,6 +155,7 @@ async function processMessage(
     const configs = await prisma.analysisConfig.findMany({
         where: { isActive: true },
         include: {
+            allowedChats: { select: { id: true } },
             actionRules: {
                 where: { isActive: true },
                 include: { notifier: true },
@@ -172,9 +173,23 @@ async function processMessage(
         return
     }
 
+    const scoped = configs.filter(
+        (cfg) => cfg.allowedChats.length === 0 || cfg.allowedChats.some((allowed) => allowed.id === chat.id),
+    )
+
+    if (scoped.length === 0) {
+        await updateDiagnosticsState({
+            status: 'warning',
+            message: 'No active analysis config covers this chat — message was not analyzed.',
+            updatedAt: new Date().toISOString(),
+            context: { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
+        })
+        return
+    }
+
     let allOk = true
 
-    for (const cfg of configs) {
+    for (const cfg of scoped) {
         let output: Record<string, unknown>
         try {
             output = await runAnalysis(cfg, message.text)
