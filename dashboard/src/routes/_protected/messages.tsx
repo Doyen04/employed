@@ -288,8 +288,8 @@ function MessagesPage() {
 
                     <section className="flex min-h-0 flex-col">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--line) px-4 py-3">
-                            <div>
-                                <h3 className="m-0 text-sm font-semibold text-(--sea-ink) dark:text-zinc-100">
+                            <div className="min-w-0">
+                                <h3 className="m-0 truncate text-sm font-semibold text-(--sea-ink) dark:text-zinc-100">
                                     {selectedChat ? selectedChat.title : 'All chats'}
                                 </h3>
                                 <p className="m-0 text-xs text-(--sea-ink-soft)">
@@ -302,7 +302,7 @@ function MessagesPage() {
                                 aria-label="Choose chat"
                                 value={chatId ?? ''}
                                 onChange={(event) => setChatId(event.target.value || undefined)}
-                                className="rounded-xl border border-(--line) bg-(--header-bg) px-3 py-1.5 text-xs font-semibold text-(--sea-ink) outline-none transition focus:border-(--lagoon) dark:text-zinc-200 lg:hidden"
+                                className="w-full max-w-full rounded-xl border border-(--line) bg-(--header-bg) px-3 py-1.5 text-xs font-semibold text-(--sea-ink) outline-none transition focus:border-(--lagoon) dark:text-zinc-200 sm:w-48 lg:hidden"
                             >
                                 <option value="">All chats</option>
                                 {summaries.map((row) => (
