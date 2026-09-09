@@ -154,7 +154,7 @@ function ChatsPage() {
                             {chats.length} dialogs · <b className="text-(--sea-ink) dark:text-zinc-200">{monitoredCount} monitored</b>
                         </p>
                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="relative">
+                            <div className="relative flex-1 sm:flex-initial">
                                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
                                 <input
                                     type="search"
@@ -162,7 +162,7 @@ function ChatsPage() {
                                     onChange={(event) => setQuery(event.target.value)}
                                     placeholder="Search chats…"
                                     aria-label="Search chats"
-                                    className="w-44 rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
+                                    className="w-full rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100 sm:w-44"
                                 />
                             </div>
                             <div className="flex items-center gap-1 rounded-full border border-(--line) bg-(--surface) p-1">
