@@ -51,8 +51,8 @@ Use established libraries for everything else — hand-rolling these is forbidde
   the `_protected` layout's `beforeLoad`; unauthenticated users are redirected to `/login`.
 - `/login` — public admin sign-in.
 - The `_protected` layout renders the app shell: fixed sidebar navigation + top bar (worker
-  status pill, theme toggle). Feature pages live under it: overview, chats, messages,
-  telegram, action-logs, settings.
+  status pill, theme toggle). Feature pages live under it: overview, chats, diagnostics,
+  messages, telegram, action-logs, settings.
 
 ## Commands
 

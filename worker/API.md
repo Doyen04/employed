@@ -80,23 +80,8 @@ when there are no completed actions. `latestActionAt` is the newest action's ana
 timestamp because `ActionLog` has no creation timestamp. `recentMessages` contains at
 most five records and uses the same `Message` shape documented below.
 
-`diagnostics` is the app-wide health surface. It aggregates **all** failure modes the
-worker can hit, each as an entry in `issues` keyed by source:
-
-- `system.startup` — telegram listener failed to boot
-- `db.connection` — database unreachable
-- `telegram.session` — no session, rejected, revoked/expired auth key, or re-login required
-- `telegram.listener` — connection lost mid-run, connect failures, backfill gaps
-- `telegram.scan` — chat refresh (`POST /chats/refresh`) failed or timed out
-- `login.flow` — Telegram sign-in errors in the web login flow
-- `llm.analyze` — LLM call failed or returned non-JSON
-- `analysis.config` — no active configs, or a message arrived in a chat the active configs don't cover
-- `notifier.dispatch` — a notifier send failed (or unknown notifier type)
-
-`status`/`message`/`updatedAt`/`context` mirror the **worst** current issue (errors beat
-warnings, then newest). Issues are self-clearing: the reporter for each source resolves
-its own key on success (e.g. a successful dispatch removes `notifier.dispatch`), so the
-banner shows every live problem at once instead of just the last one.
+`diagnostics` in the overview is the same payload as `GET /diagnostics` — see the
+[Diagnostics](#diagnostics) section for the full shape and issue keys.
 
 `OverviewAction` shape:
 `{ id, status: 'pending'|'sent'|'failed', retryCount, sentAt: ISO|null,
@@ -134,6 +119,42 @@ banner shows every live problem at once instead of just the last one.
    lastText: string|null, lastReceivedAt: ISO|null }`
 
 Order: newest first. `cursor` is a `Message.id`; pass `nextCursor` for the next page.
+
+### Diagnostics
+
+| Method | Path | Body | Response |
+| --- | --- | --- | --- |
+| GET | `/diagnostics` | — | `200 Diagnostics` |
+
+`Diagnostics` shape:
+
+```text
+{
+  status: 'ok'|'warning'|'error' (worst issue severity),
+  issues: [{ key, severity: 'warning'|'error', message, updatedAt: ISO, context|null }],
+  message: string|null (worst issue's message),
+  updatedAt: ISO|null,
+  context: { chatTitle, messageText }|null
+}
+```
+
+This is the app-wide health surface. It aggregates **all** failure modes the worker can
+hit, each as an entry in `issues` keyed by source:
+
+- `system.startup` — telegram listener failed to boot
+- `db.connection` — database unreachable
+- `telegram.session` — no session, rejected, revoked/expired auth key, or re-login required
+- `telegram.listener` — connection lost mid-run, connect failures, backfill gaps
+- `telegram.scan` — chat refresh (`POST /chats/refresh`) failed or timed out
+- `login.flow` — Telegram sign-in errors in the web login flow
+- `llm.analyze` — LLM call failed or returned non-JSON
+- `analysis.config` — no active configs, or a message arrived in a chat the active configs don't cover
+- `notifier.dispatch` — a notifier send failed (or unknown notifier type)
+
+`status`/`message`/`updatedAt`/`context` mirror the **worst** current issue (errors beat
+warnings, then newest). Issues are self-clearing: the reporter for each source resolves
+its own key on success (e.g. a successful dispatch removes `notifier.dispatch`), so the
+dashboard banner shows every live problem at once instead of just the last one.
 
 ### Settings
 

@@ -3,6 +3,7 @@ import {
     Activity,
     Bot,
     ChevronRight,
+    HeartPulse,
     LayoutDashboard,
     LogOut,
     MessageSquare,
@@ -18,13 +19,14 @@ import { getSession, logout } from '../server/auth'
 import { WorkerStatusPill } from '../components/dashboard/WorkerStatusPill'
 import ThemeToggle from '../components/ThemeToggle'
 
-type AppPath = '/dashboard' | '/messages' | '/analyses' | '/chats' | '/telegram' | '/action-logs' | '/settings'
+type AppPath = '/dashboard' | '/messages' | '/analyses' | '/chats' | '/diagnostics' | '/telegram' | '/settings' | '/action-logs'
 
 const NAV: { to: AppPath; label: string; description: string; icon: LucideIcon }[] = [
     { to: '/dashboard', label: 'Overview', description: 'System pulse', icon: LayoutDashboard },
     { to: '/messages', label: 'Messages', description: 'Intelligence inbox', icon: MessageSquare },
     { to: '/analyses', label: 'Analyses', description: 'LLM verdicts', icon: ScanSearch },
     { to: '/chats', label: 'Chats', description: 'Monitored sources', icon: Radio },
+    { to: '/diagnostics', label: 'Diagnostics', description: 'System health', icon: HeartPulse },
     { to: '/telegram', label: 'Telegram', description: 'Account connection', icon: Send },
     { to: '/settings', label: 'Automation', description: 'Analyses & rules', icon: Bot },
     { to: '/action-logs', label: 'Action logs', description: 'Delivery activity', icon: Activity },
@@ -62,9 +64,9 @@ function AppShell() {
 
                 <nav className="app-sidebar-nav" aria-label="Dashboard navigation">
                     <p>Monitor</p>
-                    {NAV.slice(0, 4).map((item) => <SidebarLink key={item.to} item={item} />)}
+                    {NAV.slice(0, 5).map((item) => <SidebarLink key={item.to} item={item} />)}
                     <p>Configure</p>
-                    {NAV.slice(4).map((item) => <SidebarLink key={item.to} item={item} />)}
+                    {NAV.slice(5).map((item) => <SidebarLink key={item.to} item={item} />)}
                 </nav>
 
                 <div className="sidebar-footer">

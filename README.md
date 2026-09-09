@@ -28,7 +28,7 @@ See `worker/README.md` and `dashboard/README.md` for per-codebase setup.
 ## Development
 
 ```powershell
-# worker (needs local Postgres)
+# worker (needs local Popencode -s ses_f8c56e784ffecBESykilpfJi7Dostgres)
 cd worker
 npm install
 npm run db:generate

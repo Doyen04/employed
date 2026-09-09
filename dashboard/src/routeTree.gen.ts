@@ -16,6 +16,7 @@ import { Route as ProtectedActionLogsRouteImport } from './routes/_protected/act
 import { Route as ProtectedAnalysesRouteImport } from './routes/_protected/analyses'
 import { Route as ProtectedChatsRouteImport } from './routes/_protected/chats'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
+import { Route as ProtectedDiagnosticsRouteImport } from './routes/_protected/diagnostics'
 import { Route as ProtectedMessagesRouteImport } from './routes/_protected/messages'
 import { Route as ProtectedSettingsRouteImport } from './routes/_protected/settings'
 import { Route as ProtectedTelegramRouteImport } from './routes/_protected/telegram'
@@ -54,6 +55,11 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedDiagnosticsRoute = ProtectedDiagnosticsRouteImport.update({
+  id: '/diagnostics',
+  path: '/diagnostics',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedMessagesRoute = ProtectedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/analyses': typeof ProtectedAnalysesRoute
   '/chats': typeof ProtectedChatsRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/diagnostics': typeof ProtectedDiagnosticsRoute
   '/messages': typeof ProtectedMessagesRoute
   '/settings': typeof ProtectedSettingsRoute
   '/telegram': typeof ProtectedTelegramRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/analyses': typeof ProtectedAnalysesRoute
   '/chats': typeof ProtectedChatsRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/diagnostics': typeof ProtectedDiagnosticsRoute
   '/messages': typeof ProtectedMessagesRoute
   '/settings': typeof ProtectedSettingsRoute
   '/telegram': typeof ProtectedTelegramRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_protected/analyses': typeof ProtectedAnalysesRoute
   '/_protected/chats': typeof ProtectedChatsRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
+  '/_protected/diagnostics': typeof ProtectedDiagnosticsRoute
   '/_protected/messages': typeof ProtectedMessagesRoute
   '/_protected/settings': typeof ProtectedSettingsRoute
   '/_protected/telegram': typeof ProtectedTelegramRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/analyses'
     | '/chats'
     | '/dashboard'
+    | '/diagnostics'
     | '/messages'
     | '/settings'
     | '/telegram'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/analyses'
     | '/chats'
     | '/dashboard'
+    | '/diagnostics'
     | '/messages'
     | '/settings'
     | '/telegram'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_protected/analyses'
     | '/_protected/chats'
     | '/_protected/dashboard'
+    | '/_protected/diagnostics'
     | '/_protected/messages'
     | '/_protected/settings'
     | '/_protected/telegram'
@@ -199,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedDashboardRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/diagnostics': {
+      id: '/_protected/diagnostics'
+      path: '/diagnostics'
+      fullPath: '/diagnostics'
+      preLoaderRoute: typeof ProtectedDiagnosticsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/messages': {
       id: '/_protected/messages'
       path: '/messages'
@@ -228,6 +247,7 @@ interface ProtectedRouteChildren {
   ProtectedAnalysesRoute: typeof ProtectedAnalysesRoute
   ProtectedChatsRoute: typeof ProtectedChatsRoute
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
+  ProtectedDiagnosticsRoute: typeof ProtectedDiagnosticsRoute
   ProtectedMessagesRoute: typeof ProtectedMessagesRoute
   ProtectedSettingsRoute: typeof ProtectedSettingsRoute
   ProtectedTelegramRoute: typeof ProtectedTelegramRoute
@@ -238,6 +258,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAnalysesRoute: ProtectedAnalysesRoute,
   ProtectedChatsRoute: ProtectedChatsRoute,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
+  ProtectedDiagnosticsRoute: ProtectedDiagnosticsRoute,
   ProtectedMessagesRoute: ProtectedMessagesRoute,
   ProtectedSettingsRoute: ProtectedSettingsRoute,
   ProtectedTelegramRoute: ProtectedTelegramRoute,
