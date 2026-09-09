@@ -79,7 +79,7 @@ export function LogTable<T>({
                             aria-label={rowAriaLabel?.(row)}
                             className="w-full cursor-pointer rounded-xl border border-(--line)/70 bg-(--header-bg) px-4 py-3 text-left transition hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-(--lagoon)/40 dark:hover:bg-zinc-800/60"
                         >
-                            <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
                                 <div className="min-w-0">{titleColumn.cell(row)}</div>
                                 {timeColumn ? <div className="shrink-0">{timeColumn.cell(row)}</div> : null}
                             </div>

@@ -354,7 +354,7 @@ function StatusBadge({ status }: { status: WorkerActionLog['status'] }) {
         failed: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     }
     return (
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${styles[status]}`}>
+        <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${styles[status]}`}>
             {status.toUpperCase()}
         </span>
     )

@@ -221,7 +221,7 @@ function ChatsPage() {
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3">
                                                 <span
-                                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${chat.isMonitored
+                                                    className={`inline-flex whitespace-nowrap items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${chat.isMonitored
                                                         ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)'
                                                         : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft) dark:bg-zinc-800 dark:text-zinc-400'
                                                     }`}

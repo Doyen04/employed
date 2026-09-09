@@ -371,7 +371,7 @@ function StatCard({
 function FiredBadge({ analysis }: { analysis: WorkerAnalysis }) {
     if (!analysis.fired) {
         return (
-            <span className="rounded-full bg-[rgba(79,61,53,0.08)] px-2.5 py-0.5 text-xs font-semibold text-(--sea-ink-soft)">
+            <span className="whitespace-nowrap rounded-full bg-[rgba(79,61,53,0.08)] px-2.5 py-0.5 text-xs font-semibold text-(--sea-ink-soft)">
                 NO ACTION
             </span>
         )
@@ -391,7 +391,7 @@ function FiredBadge({ analysis }: { analysis: WorkerAnalysis }) {
                 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                 : 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
 
-    return <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${className}`}>{label}</span>
+    return <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${className}`}>{label}</span>
 }
 
 function ActionStatusBadge({ status, retryCount }: { status: WorkerAnalysis['actions'][number]['status']; retryCount: number }) {
@@ -401,7 +401,7 @@ function ActionStatusBadge({ status, retryCount }: { status: WorkerAnalysis['act
         failed: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     }
     return (
-        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${styles[status]}`}>
+        <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${styles[status]}`}>
             {status.toUpperCase()}
             {retryCount > 0 ? ` · ${retryCount} retry${retryCount === 1 ? '' : 's'}` : ''}
         </span>
