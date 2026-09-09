@@ -41,8 +41,8 @@ export function MobileCards<T>({
                                 : ''
                             }`}
                     >
-                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
-                            <div className="min-w-0">{title(row)}</div>
+                        <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
+                            <div className="min-w-0 max-w-full">{title(row)}</div>
                             {overlay ? <div className="shrink-0">{overlay(row)}</div> : null}
                         </div>
                         {cells && cells.length > 0 ? (
@@ -52,7 +52,7 @@ export function MobileCards<T>({
                                         <dt className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
                                             {cell.label}
                                         </dt>
-                                        <dd className="min-w-0 truncate text-xs text-(--sea-ink)">
+                                        <dd className="min-w-0 max-w-full truncate text-xs text-(--sea-ink)">
                                             {cell.value(row)}
                                         </dd>
                                     </div>

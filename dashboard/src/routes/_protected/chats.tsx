@@ -104,11 +104,11 @@ function ChatsPage() {
         {
             header: 'Chat',
             cell: (chat) => (
-                <div className="flex items-center gap-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
                         {initials(chat.title)}
                     </span>
-                    <span className="truncate font-medium text-(--sea-ink) dark:text-zinc-100">{chat.title}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium text-(--sea-ink) dark:text-zinc-100">{chat.title}</span>
                 </div>
             ),
         },
