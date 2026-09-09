@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { MobileCards } from './MobileCards'
 
 export interface LogTableColumn<T> {
     header: ReactNode
@@ -18,7 +19,7 @@ export function LogTable<T>({
     columns: LogTableColumn<T>[]
     rows: T[]
     rowKey: (row: T) => string
-    onRowClick: (row: T) => void
+    onRowClick?: (row: T) => void
     rowAriaLabel?: (row: T) => string
 }) {
     const visible = columns.filter((column) => !column.hiddenOnMobile)
@@ -47,9 +48,12 @@ export function LogTable<T>({
                         {rows.map((row) => (
                             <tr
                                 key={rowKey(row)}
-                                onClick={() => onRowClick(row)}
+                                onClick={onRowClick ? () => onRowClick(row) : undefined}
                                 aria-label={rowAriaLabel?.(row)}
-                                className="cursor-pointer border-t border-(--line)/70 transition hover:bg-white/50 dark:hover:bg-zinc-800/60"
+                                className={`border-t border-(--line)/70 ${onRowClick
+                                        ? 'cursor-pointer transition hover:bg-white/50 dark:hover:bg-zinc-800/60'
+                                        : ''
+                                    }`}
                             >
                                 {columns.map((column, index) => (
                                     <td
@@ -66,44 +70,20 @@ export function LogTable<T>({
                 </table>
             </div>
 
-            <ul className="flex flex-col gap-2 md:hidden">
-                {rows.map((row) => (
-                    <li key={rowKey(row)}>
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => onRowClick(row)}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter' || event.key === ' ') onRowClick(row)
-                            }}
-                            aria-label={rowAriaLabel?.(row)}
-                            className="w-full cursor-pointer rounded-xl border border-(--line)/70 bg-(--header-bg) px-4 py-3 text-left transition hover:bg-white/50 focus:outline-none focus:ring-2 focus:ring-(--lagoon)/40 dark:hover:bg-zinc-800/60"
-                        >
-                            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
-                                <div className="min-w-0">{titleColumn.cell(row)}</div>
-                                {timeColumn ? <div className="shrink-0">{timeColumn.cell(row)}</div> : null}
-                            </div>
-                            {metaColumns.length > 0 ? (
-                                <dl className="mt-2 divide-y divide-(--line)/60">
-                                    {metaColumns.map((column, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-baseline justify-between gap-3 py-1.5"
-                                        >
-                                            <dt className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
-                                                {column.header}
-                                            </dt>
-                                            <dd className="min-w-0 truncate text-xs text-(--sea-ink)">
-                                                {column.cell(row)}
-                                            </dd>
-                                        </div>
-                                    ))}
-                                </dl>
-                            ) : null}
-                        </div>
-                    </li>
-                ))}
-            </ul>
+            <div className="md:hidden">
+                <MobileCards
+                    rows={rows}
+                    rowKey={rowKey}
+                    title={(row) => titleColumn.cell(row)}
+                    overlay={timeColumn ? (row) => timeColumn.cell(row) : undefined}
+                    cells={metaColumns.map((column) => ({
+                        label: column.header,
+                        value: (row) => column.cell(row),
+                    }))}
+                    onRowClick={onRowClick}
+                    rowAriaLabel={rowAriaLabel}
+                />
+            </div>
         </div>
     )
 }

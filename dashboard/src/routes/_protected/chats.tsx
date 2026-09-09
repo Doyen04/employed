@@ -6,6 +6,8 @@ import { listChats, refreshChats, updateChat } from '../../server/chats'
 import { getTelegramStatus } from '../../server/telegram'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
+import { LogTable } from '../../components/dashboard/LogTable'
+import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import type { WorkerChat } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -98,6 +100,57 @@ function ChatsPage() {
         })
     }, [chats, filter, query])
 
+    const columns: LogTableColumn<WorkerChat>[] = [
+        {
+            header: 'Chat',
+            cell: (chat) => (
+                <div className="flex items-center gap-2.5">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
+                        {initials(chat.title)}
+                    </span>
+                    <span className="truncate font-medium text-(--sea-ink) dark:text-zinc-100">{chat.title}</span>
+                </div>
+            ),
+        },
+        {
+            header: 'Telegram ID',
+            hiddenOnMobile: true,
+            cell: (chat) => (
+                <span className="whitespace-nowrap font-mono text-xs text-(--sea-ink-soft)">{chat.telegramChatId}</span>
+            ),
+        },
+        {
+            header: 'Status',
+            cell: (chat) => (
+                <span
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${chat.isMonitored
+                        ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)'
+                        : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft) dark:bg-zinc-800 dark:text-zinc-400'
+                    }`}
+                >
+                    {chat.isMonitored && <Radio className="h-3 w-3" aria-hidden="true" />}
+                    {chat.isMonitored ? 'Monitoring' : 'Paused'}
+                </span>
+            ),
+        },
+        {
+            header: 'Action',
+            align: 'right',
+            cell: (chat) => (
+                <button
+                    onClick={() => void handleToggleMonitor(chat)}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                        chat.isMonitored
+                            ? 'bg-zinc-200/60 text-(--sea-ink-soft) hover:bg-zinc-300/60 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                            : 'bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) dark:text-(--lagoon) border border-[rgba(236,185,20,0.35)] hover:opacity-90'
+                    }`}
+                >
+                    {chat.isMonitored ? 'Pause' : 'Monitor'}
+                </button>
+            ),
+        },
+    ]
+
     if (loading) return <PageSkeleton label="Loading chats" />
 
     return (
@@ -148,24 +201,23 @@ function ChatsPage() {
                     </p>
                 </div>
             ) : (
-                <div className="overflow-hidden rounded-2xl border border-(--line)">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-(--line) bg-(--surface-strong) px-4 py-3">
-                        <p className="m-0 text-xs text-(--sea-ink-soft)">
-                            {chats.length} dialogs · <b className="text-(--sea-ink) dark:text-zinc-200">{monitoredCount} monitored</b>
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="relative flex-1 sm:flex-initial">
-                                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
-                                <input
-                                    type="search"
-                                    value={query}
-                                    onChange={(event) => setQuery(event.target.value)}
-                                    placeholder="Search chats…"
-                                    aria-label="Search chats"
-                                    className="w-full rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100 sm:w-44"
-                                />
-                            </div>
-                            <div className="flex items-center gap-1 rounded-full border border-(--line) bg-(--surface) p-1">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--line) bg-(--surface-strong) px-4 py-3">
+                    <p className="m-0 text-xs text-(--sea-ink-soft)">
+                        {chats.length} dialogs · <b className="text-(--sea-ink) dark:text-zinc-200">{monitoredCount} monitored</b>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative flex-1 sm:flex-initial">
+                            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
+                            <input
+                                type="search"
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                placeholder="Search chats…"
+                                aria-label="Search chats"
+                                className="w-full rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100 sm:w-44"
+                            />
+                        </div>
+                        <div className="flex items-center gap-1 rounded-full border border-(--line) bg-(--surface) p-1">
                             {FILTERS.map(({ key, label }) => (
                                 <button
                                     key={key}
@@ -183,72 +235,17 @@ function ChatsPage() {
                     </div>
                 </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead>
-                                <tr className="border-b border-(--line) text-xs uppercase tracking-wider text-(--sea-ink-soft)">
-                                    <th className="px-4 py-2.5 font-semibold">Chat</th>
-                                    <th className="hidden whitespace-nowrap px-4 py-2.5 font-semibold md:table-cell">Telegram ID</th>
-                                    <th className="whitespace-nowrap px-4 py-2.5 font-semibold">Status</th>
-                                    <th className="whitespace-nowrap px-4 py-2.5 text-right font-semibold">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-8 text-center text-xs text-(--sea-ink-soft)">
-                                            No chats match {query ? `"${query}"` : 'the filter'}.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filtered.map((chat) => (
-                                        <tr
-                                            key={chat.id}
-                                            className="border-b border-(--line) transition last:border-0 hover:bg-(--surface-strong)"
-                                        >
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2.5">
-                                                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
-                                                        {initials(chat.title)}
-                                                    </span>
-                                                    <span className="truncate font-medium text-(--sea-ink) dark:text-zinc-100">
-                                                        {chat.title}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-xs text-(--sea-ink-soft) md:table-cell">
-                                                {chat.telegramChatId}
-                                            </td>
-                                            <td className="whitespace-nowrap px-4 py-3">
-                                                <span
-                                                    className={`inline-flex whitespace-nowrap items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${chat.isMonitored
-                                                        ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)'
-                                                        : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft) dark:bg-zinc-800 dark:text-zinc-400'
-                                                    }`}
-                                                >
-                                                    {chat.isMonitored && <Radio className="h-3 w-3" aria-hidden="true" />}
-                                                    {chat.isMonitored ? 'Monitoring' : 'Paused'}
-                                                </span>
-                                            </td>
-                                            <td className="whitespace-nowrap px-4 py-3 text-right">
-                                                <button
-                                                    onClick={() => void handleToggleMonitor(chat)}
-                                                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                                                        chat.isMonitored
-                                                            ? 'bg-zinc-200/60 text-(--sea-ink-soft) hover:bg-zinc-300/60 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
-                                                            : 'bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) dark:text-(--lagoon) border border-[rgba(236,185,20,0.35)] hover:opacity-90'
-                                                    }`}
-                                                >
-                                                    {chat.isMonitored ? 'Pause' : 'Monitor'}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                {filtered.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-(--sea-ink-soft)">
+                        No chats match {query ? `"${query}"` : 'the filter'}.
+                    </p>
+                ) : (
+                    <LogTable
+                        rows={filtered}
+                        rowKey={(row) => row.id}
+                        columns={columns}
+                    />
+                )}
             )}
         </Panel>
     )

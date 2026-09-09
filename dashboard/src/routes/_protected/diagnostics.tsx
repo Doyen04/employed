@@ -5,6 +5,8 @@ import { AlertTriangle, CheckCircle2, RefreshCw, XCircle } from 'lucide-react'
 import { getDiagnostics } from '../../server/diagnostics'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
+import { LogTable } from '../../components/dashboard/LogTable'
+import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import type { WorkerDiagnosticIssue, WorkerDiagnostics } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -71,6 +73,39 @@ function DiagnosticsPage() {
         .map((key) => ({ key, title: key, issue: issueByKey.get(key)! }))
     const rows: SubsystemRow[] = [...knownRows, ...extraRows]
 
+    const columns: LogTableColumn<SubsystemRow>[] = [
+        {
+            header: 'Subsystem',
+            cell: (row) => <span className="font-semibold text-(--sea-ink)">{row.title}</span>,
+        },
+        {
+            header: 'Key',
+            hiddenOnMobile: true,
+            cell: (row) => (
+                <span className="whitespace-nowrap font-mono text-xs text-(--sea-ink-soft)">{row.key}</span>
+            ),
+        },
+        {
+            header: 'Status',
+            cell: (row) => <SubsystemBadge issue={row.issue} />,
+        },
+        {
+            header: 'Message',
+            cell: (row) => (
+                <span className="text-xs text-(--sea-ink-soft)">{row.issue ? row.issue.message : '—'}</span>
+            ),
+        },
+        {
+            header: 'Updated',
+            align: 'right',
+            cell: (row) => (
+                <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">
+                    {row.issue ? formatTime(row.issue.updatedAt) : '—'}
+                </span>
+            ),
+        },
+    ]
+
     const errorCount = issues.filter((issue) => issue.severity === 'error').length
     const warningCount = issues.filter((issue) => issue.severity === 'warning').length
     const healthyCount = rows.length - issueByKey.size
@@ -128,55 +163,7 @@ function DiagnosticsPage() {
                             </div>
                         )}
 
-                        <div className="overflow-hidden rounded-xl border border-(--line)">
-                            <div className="hidden overflow-x-auto md:block">
-                                <table className="w-full border-collapse text-sm">
-                                    <thead>
-                                        <tr className="border-b border-(--line) text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
-                                            <th className="px-4 py-2.5 font-semibold">Subsystem</th>
-                                            <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Key</th>
-                                            <th className="whitespace-nowrap px-4 py-2.5 font-semibold">Status</th>
-                                            <th className="px-4 py-2.5 font-semibold">Message</th>
-                                            <th className="whitespace-nowrap px-4 py-2.5 text-right font-semibold">Updated</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {rows.map((row) => (
-                                            <tr key={row.key} className="border-b border-(--line)/70 transition last:border-0">
-                                                <td className="px-4 py-3 font-semibold text-(--sea-ink)">{row.title}</td>
-                                                <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-xs text-(--sea-ink-soft) lg:table-cell">
-                                                    {row.key}
-                                                </td>
-                                                <td className="whitespace-nowrap px-4 py-3"><SubsystemBadge issue={row.issue} /></td>
-                                                <td className="px-4 py-3 text-xs text-(--sea-ink-soft)">
-                                                    {row.issue ? row.issue.message : '—'}
-                                                </td>
-                                                <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-(--sea-ink-soft)">
-                                                    {row.issue ? formatTime(row.issue.updatedAt) : '—'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <ul className="flex flex-col md:hidden">
-                                {rows.map((row) => (
-                                    <li key={row.key} className="border-b border-(--line)/70 px-4 py-3 last:border-0">
-                                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                                            <span className="min-w-0 truncate font-semibold text-(--sea-ink)">
-                                                {row.title}
-                                            </span>
-                                            <SubsystemBadge issue={row.issue} />
-                                        </div>
-                                        <p className="m-0 mt-1 text-xs text-(--sea-ink-soft)">
-                                            {row.issue ? row.issue.message : 'Operating normally'}
-                                        </p>
-                                        <p className="m-0 mt-0.5 font-mono text-[10px] text-(--sea-ink-soft)">{row.key}</p>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <LogTable rows={rows} rowKey={(row) => row.key} columns={columns} />
 
                         <details className="mt-6">
                             <summary className="cursor-pointer select-none text-xs font-semibold text-(--sea-ink-soft) transition hover:text-(--sea-ink)">
