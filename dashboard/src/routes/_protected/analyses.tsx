@@ -103,9 +103,9 @@ useEffect(() => {
                         disabled={refreshing}
                         aria-label="Refresh analyses"
                         title="Refresh analyses"
-                        className="grid h-8 w-8 place-items-center rounded-lg border border-(--line) text-(--sea-ink-soft) transition hover:border-(--lagoon) hover:text-(--sea-ink) disabled:opacity-50"
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-(--line) text-(--sea-ink-soft) transition hover:border-(--lagoon) hover:text-(--sea-ink) disabled:opacity-50 md:h-8 md:w-8"
                     >
-                        <RefreshCw className={refreshing ? 'animate-spin' : 'h-4 w-4'} aria-hidden="true" />
+                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
                     </button>
                 }
             >
@@ -158,7 +158,7 @@ useEffect(() => {
                                     type="search"
                                     value={query}
                                     onChange={(event) => setQuery(event.target.value)}
-                                    placeholder="Search by chat, config, sender or message…"
+                                    placeholder="Search analyses…"
                                     className="w-full rounded-lg border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-sm text-(--sea-ink) outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
                                 />
                             </div>
@@ -350,7 +350,7 @@ function StatCard({
                 <Icon className="h-4 w-4" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-                <p className="m-0 truncate text-[11px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
+                <p className="m-0 text-[11px] font-semibold leading-snug uppercase tracking-wider text-(--sea-ink-soft)">
                     {label}
                 </p>
                 <p className="m-0 text-lg font-bold leading-tight text-(--sea-ink)">{value}</p>
