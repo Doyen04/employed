@@ -74,11 +74,11 @@ export function LogTable<T>({
                 <MobileCards
                     rows={rows}
                     rowKey={rowKey}
-                    title={(row) => titleColumn.cell(row)}
-                    overlay={timeColumn ? (row) => timeColumn.cell(row) : undefined}
+                    title={(row: T) => titleColumn.cell(row)}
+                    overlay={timeColumn ? (row: T) => timeColumn.cell(row) : undefined}
                     cells={metaColumns.map((column) => ({
                         label: column.header,
-                        value: (row) => column.cell(row),
+                        value: (row: T) => column.cell(row),
                     }))}
                     onRowClick={onRowClick}
                     rowAriaLabel={rowAriaLabel}
