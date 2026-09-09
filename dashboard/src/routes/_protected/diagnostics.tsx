@@ -12,17 +12,19 @@ export const Route = createFileRoute('/_protected/diagnostics')({ component: Dia
 
 const POLL_MS = 15_000
 
-const KEY_TITLES: Record<string, string> = {
-    'system.startup': 'Startup',
-    'db.connection': 'Database',
-    'telegram.session': 'Telegram session',
-    'telegram.listener': 'Telegram connection',
-    'telegram.scan': 'Chat scan',
-    'login.flow': 'Telegram login',
-    'llm.analyze': 'Analysis',
-    'analysis.config': 'Analysis config',
-    'notifier.dispatch': 'Notifier',
-}
+const SUBSYSTEM_KEYS: { key: string; title: string }[] = [
+    { key: 'system.startup', title: 'Startup' },
+    { key: 'db.connection', title: 'Database' },
+    { key: 'telegram.session', title: 'Telegram session' },
+    { key: 'telegram.listener', title: 'Telegram connection' },
+    { key: 'telegram.scan', title: 'Chat scan' },
+    { key: 'login.flow', title: 'Telegram login' },
+    { key: 'llm.analyze', title: 'Analysis' },
+    { key: 'analysis.config', title: 'Analysis config' },
+    { key: 'notifier.dispatch', title: 'Notifier' },
+]
+
+type SubsystemRow = { key: string; title: string; issue: WorkerDiagnosticIssue | null }
 
 function DiagnosticsPage() {
     const [state, setState] = useState<WorkerDiagnostics | null>(null)
@@ -55,8 +57,23 @@ function DiagnosticsPage() {
     const issues = state?.issues ?? []
     const status = state?.status ?? 'ok'
     const updatedAt = state?.updatedAt ?? null
+
+    const issueByKey = new Map<string, WorkerDiagnosticIssue>()
+    for (const issue of issues) issueByKey.set(issue.key, issue)
+
+    const knownRows: SubsystemRow[] = SUBSYSTEM_KEYS.map(({ key, title }) => ({
+        key,
+        title,
+        issue: issueByKey.get(key) ?? null,
+    }))
+    const extraRows: SubsystemRow[] = [...issueByKey.keys()]
+        .filter((key) => !SUBSYSTEM_KEYS.some((row) => row.key === key))
+        .map((key) => ({ key, title: key, issue: issueByKey.get(key)! }))
+    const rows: SubsystemRow[] = [...knownRows, ...extraRows]
+
     const errorCount = issues.filter((issue) => issue.severity === 'error').length
     const warningCount = issues.filter((issue) => issue.severity === 'warning').length
+    const healthyCount = rows.length - issueByKey.size
 
     return (
         <>
@@ -78,89 +95,123 @@ function DiagnosticsPage() {
             >
                 {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
 
-                <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4">
-                    <StatusCard label="Status" value={statusLabel(status)} tone={statusTone(status)} />
-                    <StatusCard
-                        icon={CheckCircle2}
-                        label="OK areas"
-                        value={String(issues.length)}
-                        tone="muted"
-                        detail="(issues tracked)"
-                    />
-                    <StatusCard icon={AlertTriangle} label="Warnings" value={warningCount} tone="warning" />
-                    <StatusCard icon={XCircle} label="Errors" value={errorCount} tone="error" />
-                </div>
-
-                <p className="mb-4 text-xs text-(--sea-ink-soft)">
-                    {updatedAt ? `Last change reported at ${formatTime(updatedAt)}` : 'No changes reported yet'}
-                    {' — auto-refreshes every 15s'}
-                </p>
-
-                {issues.length === 0 ? (
-                    <div className="flex items-start gap-2.5 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 dark:border-emerald-700/40 dark:bg-emerald-900/20">
-                        <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-500" aria-hidden="true" />
-                        <div className="min-w-0">
-                            <p className="m-0 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                                All systems operational
-                            </p>
-                            <p className="m-0 text-xs text-emerald-600/90 dark:text-emerald-300/80">
-                                No current failures across Telegram, analysis, dispatch, or the database.
-                            </p>
+                {state !== null ? (
+                    <>
+                        <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4">
+                            <StatusCard label="Status" value={statusLabel(status)} tone={statusTone(status)} />
+                            <StatusCard
+                                icon={CheckCircle2}
+                                label="Healthy systems"
+                                value={healthyCount}
+                                tone="positive"
+                            />
+                            <StatusCard icon={AlertTriangle} label="Warnings" value={warningCount} tone="warning" />
+                            <StatusCard icon={XCircle} label="Errors" value={errorCount} tone="error" />
                         </div>
-                    </div>
-                ) : (
-                    <div className="space-y-2.5">
-                        {issues.map((issue) => (
-                            <IssueCard key={issue.key} issue={issue} />
-                        ))}
-                    </div>
-                )}
 
-                <details className="mt-6">
-                    <summary className="cursor-pointer select-none text-xs font-semibold text-(--sea-ink-soft) transition hover:text-(--sea-ink)">
-                        Raw response
-                    </summary>
-                    <pre className="mt-2 overflow-x-auto rounded-xl border border-(--line) bg-(--surface-strong) p-3 text-[11px] leading-relaxed text-(--sea-ink-soft)">
-                        {JSON.stringify(state, null, 2)}
-                    </pre>
-                </details>
+                        <p className="mb-4 text-xs text-(--sea-ink-soft)">
+                            {updatedAt ? `Last change reported at ${formatTime(updatedAt)}` : 'No changes reported yet'}
+                            {' — auto-refreshes every 15s'}
+                        </p>
+
+                        {issues.length === 0 && (
+                            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 dark:border-emerald-700/40 dark:bg-emerald-900/20">
+                                <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-emerald-500" aria-hidden="true" />
+                                <div className="min-w-0">
+                                    <p className="m-0 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                                        All systems operational
+                                    </p>
+                                    <p className="m-0 text-xs text-emerald-600/90 dark:text-emerald-300/80">
+                                        Every subsystem is reporting healthy.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="overflow-hidden rounded-xl border border-(--line)">
+                            <div className="hidden overflow-x-auto md:block">
+                                <table className="w-full border-collapse text-sm">
+                                    <thead>
+                                        <tr className="border-b border-(--line) text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
+                                            <th className="px-4 py-2.5 font-semibold">Subsystem</th>
+                                            <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Key</th>
+                                            <th className="whitespace-nowrap px-4 py-2.5 font-semibold">Status</th>
+                                            <th className="px-4 py-2.5 font-semibold">Message</th>
+                                            <th className="whitespace-nowrap px-4 py-2.5 text-right font-semibold">Updated</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {rows.map((row) => (
+                                            <tr key={row.key} className="border-b border-(--line)/70 transition last:border-0">
+                                                <td className="px-4 py-3 font-semibold text-(--sea-ink)">{row.title}</td>
+                                                <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-xs text-(--sea-ink-soft) lg:table-cell">
+                                                    {row.key}
+                                                </td>
+                                                <td className="whitespace-nowrap px-4 py-3"><SubsystemBadge issue={row.issue} /></td>
+                                                <td className="px-4 py-3 text-xs text-(--sea-ink-soft)">
+                                                    {row.issue ? row.issue.message : '—'}
+                                                </td>
+                                                <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-(--sea-ink-soft)">
+                                                    {row.issue ? formatTime(row.issue.updatedAt) : '—'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <ul className="flex flex-col md:hidden">
+                                {rows.map((row) => (
+                                    <li key={row.key} className="border-b border-(--line)/70 px-4 py-3 last:border-0">
+                                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                                            <span className="min-w-0 truncate font-semibold text-(--sea-ink)">
+                                                {row.title}
+                                            </span>
+                                            <SubsystemBadge issue={row.issue} />
+                                        </div>
+                                        <p className="m-0 mt-1 text-xs text-(--sea-ink-soft)">
+                                            {row.issue ? row.issue.message : 'Operating normally'}
+                                        </p>
+                                        <p className="m-0 mt-0.5 font-mono text-[10px] text-(--sea-ink-soft)">{row.key}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <details className="mt-6">
+                            <summary className="cursor-pointer select-none text-xs font-semibold text-(--sea-ink-soft) transition hover:text-(--sea-ink)">
+                                Raw response
+                            </summary>
+                            <pre className="mt-2 overflow-x-auto rounded-xl border border-(--line) bg-(--surface-strong) p-3 text-[11px] leading-relaxed text-(--sea-ink-soft)">
+                                {JSON.stringify(state, null, 2)}
+                            </pre>
+                        </details>
+                    </>
+                ) : null}
             </Panel>
         </>
     )
 }
 
-function IssueCard({ issue }: { issue: WorkerDiagnosticIssue }) {
+function SubsystemBadge({ issue }: { issue: WorkerDiagnosticIssue | null }) {
+    if (!issue) {
+        return (
+            <span className="inline-flex whitespace-nowrap rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                Healthy
+            </span>
+        )
+    }
     const isError = issue.severity === 'error'
-    const wrapper = isError
-        ? 'border-red-300 bg-red-50 dark:bg-red-900/20'
-        : 'border-amber-300 bg-amber-50 dark:bg-amber-900/20'
-    const Icon = isError ? XCircle : AlertTriangle
-    const accent = isError ? 'text-red-500' : 'text-amber-600'
-
     return (
-        <div className={`rounded-xl border px-4 py-3 ${wrapper}`}>
-            <div className="flex items-start gap-2.5">
-                <Icon className={`mt-0.5 h-4.5 w-4.5 shrink-0 ${accent}`} aria-hidden="true" />
-                <div className="min-w-0 flex-1">
-                    <p className={`m-0 text-sm font-semibold ${isError ? 'text-red-700 dark:text-red-300' : 'text-amber-800 dark:text-amber-300'}`}>
-                        {issueTitle(issue)}
-                    </p>
-                    <p className={`m-0 text-xs ${isError ? 'text-red-600/90 dark:text-red-300/80' : 'text-amber-700/90 dark:text-amber-200/80'}`}>
-                        {issue.message}
-                        <span className="font-medium opacity-80">
-                            {' · '}
-                            {formatTime(issue.updatedAt)}
-                        </span>
-                    </p>
-                    {issue.context ? (
-                        <p className={`m-0 mt-1 text-xs ${isError ? 'text-red-600/90 dark:text-red-300/80' : 'text-amber-700/90 dark:text-amber-200/80'}`}>
-                            <span className="font-semibold">{issue.context.chatTitle}</span>: “
-                            {truncate(issue.context.messageText, 160)}”
-                        </p>
-                    ) : null}
-                </div>
-            </div>
-        </div>
+        <span
+            className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                isError
+                    ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+            }`}
+        >
+            {isError ? 'Error' : 'Warning'}
+        </span>
     )
 }
 
@@ -169,13 +220,11 @@ function StatusCard({
     label,
     value,
     tone,
-    detail,
 }: {
     icon?: typeof CheckCircle2
     label: string
     value: string | number
     tone: 'accent' | 'positive' | 'warning' | 'error' | 'muted'
-    detail?: string
 }) {
     const tones: Record<string, string> = {
         accent: 'border-(--lagoon) text-(--lagoon)',
@@ -191,13 +240,8 @@ function StatusCard({
                 {label}
             </div>
             <p className={`m-0 mt-1 text-xl font-bold ${tones[tone]}`}>{value}</p>
-            {detail ? <p className="m-0 text-[11px] text-(--sea-ink-soft)">{detail}</p> : null}
         </div>
     )
-}
-
-function issueTitle(issue: WorkerDiagnosticIssue): string {
-    return KEY_TITLES[issue.key] ?? issue.key
 }
 
 function statusLabel(status: WorkerDiagnostics['status']): string {
@@ -216,8 +260,4 @@ function formatTime(iso: string): string {
     const date = new Date(iso)
     if (Number.isNaN(date.getTime())) return iso
     return date.toLocaleString()
-}
-
-function truncate(value: string, max: number): string {
-    return value.length > max ? `${value.slice(0, max)}…` : value
 }

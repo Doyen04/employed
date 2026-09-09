@@ -18,7 +18,6 @@ import type { LucideIcon } from 'lucide-react'
 
 import { getOverview } from '../../server/overview'
 import { getTelegramStatus } from '../../server/telegram'
-import { DiagnosticsBanner } from '../../components/dashboard/DiagnosticsBanner'
 import { LiveFeed } from '../../components/dashboard/LiveFeed'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerOverview, WorkerOverviewAction, WorkerTelegramStatus } from '../../lib/types'
@@ -113,8 +112,6 @@ function OverviewPage() {
             )}
 
             {!isConfigured && <SetupBanner overview={overview} telegram={telegram} />}
-
-            <DiagnosticsBanner diagnostics={overview.diagnostics} />
 
             <section className="metric-grid" aria-label="Operational metrics">
                 <MetricCard
