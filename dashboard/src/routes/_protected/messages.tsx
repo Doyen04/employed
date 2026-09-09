@@ -141,7 +141,7 @@ function MessagesPage() {
                 <div>
                     <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Messages</h2>
                     <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
-                        Every message from your monitored chats — pick one on the left to focus its thread.
+                        Every message from your monitored chats — browse the inbox or focus a single thread.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -298,22 +298,41 @@ function MessagesPage() {
                                         : `Newest first · ${totalMessages.toLocaleString()} total`}
                                 </p>
                             </div>
-                            <select
-                                aria-label="Choose chat"
-                                value={chatId ?? ''}
-                                onChange={(event) => setChatId(event.target.value || undefined)}
-                                className="rounded-xl border border-(--line) bg-(--header-bg) px-3 py-1.5 text-xs font-semibold text-(--sea-ink) outline-none transition focus:border-(--lagoon) dark:text-zinc-200 lg:hidden"
+                            </div>
+                        <div
+                            className="flex items-center gap-2 overflow-x-auto border-b border-(--line) px-4 py-2 [&::-webkit-scrollbar]:hidden lg:hidden"
+                            style={{ scrollbarWidth: 'none' }}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setChatId(undefined)}
+                                aria-pressed={chatId === undefined}
+                                className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                    chatId === undefined
+                                        ? 'border-transparent bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) dark:text-(--lagoon)'
+                                        : 'border-(--line) text-(--sea-ink-soft)'
+                                }`}
                             >
-                                <option value="">All chats</option>
-                                {summaries.map((row) => (
-                                    <option key={row.chatId} value={row.chatId}>
-                                        {row.title}
-                                    </option>
-                                ))}
-                            </select>
+                                All chats
+                            </button>
+                            {summaries.map((row) => (
+                                <button
+                                    key={row.chatId}
+                                    type="button"
+                                    onClick={() => setChatId(row.chatId)}
+                                    aria-pressed={chatId === row.chatId}
+                                    className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                        chatId === row.chatId
+                                            ? 'border-transparent bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) dark:text-(--lagoon)'
+                                            : 'border-(--line) text-(--sea-ink-soft)'
+                                    }`}
+                                >
+                                    {row.title}
+                                </button>
+                            ))}
                         </div>
 
-                        <div ref={threadRef} className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                        <div ref={threadRef} className="min-h-[20rem] h-[calc(100dvh-19rem)] flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 lg:h-auto lg:min-h-0">
                             {loading ? (
                                 <div className="flex items-center justify-center py-16 text-xs text-(--sea-ink-soft)">
                                     Loading messages…
@@ -372,7 +391,7 @@ function MessagesPage() {
                                                                 {formatTime(message.receivedAt)}
                                                             </span>
                                                         </p>
-                                                        <p className="m-0 mt-0.5 whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
+                                                        <p className="m-0 mt-0.5 break-words whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
                                                             {message.text}
                                                         </p>
                                                     </div>
