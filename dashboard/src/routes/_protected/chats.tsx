@@ -126,7 +126,7 @@ function ChatsPage() {
                     className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${chat.isMonitored
                         ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)'
                         : 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft) dark:bg-zinc-800 dark:text-zinc-400'
-                    }`}
+                        }`}
                 >
                     {chat.isMonitored && <Radio className="h-3 w-3" aria-hidden="true" />}
                     {chat.isMonitored ? 'Monitoring' : 'Paused'}
@@ -139,11 +139,10 @@ function ChatsPage() {
             cell: (chat) => (
                 <button
                     onClick={() => void handleToggleMonitor(chat)}
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        chat.isMonitored
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${chat.isMonitored
                             ? 'bg-zinc-200/60 text-(--sea-ink-soft) hover:bg-zinc-300/60 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
                             : 'bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) dark:text-(--lagoon) border border-[rgba(236,185,20,0.35)] hover:opacity-90'
-                    }`}
+                        }`}
                 >
                     {chat.isMonitored ? 'Pause' : 'Monitor'}
                 </button>
@@ -201,51 +200,53 @@ function ChatsPage() {
                     </p>
                 </div>
             ) : (
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--line) bg-(--surface-strong) px-4 py-3">
-                    <p className="m-0 text-xs text-(--sea-ink-soft)">
-                        {chats.length} dialogs · <b className="text-(--sea-ink) dark:text-zinc-200">{monitoredCount} monitored</b>
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="relative flex-1 sm:flex-initial">
-                            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
-                            <input
-                                type="search"
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
-                                placeholder="Search chats…"
-                                aria-label="Search chats"
-                                className="w-full rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100 sm:w-44"
-                            />
-                        </div>
-                        <div className="flex items-center gap-1 rounded-full border border-(--line) bg-(--surface) p-1">
-                            {FILTERS.map(({ key, label }) => (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setFilter(key)}
-                                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${filter === key
-                                        ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)'
-                                        : 'text-(--sea-ink-soft) hover:text-(--sea-ink) dark:hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {label}
-                                </button>
-                            ))}
+                <>
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--line) bg-(--surface-strong) px-4 py-3">
+                        <p className="m-0 text-xs text-(--sea-ink-soft)">
+                            {chats.length} dialogs · <b className="text-(--sea-ink) dark:text-zinc-200">{monitoredCount} monitored</b>
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="relative flex-1 sm:flex-initial">
+                                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
+                                <input
+                                    type="search"
+                                    value={query}
+                                    onChange={(event) => setQuery(event.target.value)}
+                                    placeholder="Search chats…"
+                                    aria-label="Search chats"
+                                    className="w-full rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100 sm:w-44"
+                                />
+                            </div>
+                            <div className="flex items-center gap-1 rounded-full border border-(--line) bg-(--surface) p-1">
+                                {FILTERS.map(({ key, label }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setFilter(key)}
+                                        className={`rounded-full px-3 py-1 text-xs font-semibold transition ${filter === key
+                                            ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)'
+                                            : 'text-(--sea-ink-soft) hover:text-(--sea-ink) dark:hover:text-zinc-200'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {filtered.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-(--sea-ink-soft)">
-                        No chats match {query ? `"${query}"` : 'the filter'}.
-                    </p>
-                ) : (
-                    <LogTable
-                        rows={filtered}
-                        rowKey={(row) => row.id}
-                        columns={columns}
-                    />
-                )}
+                    {filtered.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-(--sea-ink-soft)">
+                            No chats match {query ? `"${query}"` : 'the filter'}.
+                        </p>
+                    ) : (
+                        <LogTable
+                            rows={filtered}
+                            rowKey={(row) => row.id}
+                            columns={columns}
+                        />
+                    )}
+                </>
             )}
         </Panel>
     )
