@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { emitDiagnosticsUpdate } from './socket/server'
 
 const KEY = 'system.diagnostics'
 
@@ -103,4 +104,5 @@ async function persist(state: DiagnosticsState): Promise<void> {
         update: { value: JSON.stringify(state), updatedAt: new Date() },
         create: { key: KEY, value: JSON.stringify(state) },
     })
+    emitDiagnosticsUpdate(state)
 }

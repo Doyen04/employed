@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { AlertTriangle, CheckCircle2, RefreshCw, XCircle } from 'lucide-react'
 
 import { getDiagnostics } from '../../server/diagnostics'
+import { connectRealtime } from '../../client/socket'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
@@ -11,8 +12,6 @@ import type { WorkerDiagnosticIssue, WorkerDiagnostics } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
 export const Route = createFileRoute('/_protected/diagnostics')({ component: DiagnosticsPage })
-
-const POLL_MS = 15_000
 
 const SUBSYSTEM_KEYS: { key: string; title: string }[] = [
     { key: 'system.startup', title: 'Startup' },
@@ -50,8 +49,13 @@ function DiagnosticsPage() {
 
     useEffect(() => {
         void load()
-        const timer = setInterval(() => void load(true), POLL_MS)
-        return () => clearInterval(timer)
+        const unsubscribe = connectRealtime({
+            onDiagnosticsUpdate: (payload) => {
+                setState(payload as WorkerDiagnostics)
+                setError(null)
+            },
+        })
+        return unsubscribe
     }, [])
 
     if (loading) return <PageSkeleton label="Loading diagnostics" />
@@ -146,7 +150,7 @@ function DiagnosticsPage() {
 
                         <p className="mb-4 text-xs text-(--sea-ink-soft)">
                             {updatedAt ? `Last change reported at ${formatTime(updatedAt)}` : 'No changes reported yet'}
-                            {' — auto-refreshes every 15s'}
+                            {' — live via socket'}
                         </p>
 
                         {issues.length === 0 && (

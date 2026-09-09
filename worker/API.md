@@ -26,6 +26,7 @@ and the HTTP API share the same `WORKER_API_KEY` token. Events:
 | `message:stored` | `{ message, chat }` after any monitored message is persisted (live or backfill) |
 | `message:new` | `{ message, chat, analysis, analysisConfigName }` after a monitored message is analysed |
 | `chat:update` | `{ id, telegramChatId, title, isMonitored, addedAt }` |
+| `diagnostics:update` | full `DiagnosticsState` (`{ status, issues[], message, updatedAt, context }`) whenever subsystem diagnostics change; also emitted to each client on connect |
 
 ## Endpoints
 

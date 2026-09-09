@@ -11,6 +11,7 @@ export interface RealtimeHandlers {
     onMessageNew?: (payload: unknown) => void
     onMessageStored?: (payload: unknown) => void
     onChatUpdate?: (payload: unknown) => void
+    onDiagnosticsUpdate?: (payload: unknown) => void
 }
 
 interface Listener {
@@ -69,6 +70,11 @@ export function connectRealtime(handlers: RealtimeHandlers = {}): () => void {
     }
     if (handlers.onChatUpdate) {
         const listener: Listener = { event: 'chat:update', handler: handlers.onChatUpdate }
+        listeners.push(listener)
+        added.push(listener)
+    }
+    if (handlers.onDiagnosticsUpdate) {
+        const listener: Listener = { event: 'diagnostics:update', handler: handlers.onDiagnosticsUpdate }
         listeners.push(listener)
         added.push(listener)
     }

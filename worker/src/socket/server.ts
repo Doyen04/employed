@@ -45,3 +45,11 @@ export function emitMessageStored(payload: unknown): void {
 export function emitChatUpdate(payload: unknown): void {
     io?.emit('chat:update', payload)
 }
+
+export function emitDiagnosticsUpdate(payload: unknown): void {
+    io?.emit('diagnostics:update', payload)
+}
+
+export function onSocketConnection(callback: () => void): void {
+    io?.on('connection', callback)
+}
