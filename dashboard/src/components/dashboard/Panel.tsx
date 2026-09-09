@@ -14,7 +14,7 @@ export function Panel({
   className?: string
 }) {
   return (
-    <section className={`island-shell rounded-2xl p-6 ${className ?? ''}`.trim()}>
+    <section className={`island-shell rounded-2xl p-5 sm:p-6 ${className ?? ''}`.trim()}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="m-0 text-base font-semibold text-(--sea-ink)">{title}</h2>

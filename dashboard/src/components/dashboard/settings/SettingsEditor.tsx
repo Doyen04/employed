@@ -228,7 +228,7 @@ function ChatMultiSelect({
                                     Clear selection (apply to all chats)
                                 </button>
                             ) : null}
-                            <div className="max-h-48 overflow-y-auto p-1">
+                            <div className="max-h-72 overflow-y-auto overscroll-contain p-1 sm:max-h-48">
                                 {chats.map((chat) => {
                                     const active = selected.includes(chat.id)
                                     return (
@@ -313,7 +313,7 @@ function ChatSelect({
                             No chats yet — chats appear here once the worker scans Telegram dialogs.
                         </p>
                     ) : (
-                        <div className="max-h-48 overflow-y-auto p-1">
+                        <div className="max-h-72 overflow-y-auto overscroll-contain p-1 sm:max-h-48">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -510,26 +510,26 @@ function KVEditor({
     return (
         <div className="flex flex-col gap-1.5">
             {rows.map((row, i) => (
-                <div key={i} className="flex items-center gap-1.5">
+                <div key={i} className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-1.5">
                     <input
                         type="text"
                         value={row.key}
                         placeholder="key"
                         onChange={(e) => replace(i, { key: e.target.value })}
-                        className="w-2/5 rounded-lg border border-(--line) bg-(--surface) px-2.5 py-1.5 text-sm outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
+                        className="w-full rounded-lg border border-(--line) bg-(--surface) px-2.5 py-1.5 text-sm outline-none transition focus:border-(--lagoon) dark:text-zinc-100 sm:w-2/5"
                     />
                     <input
                         type="text"
                         value={row.value}
                         placeholder="value (JSON allowed)"
                         onChange={(e) => replace(i, { value: e.target.value })}
-                        className="flex-1 rounded-lg border border-(--line) bg-(--surface) px-2.5 py-1.5 text-sm outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
+                        className="w-full flex-1 rounded-lg border border-(--line) bg-(--surface) px-2.5 py-1.5 text-sm outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
                     />
                     <button
                         type="button"
                         title="Remove row"
                         onClick={() => onChange(rows.filter((_, idx) => idx !== i))}
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-(--line) text-(--sea-ink-soft) transition hover:bg-red-500/10 hover:text-red-600"
+                        className="grid h-7 w-7 shrink-0 place-items-center self-end rounded-lg border border-(--line) text-(--sea-ink-soft) transition hover:bg-red-500/10 hover:text-red-600 sm:self-auto"
                     >
                         <X className="h-3 w-3" />
                     </button>

@@ -184,11 +184,11 @@ function ChatsPage() {
                 </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[40rem] text-left text-sm">
+                        <table className="w-full text-left text-sm">
                             <thead>
                                 <tr className="border-b border-(--line) text-xs uppercase tracking-wider text-(--sea-ink-soft)">
                                     <th className="px-4 py-2.5 font-semibold">Chat</th>
-                                    <th className="whitespace-nowrap px-4 py-2.5 font-semibold">Telegram ID</th>
+                                    <th className="hidden whitespace-nowrap px-4 py-2.5 font-semibold md:table-cell">Telegram ID</th>
                                     <th className="whitespace-nowrap px-4 py-2.5 font-semibold">Status</th>
                                     <th className="whitespace-nowrap px-4 py-2.5 text-right font-semibold">Action</th>
                                 </tr>
@@ -216,7 +216,7 @@ function ChatsPage() {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-(--sea-ink-soft)">
+                                            <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-xs text-(--sea-ink-soft) md:table-cell">
                                                 {chat.telegramChatId}
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3">

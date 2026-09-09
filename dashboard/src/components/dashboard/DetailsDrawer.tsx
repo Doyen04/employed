@@ -25,6 +25,14 @@ export function DetailsDrawer({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
+  useEffect(() => {
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [])
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={ariaLabel}>
       <div className="absolute inset-0 bg-[rgba(15,23,42,0.45)]" onClick={onClose} />
@@ -44,7 +52,7 @@ export function DetailsDrawer({
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
       </aside>
     </div>
   )

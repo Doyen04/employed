@@ -264,7 +264,7 @@ export function TelegramLoginCard({
                         >
                             {stepIndex > 1 ? <CheckCircle2 className="h-4 w-4" /> : '1'}
                         </div>
-                        <span>Phone Number</span>
+                        <span className="hidden sm:inline">Phone Number</span>
                     </div>
 
                     <div className="h-0.5 flex-1 mx-3 bg-(--line)" />
@@ -284,7 +284,7 @@ export function TelegramLoginCard({
                         >
                             {stepIndex > 2 ? <CheckCircle2 className="h-4 w-4" /> : '2'}
                         </div>
-                        <span>OTP Code</span>
+                        <span className="hidden sm:inline">OTP Code</span>
                     </div>
 
                     <div className="h-0.5 flex-1 mx-3 bg-(--line)" />
@@ -302,10 +302,20 @@ export function TelegramLoginCard({
                         >
                             3
                         </div>
-                        <span>2FA Password</span>
+                        <span className="hidden sm:inline">2FA Password</span>
                     </div>
                 </div>
             </div>
+
+            {/* Mobile-only step label */}
+            <p className="my-0 text-center text-xs font-semibold text-(--sea-ink-soft) sm:hidden">
+                Step {stepIndex} ·{' '}
+                {phase === 'awaitingPassword'
+                    ? '2FA password'
+                    : phase === 'awaitingCode'
+                        ? 'OTP code'
+                        : 'Phone number'}
+            </p>
 
             {/* Success banner if just completed */}
             {phase === 'done' && (

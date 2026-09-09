@@ -1066,3 +1066,12 @@ a {
     .action-status { display: none; }
     .skeleton-grid { grid-template-columns: 1fr 1fr; }
 }
+
+@media (max-width: 480px) {
+    .worker-pill { padding-inline: .55rem; }
+    .worker-pill .worker-pill-label { display: none; }
+    .metric-grid { grid-template-columns: 1fr; }
+    .app-mobile-nav { padding: .4rem .5rem; }
+    .app-mobile-nav a { padding: .38rem .5rem; font-size: .5rem; }
+    .app-mobile-nav svg { width: .62rem; }
+}

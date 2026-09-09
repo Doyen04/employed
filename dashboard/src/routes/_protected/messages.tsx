@@ -344,7 +344,7 @@ function MessagesPage() {
                                                 rows.push(
                                                     <li
                                                         key={`day-${dayKey}`}
-                                                        className="sticky top-0 z-10 my-1 self-center rounded-full border border-(--line) bg-(--header-bg) px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)"
+                                                        className="lg:sticky lg:top-0 lg:z-10 my-1 self-center rounded-full border border-(--line) bg-(--header-bg) px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)"
                                                     >
                                                         {dayLabel(message.receivedAt)}
                                                     </li>,
