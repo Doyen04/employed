@@ -285,19 +285,25 @@ function StatusCard({
     tone: 'accent' | 'positive' | 'warning' | 'error' | 'muted'
 }) {
     const tones: Record<string, string> = {
-        accent: 'border-(--lagoon) text-(--lagoon)',
-        positive: 'border-emerald-400 text-emerald-500',
-        warning: 'border-amber-400 text-amber-600',
-        error: 'border-red-400 text-red-500',
-        muted: 'border-(--line) text-(--sea-ink-soft)',
+        accent: 'text-(--lagoon)',
+        positive: 'text-emerald-500',
+        warning: 'text-amber-600 dark:text-amber-400',
+        error: 'text-red-500',
+        muted: 'text-(--sea-ink-soft)',
     }
     return (
-        <div className="rounded-xl border border-(--line) bg-(--surface-strong) p-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
-                {Icon ? <Icon className={`h-3.5 w-3.5 ${tones[tone]}`} aria-hidden="true" /> : null}
-                {label}
+        <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-(--line) bg-(--surface-strong) px-3 py-2.5">
+            {Icon ? (
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.15)]">
+                    <Icon className={`h-4 w-4 ${tones[tone]}`} aria-hidden="true" />
+                </span>
+            ) : null}
+            <div className="min-w-0 flex-1">
+                <p className="m-0 truncate text-[11px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
+                    {label}
+                </p>
+                <p className={`m-0 whitespace-nowrap text-lg font-bold leading-tight ${tones[tone]}`}>{value}</p>
             </div>
-            <p className={`m-0 mt-1 text-xl font-bold ${tones[tone]}`}>{value}</p>
         </div>
     )
 }
