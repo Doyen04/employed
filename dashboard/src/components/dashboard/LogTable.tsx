@@ -36,7 +36,7 @@ export function LogTable<T>({
                             {columns.map((column, index) => (
                                 <th
                                     key={index}
-                                    className={`px-3 py-2.5 font-semibold ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
+                                    className={`whitespace-nowrap px-3 py-2.5 font-semibold ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
                                         }`}
                                 >
                                     {column.header}

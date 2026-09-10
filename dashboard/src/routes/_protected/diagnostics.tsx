@@ -80,7 +80,9 @@ function DiagnosticsPage() {
     const columns: LogTableColumn<SubsystemRow>[] = [
         {
             header: 'Subsystem',
-            cell: (row) => <span className="font-semibold text-(--sea-ink)">{row.title}</span>,
+            cell: (row) => (
+                <span className="whitespace-nowrap font-semibold text-(--sea-ink)">{row.title}</span>
+            ),
         },
         {
             header: 'Key',

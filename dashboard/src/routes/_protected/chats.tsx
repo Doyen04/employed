@@ -139,7 +139,7 @@ function ChatsPage() {
             cell: (chat) => (
                 <button
                     onClick={() => void handleToggleMonitor(chat)}
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${chat.isMonitored
+                    className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition ${chat.isMonitored
                             ? 'bg-zinc-200/60 text-(--sea-ink-soft) hover:bg-zinc-300/60 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
                             : 'bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) dark:text-(--lagoon) border border-[rgba(236,185,20,0.35)] hover:opacity-90'
                         }`}
