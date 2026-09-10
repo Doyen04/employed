@@ -11,8 +11,14 @@ const OPENROUTER_DEFAULT_MODEL = 'openrouter/free'
 
 const SCHEMA_NAME = 'analysis_result'
 
+export interface LlmResult {
+    content: string
+    provider: string | null
+    model: string | null
+}
+
 export interface LlmProvider {
-    completeJson(prompt: string, schema?: unknown): Promise<string>
+    completeJson(prompt: string, schema?: unknown): Promise<LlmResult>
 }
 
 type FormatMode = 'json_schema' | 'json_object' | 'plain'
@@ -188,7 +194,7 @@ class ProviderChain implements LlmProvider {
         this.providers = providers
     }
 
-    async completeJson(prompt: string, schema?: unknown): Promise<string> {
+    async completeJson(prompt: string, schema?: unknown): Promise<LlmResult> {
         const modes = buildModes(schema)
         const now = Date.now()
         const ready = this.providers.filter(
@@ -199,7 +205,13 @@ class ProviderChain implements LlmProvider {
 
         for (const entry of candidates) {
             try {
-                const result = await attemptWithRetries(entry.client, entry, prompt, modes, schema)
+                const content = await attemptWithRetries(
+                    entry.client,
+                    entry,
+                    prompt,
+                    modes,
+                    schema,
+                )
                 this.cooldownUntil.delete(entry.name)
                 if (entry === this.providers[0]) {
                     await clearDiagnostic('llm.failover')
@@ -210,7 +222,7 @@ class ProviderChain implements LlmProvider {
                         `${entry.name} unavailable (${reasonOf(lastError)}) — routed to backup provider.`,
                     )
                 }
-                return result
+                return { content, provider: entry.name, model: entry.model }
             } catch (error) {
                 lastError = error
                 console.warn(`[llm] ${entry.name} failed:`, getErrorMessage(error))

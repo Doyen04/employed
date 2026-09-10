@@ -74,6 +74,8 @@ model Analysis {
   messageId        String
   analysisConfigId String
   rawResponse      Json
+  provider         String?
+  model            String?
   analyzedAt       DateTime       @default(now())
   message          Message        @relation(fields: [messageId], references: [id])
   analysisConfig   AnalysisConfig @relation(fields: [analysisConfigId], references: [id])

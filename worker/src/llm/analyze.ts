@@ -12,10 +12,16 @@ function getProvider(): LlmProvider | null {
 
 export type AnalysisOutput = Record<string, unknown>
 
+export interface AnalysisResult {
+    output: AnalysisOutput
+    provider: string | null
+    model: string | null
+}
+
 export async function runAnalysis(
     analysisConfig: Pick<AnalysisConfig, 'promptTemplate' | 'outputSchema'>,
     messageText: string,
-): Promise<AnalysisOutput> {
+): Promise<AnalysisResult> {
     const llm = getProvider()
     if (!llm) {
         throw new Error('Configure LLM_API_KEY to enable message analysis')
@@ -25,19 +31,23 @@ export async function runAnalysis(
         .replaceAll('{{text}}', messageText)
         .replaceAll('{{schema}}', JSON.stringify(analysisConfig.outputSchema))
 
-    const raw = await llm.completeJson(prompt, analysisConfig.outputSchema)
-    if (!raw) {
+    const result = await llm.completeJson(prompt, analysisConfig.outputSchema)
+    if (!result.content) {
         throw new Error('LLM returned an empty response')
     }
 
-    const parsed: unknown = parseJsonOutput(raw)
+    const parsed: unknown = parseJsonOutput(result.content)
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
         throw new Error(
-            `LLM output was not valid JSON: ${truncate(raw, 160)}`,
+            `LLM output was not valid JSON: ${truncate(result.content, 160)}`,
         )
     }
 
-    return parsed as AnalysisOutput
+    return {
+        output: parsed as AnalysisOutput,
+        provider: result.provider,
+        model: result.model,
+    }
 }
 
 /**

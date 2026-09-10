@@ -198,8 +198,11 @@ async function processMessage(
 
     for (const cfg of scoped) {
         let output: Record<string, unknown>
+        let analyzedBy: { provider: string | null; model: string | null } = { provider: null, model: null }
         try {
-            output = await runAnalysis(cfg, message.text)
+            const result = await runAnalysis(cfg, message.text)
+            output = result.output
+            analyzedBy = { provider: result.provider, model: result.model }
         } catch (error) {
             const errorMessage = getErrorMessage(error)
             allOk = false
@@ -215,6 +218,8 @@ async function processMessage(
                 messageId: message.id,
                 analysisConfigId: cfg.id,
                 rawResponse: toJsonValue(output),
+                provider: analyzedBy.provider,
+                model: analyzedBy.model,
             },
         })
 

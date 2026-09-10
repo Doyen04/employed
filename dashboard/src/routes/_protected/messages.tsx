@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, Inbox, MessageSquare, Radio, RefreshCw, Search, Zap } from 'lucide-react'
+import { ArrowRight, ChevronDown, Inbox, MessageSquare, Radio, RefreshCw, Search, Zap } from 'lucide-react'
 
 import { listMessages, messageSummary } from '../../server/messages'
 import { getTelegramStatus } from '../../server/telegram'
 import { connectRealtime } from '../../client/socket'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
-import { LogTable } from '../../components/dashboard/LogTable'
-import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import { DetailsDrawer } from '../../components/dashboard/DetailsDrawer'
+import { LogTable } from '../../components/dashboard/LogTable'
 import type { RealtimeMessageStored, WorkerMessage, WorkerMessageSummary } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 import { initials, formatTime, dayKeyOf, dayLabel } from '../../lib/helpers'
@@ -23,26 +22,30 @@ function MessagesPage() {
     const [summaries, setSummaries] = useState<WorkerMessageSummary[]>([])
     const [selected, setSelected] = useState<WorkerMessageSummary | null>(null)
     const [items, setItems] = useState<WorkerMessage[]>([])
+    const [threadItems, setThreadItems] = useState<WorkerMessage[]>([])
+    const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [newHeads, setNewHeads] = useState<string[]>([])
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
     const [booting, setBooting] = useState(true)
-    const [cursor, setCursor] = useState<string | null>(null)
-    const [hasMore, setHasMore] = useState(false)
-    const [loading, setLoading] = useState(true)
+    const [listCursor, setListCursor] = useState<string | null>(null)
+    const [threadCursor, setThreadCursor] = useState<string | null>(null)
+    const [hasMoreList, setHasMoreList] = useState(false)
+    const [hasMoreThread, setHasMoreThread] = useState(false)
+    const [loadingList, setLoadingList] = useState(true)
+    const [loadingThread, setLoadingThread] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [query, setQuery] = useState('')
 
     const chatId = selected?.chatId
 
-    async function loadThread(reset: boolean) {
-        if (reset) setLoading(true)
+    async function loadMessages(reset: boolean) {
+        if (reset) setLoadingList(true)
         setError(null)
         try {
             const result = await listMessages({
                 data: {
-                    chatId,
                     limit: PAGE_SIZE,
-                    cursor: reset ? undefined : (cursor ?? undefined),
+                    cursor: reset ? undefined : (listCursor ?? undefined),
                 },
             })
             setItems((previous) => {
@@ -54,12 +57,41 @@ function MessagesPage() {
                     return true
                 })
             })
-            setCursor(result.nextCursor)
-            setHasMore(result.hasMore)
+            setListCursor(result.nextCursor)
+            setHasMoreList(result.hasMore)
         } catch (err) {
             setError(errorText(err))
         } finally {
-            if (reset) setLoading(false)
+            if (reset) setLoadingList(false)
+        }
+    }
+
+    async function loadThread(reset: boolean) {
+        if (reset) setLoadingThread(true)
+        setError(null)
+        try {
+            const result = await listMessages({
+                data: {
+                    chatId,
+                    limit: PAGE_SIZE,
+                    cursor: reset ? undefined : (threadCursor ?? undefined),
+                },
+            })
+            setThreadItems((previous) => {
+                const next = (reset ? result.items : [...previous, ...result.items]).slice(0, MAX_ITEMS)
+                const seen = new Set<string>()
+                return next.filter((message) => {
+                    if (seen.has(message.id)) return false
+                    seen.add(message.id)
+                    return true
+                })
+            })
+            setThreadCursor(result.nextCursor)
+            setHasMoreThread(result.hasMore)
+        } catch (err) {
+            setError(errorText(err))
+        } finally {
+            if (reset) setLoadingThread(false)
         }
     }
 
@@ -72,16 +104,14 @@ function MessagesPage() {
 
     async function refresh() {
         setError(null)
-        try {
-            const [sumRes, statusRes] = await Promise.allSettled([
-                messageSummary(),
-                getTelegramStatus(),
-            ])
-            if (sumRes.status === 'fulfilled') setSummaries(sumRes.value)
-            if (statusRes.status === 'fulfilled') setTelegramLoggedIn(statusRes.value.loggedIn)
-        } catch (err) {
-            setError(errorText(err))
-        }
+        const [sumRes, statusRes, msgRes] = await Promise.allSettled([
+            messageSummary(),
+            getTelegramStatus(),
+            loadMessages(true),
+        ])
+        if (sumRes.status === 'fulfilled') setSummaries(sumRes.value)
+        if (statusRes.status === 'fulfilled') setTelegramLoggedIn(statusRes.value.loggedIn)
+        if (msgRes.status === 'rejected') setError(errorText(msgRes.reason))
     }
 
     useEffect(() => {
@@ -97,6 +127,7 @@ function MessagesPage() {
             setBooting(false)
         }
         void init()
+        void loadMessages(true)
         return () => {
             alive = false
         }
@@ -110,8 +141,12 @@ function MessagesPage() {
         const unsubscribe = connectRealtime({
             onMessageStored: (payload) => {
                 const event = payload as RealtimeMessageStored
+                setItems((previous) => {
+                    if (previous.some((message) => message.id === event.message.id)) return previous
+                    return [event.message, ...previous].slice(0, MAX_ITEMS)
+                })
                 if (selected && event.message.chatId === selected.chatId) {
-                    setItems((previous) => {
+                    setThreadItems((previous) => {
                         if (previous.some((message) => message.id === event.message.id)) return previous
                         return [event.message, ...previous].slice(0, MAX_ITEMS)
                     })
@@ -134,68 +169,87 @@ function MessagesPage() {
         return unsubscribe
     }, [selected, flashNew])
 
-    const filtered = useMemo(() => {
+    const summaryById = useMemo(
+        () => new Map(summaries.map((row) => [row.chatId, row])),
+        [summaries],
+    )
+
+    const filteredItems = useMemo(() => {
         const q = query.trim().toLowerCase()
-        if (!q) return summaries
-        return summaries.filter(
-            (row) =>
-                row.title.toLowerCase().includes(q) || row.telegramChatId.includes(q),
+        if (!q) return items
+        return items.filter(
+            (message) =>
+                message.text.toLowerCase().includes(q) ||
+                (message.senderName ?? '').toLowerCase().includes(q) ||
+                message.chat.title.toLowerCase().includes(q),
         )
-    }, [summaries, query])
+    }, [items, query])
+
+    function toggleGroup(targetChatId: string) {
+        setCollapsed((previous) => {
+            const next = new Set(previous)
+            if (next.has(targetChatId)) next.delete(targetChatId)
+            else next.add(targetChatId)
+            return next
+        })
+    }
+
+    function selectChat(message: WorkerMessage) {
+        const summary = summaryById.get(message.chatId)
+        if (summary) {
+            setSelected(summary)
+            return
+        }
+        setSelected({
+            chatId: message.chatId,
+            title: message.chat.title,
+            telegramChatId: message.chat.telegramChatId,
+            messageCount: 1,
+            lastText: message.text,
+            lastReceivedAt: message.receivedAt,
+        })
+    }
+
+    const groupHeader = (targetChatId: string) => {
+        const summary = summaryById.get(targetChatId)
+        const first = items.find((message) => message.chatId === targetChatId)
+        const title = summary?.title ?? first?.chat.title ?? targetChatId
+        const telegramChatId = summary?.telegramChatId ?? first?.chat.telegramChatId ?? ''
+        const count = summary?.messageCount ?? 0
+        const lastAt = summary?.lastReceivedAt ?? first?.receivedAt ?? null
+        return (
+            <div className="flex min-w-0 items-center gap-2.5">
+                <ChevronDown
+                    className={`h-3.5 w-3.5 shrink-0 text-(--sea-ink-soft) transition-transform ${collapsed.has(targetChatId) ? '-rotate-90' : ''}`}
+                    aria-hidden="true"
+                />
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
+                    {initials(title)}
+                </span>
+                <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-(--sea-ink) dark:text-zinc-100">
+                        {title}
+                    </span>
+                    <span className="hidden truncate font-mono text-[11px] text-(--sea-ink-soft) sm:block">
+                        {telegramChatId}
+                    </span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[rgba(236,185,20,0.18)] px-2.5 py-0.5 text-xs font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
+                    {count.toLocaleString()}
+                </span>
+                <span
+                    className="shrink-0 whitespace-nowrap text-xs text-(--sea-ink-soft)"
+                    title={lastAt ?? ''}
+                >
+                    {relativeTime(lastAt)}
+                </span>
+            </div>
+        )
+    }
 
     const totalMessages = summaries.reduce((sum, row) => sum + row.messageCount, 0)
 
     if (booting) return <PageSkeleton label="Loading messages" />
-
-    const columns: LogTableColumn<WorkerMessageSummary>[] = [
-        {
-            header: 'Chat',
-            cell: (row) => (
-                <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
-                        {initials(row.title)}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-medium text-(--sea-ink) dark:text-zinc-100">
-                        {row.title}
-                    </span>
-                </div>
-            ),
-        },
-        {
-            header: 'Telegram ID',
-            hiddenOnMobile: true,
-            cell: (row) => (
-                <span className="whitespace-nowrap font-mono text-xs text-(--sea-ink-soft)">
-                    {row.telegramChatId}
-                </span>
-            ),
-        },
-        {
-            header: 'Messages',
-            cell: (row) => (
-                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[rgba(236,185,20,0.18)] px-2.5 py-0.5 text-xs font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
-                    {row.messageCount.toLocaleString()}
-                </span>
-            ),
-        },
-        {
-            header: 'Last message',
-            cell: (row) => (
-                <span className="block max-w-72 truncate text-xs text-(--sea-ink-soft)">
-                    {row.lastText ?? 'No messages yet'}
-                </span>
-            ),
-        },
-        {
-            header: 'Last activity',
-            align: 'right',
-            cell: (row) => (
-                <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)" title={row.lastReceivedAt ?? ''}>
-                    {relativeTime(row.lastReceivedAt)}
-                </span>
-            ),
-        },
-    ]
 
     return (
         <>
@@ -204,7 +258,7 @@ function MessagesPage() {
                     <div>
                         <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Messages</h2>
                         <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
-                            Every message from your monitored chats — open a conversation to read its thread.
+                            Every message from your monitored chats, grouped by chat — click a group to collapse it, or open a chat to read its thread.
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -275,26 +329,85 @@ function MessagesPage() {
                                     type="search"
                                     value={query}
                                     onChange={(event) => setQuery(event.target.value)}
-                                    placeholder="Search chats…"
-                                    aria-label="Search chats"
+                                    placeholder="Search messages…"
+                                    aria-label="Search messages"
                                     className="w-full rounded-full border border-(--line) bg-(--surface-strong) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
                                 />
                             </div>
                         </div>
 
-                        {filtered.length === 0 ? (
+                        {loadingList ? (
                             <p className="px-8 pb-8 text-center text-sm text-(--sea-ink-soft)">
-                                No chats match {query ? `"${query}"` : ''}.
+                                Loading messages…
                             </p>
+                        ) : filteredItems.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-8 text-center">
+                                <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
+                                    <MessageSquare className="h-6 w-6" />
+                                </div>
+                                <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
+                                    {query ? 'No matches' : 'No messages yet'}
+                                </h3>
+                                <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
+                                    {query
+                                        ? `Nothing matches "${query}" in the messages loaded so far.`
+                                        : 'Messages from your monitored chats will appear here the moment they are received.'}
+                                </p>
+                            </div>
                         ) : (
                             <div className="px-4 sm:px-5 pb-5">
-                                <LogTable<WorkerMessageSummary>
-                                    rows={filtered}
-                                    rowKey={(row) => row.chatId}
-                                    onRowClick={setSelected}
+                                <LogTable<WorkerMessage>
+                                    rows={filteredItems}
+                                    rowKey={(message) => message.id}
+                                    onRowClick={selectChat}
                                     rowAriaLabel={() => 'Open conversation'}
-                                    columns={columns}
+                                    grouping={{
+                                        groupBy: (message) => message.chatId,
+                                        groupHeader,
+                                        collapsedGroups: collapsed,
+                                        onToggleGroup: toggleGroup,
+                                    }}
+                                    columns={[
+                                        {
+                                            header: 'Sender',
+                                            cell: (message) => (
+                                                <span className="whitespace-nowrap font-medium text-(--sea-ink-soft)">
+                                                    {message.senderName ?? 'Unknown'}
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            header: 'Message',
+                                            cell: (message) => (
+                                                <span className="block max-w-80 truncate text-(--sea-ink)">
+                                                    {message.text}
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            header: 'Time',
+                                            align: 'right',
+                                            cell: (message) => (
+                                                <span
+                                                    className="whitespace-nowrap text-xs text-(--sea-ink-soft)"
+                                                    title={message.receivedAt}
+                                                >
+                                                    {formatTime(message.receivedAt)}
+                                                </span>
+                                            ),
+                                        },
+                                    ]}
                                 />
+                                {hasMoreList && (
+                                    <div className="mt-4 flex justify-center">
+                                        <button
+                                            onClick={() => void loadMessages(false)}
+                                            className="rounded-full border border-(--line) bg-(--surface-strong) px-5 py-2 text-xs font-semibold text-(--sea-ink) transition hover:border-(--lagoon) dark:text-zinc-200"
+                                        >
+                                            Load older
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </>
@@ -315,11 +428,11 @@ function MessagesPage() {
                 >
                     {error && <p className="mb-3 text-xs text-red-500">{error}</p>}
 
-                    {loading ? (
+                    {loadingThread ? (
                         <div className="flex items-center justify-center py-16 text-xs text-(--sea-ink-soft)">
                             Loading messages…
                         </div>
-                    ) : items.length === 0 ? (
+                    ) : threadItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center p-8 text-center">
                             <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
                                 <MessageSquare className="h-6 w-6" />
@@ -336,7 +449,7 @@ function MessagesPage() {
                             {(() => {
                                 const rows: ReactElement[] = []
                                 let lastDayKey: string | null = null
-                                for (const message of items) {
+                                for (const message of threadItems) {
                                     const dayKey = dayKeyOf(message.receivedAt)
                                     if (dayKey !== lastDayKey) {
                                         lastDayKey = dayKey
@@ -377,7 +490,7 @@ function MessagesPage() {
                         </ul>
                     )}
 
-                    {hasMore && (
+                    {hasMoreThread && (
                         <div className="mt-4 flex justify-center">
                             <button
                                 onClick={() => void loadThread(false)}

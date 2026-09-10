@@ -31,6 +31,8 @@ analysesRouter.get('/', async (req, res) => {
       id: row.id,
       analyzedAt: row.analyzedAt.toISOString(),
       rawResponse: row.rawResponse,
+      provider: row.provider,
+      model: row.model,
       analysisConfigName: row.analysisConfig.name,
       fired: row.actionLogs.length > 0,
       message: {

@@ -86,6 +86,8 @@ export interface WorkerActionLog {
     id: string
     analyzedAt: string
     rawResponse: Json
+    provider: string | null
+    model: string | null
     analysisConfigName: string
     message: {
       id: string
@@ -101,6 +103,8 @@ export interface WorkerAnalysis {
   id: string
   analyzedAt: string
   rawResponse: Json
+  provider: string | null
+  model: string | null
   analysisConfigName: string
   fired: boolean
   message: {

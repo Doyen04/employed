@@ -187,6 +187,17 @@ useEffect(() => {
                                             ),
                                         },
                                         {
+                                            header: 'Analyzed by',
+                                            hiddenOnMobile: true,
+                                            cell: (analysis) => (
+                                                <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">
+                                                    {analysis.provider
+                                                        ? [analysis.provider, analysis.model].filter(Boolean).join(' · ')
+                                                        : '—'}
+                                                </span>
+                                            ),
+                                        },
+                                        {
                                             header: 'Chat',
                                             cell: (analysis) => (
                                                 <span className="whitespace-nowrap text-(--sea-ink)">
@@ -247,6 +258,9 @@ useEffect(() => {
           <p className="mt-2 m-0 text-xs text-(--sea-ink-soft)" title={formatDateTime(selected.analyzedAt)}>
             <Clock3 className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" />
             Analyzed {formatDateTime(selected.analyzedAt)}
+            {selected.provider
+              ? <span className="font-semibold text-(--sea-ink-soft)"> · by {[selected.provider, selected.model].filter(Boolean).join(' · ')}</span>
+              : null}
           </p>
 
           <DrawerSection title="Message">
