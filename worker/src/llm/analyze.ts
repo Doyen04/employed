@@ -25,24 +25,34 @@ export async function runAnalysis(
         .replaceAll('{{text}}', messageText)
         .replaceAll('{{schema}}', JSON.stringify(analysisConfig.outputSchema))
 
-    const raw = await llm.completeJson(prompt)
+    const raw = await llm.completeJson(prompt, analysisConfig.outputSchema)
     if (!raw) {
         throw new Error('LLM returned an empty response')
     }
 
-    const extracted = extractJson(raw)
-    if (!extracted) {
+    const parsed: unknown = parseJsonOutput(raw)
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
         throw new Error(
             `LLM output was not valid JSON: ${truncate(raw, 160)}`,
         )
     }
 
-    const parsed: unknown = JSON.parse(extracted)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        throw new Error('LLM output was not a JSON object')
-    }
-
     return parsed as AnalysisOutput
+}
+
+/**
+ * Two-stage parse: providers running structured output should return a bare
+ * JSON object, which parses directly. When a provider ignored the format and
+ * smuggled prose/code fences around the JSON, extractJson digs it out.
+ */
+function parseJsonOutput(raw: string): unknown {
+    try {
+        return JSON.parse(raw)
+    } catch {
+        const extracted = extractJson(raw)
+        if (extracted === null) throw new Error('no JSON found')
+        return JSON.parse(extracted)
+    }
 }
 
 /**

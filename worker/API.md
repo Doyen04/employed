@@ -149,6 +149,7 @@ hit, each as an entry in `issues` keyed by source:
 - `telegram.scan` — chat refresh (`POST /chats/refresh`) failed or timed out
 - `login.flow` — Telegram sign-in errors in the web login flow
 - `llm.analyze` — LLM call failed or returned non-JSON
+- `llm.failover` — a request was served by the backup provider because the primary (Groq) errored or hit a rate limit; cleared when the primary succeeds again
 - `analysis.config` — no active configs, or a message arrived in a chat the active configs don't cover
 - `notifier.dispatch` — a notifier send failed (or unknown notifier type)
 
