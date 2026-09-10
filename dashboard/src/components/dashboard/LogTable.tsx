@@ -40,15 +40,27 @@ export function LogTable<T>({
     const segments: { key: string | undefined; rows: T[] }[] | null = grouping
         ? (() => {
               const out: { key: string | undefined; rows: T[] }[] = []
-              let last: { key: string | undefined; rows: T[] } | undefined
+              const byKey = new Map<string, { key: string; rows: T[] }>()
+              let lastUngrouped: { key: undefined; rows: T[] } | undefined
               for (const row of rows) {
                   const key = grouping.groupBy(row)
-                  if (last !== undefined && last.key === key) {
-                      last.rows.push(row)
-                  } else {
-                      last = { key, rows: [row] }
-                      out.push(last)
+                  if (key === undefined) {
+                      if (lastUngrouped) {
+                          lastUngrouped.rows.push(row)
+                      } else {
+                          lastUngrouped = { key: undefined, rows: [row] }
+                          out.push(lastUngrouped)
+                      }
+                      continue
                   }
+                  lastUngrouped = undefined
+                  let segment = byKey.get(key)
+                  if (!segment) {
+                      segment = { key, rows: [] }
+                      byKey.set(key, segment)
+                      out.push(segment)
+                  }
+                  segment.rows.push(row)
               }
               return out
           })()
@@ -97,58 +109,58 @@ export function LogTable<T>({
                     <tbody>
                         {segments
                             ? segments.map((segment) => {
-                                  const isGroup = segment.key !== undefined
-                                  const collapsed =
-                                      isGroup && Boolean(grouping?.collapsedGroups?.has(segment.key as string))
-                                  return (
-                                      <Fragment
-                                          key={
-                                              isGroup
-                                                  ? `group:${segment.key as string}`
-                                                  : `row:${rowKey(segment.rows[0])}`
-                                          }
-                                      >
-                                          {isGroup ? (
-                                              <tr
-                                                  onClick={() => grouping?.onToggleGroup?.(segment.key as string)}
-                                                  aria-label={collapsed ? 'Expand group' : 'Collapse group'}
-                                                  className="cursor-pointer border-t border-(--line) bg-(--header-bg) transition hover:bg-white/60 dark:hover:bg-zinc-800/60"
-                                              >
-                                                  <td colSpan={columns.length} className="px-3 py-2">
-                                                      {grouping!.groupHeader(segment.key as string)}
-                                                  </td>
-                                              </tr>
-                                          ) : null}
-                                          {(!isGroup || !collapsed) &&
-                                              segment.rows.map((row) => (
-                                                  <tr
-                                                      key={rowKey(row)}
-                                                      onClick={onRowClick ? () => onRowClick(row) : undefined}
-                                                      aria-label={rowAriaLabel?.(row)}
-                                                      className={`border-t border-(--line)/70 ${onRowClick
-                                                              ? 'cursor-pointer transition hover:bg-white/50 dark:hover:bg-zinc-800/60'
-                                                              : ''
-                                                          }`}
-                                                  >
-                                                      {rowColumns(row)}
-                                                  </tr>
-                                              ))}
-                                      </Fragment>
-                                  )
-                              })
+                                const isGroup = segment.key !== undefined
+                                const collapsed =
+                                    isGroup && Boolean(grouping?.collapsedGroups?.has(segment.key as string))
+                                return (
+                                    <Fragment
+                                        key={
+                                            isGroup
+                                                ? `group:${segment.key as string}`
+                                                : `row:${rowKey(segment.rows[0])}`
+                                        }
+                                    >
+                                        {isGroup ? (
+                                            <tr
+                                                onClick={() => grouping?.onToggleGroup?.(segment.key as string)}
+                                                aria-label={collapsed ? 'Expand group' : 'Collapse group'}
+                                                className="cursor-pointer border-t border-(--line) bg-(--header-bg) transition hover:bg-white/60 dark:hover:bg-zinc-800/60"
+                                            >
+                                                <td colSpan={columns.length} className="px-3 py-2">
+                                                    {grouping!.groupHeader(segment.key as string)}
+                                                </td>
+                                            </tr>
+                                        ) : null}
+                                        {(!isGroup || !collapsed) &&
+                                            segment.rows.map((row) => (
+                                                <tr
+                                                    key={rowKey(row)}
+                                                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                                                    aria-label={rowAriaLabel?.(row)}
+                                                    className={`border-t border-(--line)/70 ${onRowClick
+                                                        ? 'cursor-pointer transition hover:bg-white/50 dark:hover:bg-zinc-800/60'
+                                                        : ''
+                                                        }`}
+                                                >
+                                                    {rowColumns(row)}
+                                                </tr>
+                                            ))}
+                                    </Fragment>
+                                )
+                            })
                             : rows.map((row) => (
-                                  <tr
-                                      key={rowKey(row)}
-                                      onClick={onRowClick ? () => onRowClick(row) : undefined}
-                                      aria-label={rowAriaLabel?.(row)}
-                                      className={`border-t border-(--line)/70 ${onRowClick
-                                              ? 'cursor-pointer transition hover:bg-white/50 dark:hover:bg-zinc-800/60'
-                                              : ''
-                                          }`}
-                                  >
-                                      {rowColumns(row)}
-                                  </tr>
-                              ))}
+                                <tr
+                                    key={rowKey(row)}
+                                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                                    aria-label={rowAriaLabel?.(row)}
+                                    className={`border-t border-(--line)/70 ${onRowClick
+                                        ? 'cursor-pointer transition hover:bg-white/50 dark:hover:bg-zinc-800/60'
+                                        : ''
+                                        }`}
+                                >
+                                    {rowColumns(row)}
+                                </tr>
+                            ))}
                     </tbody>
                 </table>
             </div>
