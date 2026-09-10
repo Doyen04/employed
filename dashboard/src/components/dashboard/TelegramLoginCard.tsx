@@ -171,10 +171,6 @@ export function TelegramLoginCard({
                                     <h3 className="font-semibold text-(--sea-ink) dark:text-zinc-100 text-lg">
                                         Telegram Connected
                                     </h3>
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(236,185,20,0.18)] px-2.5 py-0.5 text-xs font-semibold text-(--lagoon-deep) border border-[rgba(236,185,20,0.28)]">
-                                        <span className="h-2 w-2 rounded-full bg-(--lagoon) animate-pulse" />
-                                        Active Session
-                                    </span>
                                 </div>
                                 <p className="mt-0.5 text-xs text-(--sea-ink-soft) dark:text-zinc-400">
                                     MTProto session active &amp; encrypted via AES-256-GCM. Realtime message ingestion enabled.

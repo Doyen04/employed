@@ -98,7 +98,12 @@ function DiagnosticsPage() {
         {
             header: 'Message',
             cell: (row) => (
-                <span className="text-xs text-(--sea-ink-soft)">{row.issue ? row.issue.message : '—'}</span>
+                <span
+                    className="block max-w-72 truncate text-xs text-(--sea-ink-soft)"
+                    title={row.issue ? row.issue.message : undefined}
+                >
+                    {row.issue ? row.issue.message : '—'}
+                </span>
             ),
         },
         {
