@@ -353,7 +353,7 @@ function StatCard({
                 <p className="m-0 truncate text-[11px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
                     {label}
                 </p>
-                <p className="m-0 whitespace-nowrap text-lg font-bold leading-tight text-(--sea-ink)">{value}</p>
+                <p className="m-0 truncate text-lg font-bold leading-tight text-(--sea-ink)">{value}</p>
             </div>
         </div>
     )
