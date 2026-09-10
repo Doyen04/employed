@@ -1,8 +1,7 @@
+import { prisma } from './prisma'
 import { emitDiagnosticsUpdate } from './socket/server'
 import { safeJsonParse } from './utils/json'
-import { getSetting, setSetting } from './prisma/settings'
-
-const KEY = 'system.diagnostics'
+import { Prisma, type Diagnostic } from './generated/prisma/client'
 
 export type DiagnosticSeverity = 'warning' | 'error'
 export type DiagnosticsStatus = 'ok' | 'warning' | 'error'
@@ -28,11 +27,21 @@ export interface DiagnosticsState {
     context: DiagnosticContext | null
 }
 
+function toIssue(row: Diagnostic): DiagnosticIssue {
+    return {
+        key: row.key,
+        severity: row.severity === 'error' ? 'error' : 'warning',
+        message: row.message,
+        updatedAt: row.lastReported.toISOString(),
+        context: row.context
+            ? safeJsonParse<DiagnosticContext>(JSON.stringify(row.context), { chatTitle: '', messageText: '' })
+            : null,
+    }
+}
+
 export async function getDiagnosticsState(): Promise<DiagnosticsState> {
-    const raw = await getSetting(KEY)
-    if (!raw) return normalize([])
-    const parsed = safeJsonParse<{ issues?: DiagnosticIssue[] }>(raw, {})
-    return normalize(parsed.issues ?? [])
+    const rows = await prisma.diagnostic.findMany()
+    return normalize(rows.map(toIssue))
 }
 
 export async function reportDiagnostic(
@@ -41,9 +50,8 @@ export async function reportDiagnostic(
     message: string,
     context?: DiagnosticContext | null,
 ): Promise<void> {
-    const current = await getDiagnosticsState()
-    const existing = current.issues.find((issue) => issue.key === key)
     const nextContext = context ?? null
+    const existing = await prisma.diagnostic.findUnique({ where: { key } })
     if (
         existing &&
         existing.severity === severity &&
@@ -53,25 +61,37 @@ export async function reportDiagnostic(
         return
     }
 
-    const issue: DiagnosticIssue = {
-        key,
-        severity,
-        message,
-        updatedAt: new Date().toISOString(),
-        context: nextContext,
-    }
-    const issues = [...current.issues.filter((entry) => entry.key !== key), issue]
-    await persist(normalize(issues))
+    const contextValue: Prisma.InputJsonValue | typeof Prisma.JsonNull = nextContext
+        ? (nextContext as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull
+    await prisma.diagnostic.upsert({
+        where: { key },
+        update: {
+            severity,
+            message,
+            context: contextValue,
+            lastReported: new Date(),
+        },
+        create: {
+            key,
+            severity,
+            message,
+            context: contextValue,
+        },
+    })
+    await emitDiagnosticsUpdate(await getDiagnosticsState())
 }
 
 export async function clearDiagnostic(key: string): Promise<void> {
-    const current = await getDiagnosticsState()
-    if (!current.issues.some((issue) => issue.key === key)) return
-    await persist(normalize(current.issues.filter((issue) => issue.key !== key)))
+    const existing = await prisma.diagnostic.findUnique({ where: { key } })
+    if (!existing) return
+    await prisma.diagnostic.delete({ where: { key } })
+    await emitDiagnosticsUpdate(await getDiagnosticsState())
 }
 
 export async function clearAllDiagnostics(): Promise<void> {
-    await persist(normalize([]))
+    await prisma.diagnostic.deleteMany()
+    await emitDiagnosticsUpdate(await getDiagnosticsState())
 }
 
 function normalize(issues: DiagnosticIssue[]): DiagnosticsState {
@@ -93,9 +113,4 @@ function normalize(issues: DiagnosticIssue[]): DiagnosticsState {
         updatedAt: worst?.updatedAt ?? null,
         context: worst?.context ?? null,
     }
-}
-
-async function persist(state: DiagnosticsState): Promise<void> {
-    await setSetting(KEY, JSON.stringify(state))
-    emitDiagnosticsUpdate(state)
 }

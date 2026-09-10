@@ -113,3 +113,12 @@ model ActionLog {
   analysis    Analysis     @relation(fields: [analysisId], references: [id])
   notifier    Notifier     @relation(fields: [notifierId], references: [id])
 }
+
+model Diagnostic {
+  key           String   @id
+  severity      String
+  message       String
+  context       Json?
+  firstReported DateTime @default(now())
+  lastReported  DateTime @default(now())
+}
