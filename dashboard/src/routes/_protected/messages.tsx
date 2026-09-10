@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ReactElement } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, ChevronDown, Inbox, MessageSquare, Radio, RefreshCw, Search, Zap } from 'lucide-react'
 
@@ -11,7 +10,7 @@ import { DetailsDrawer } from '../../components/dashboard/DetailsDrawer'
 import { LogTable } from '../../components/dashboard/LogTable'
 import type { RealtimeMessageStored, WorkerMessage, WorkerMessageSummary } from '../../lib/types'
 import { errorText } from '../../lib/utils'
-import { initials, formatTime, dayKeyOf, dayLabel } from '../../lib/helpers'
+import { initials, formatTime } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/messages')({ component: MessagesPage })
 
@@ -20,23 +19,16 @@ const MAX_ITEMS = 200
 
 function MessagesPage() {
     const [summaries, setSummaries] = useState<WorkerMessageSummary[]>([])
-    const [selected, setSelected] = useState<WorkerMessageSummary | null>(null)
+    const [selected, setSelected] = useState<WorkerMessage | null>(null)
     const [items, setItems] = useState<WorkerMessage[]>([])
-    const [threadItems, setThreadItems] = useState<WorkerMessage[]>([])
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-    const [newHeads, setNewHeads] = useState<string[]>([])
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
     const [booting, setBooting] = useState(true)
     const [listCursor, setListCursor] = useState<string | null>(null)
-    const [threadCursor, setThreadCursor] = useState<string | null>(null)
     const [hasMoreList, setHasMoreList] = useState(false)
-    const [hasMoreThread, setHasMoreThread] = useState(false)
     const [loadingList, setLoadingList] = useState(true)
-    const [loadingThread, setLoadingThread] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [query, setQuery] = useState('')
-
-    const chatId = selected?.chatId
 
     async function loadMessages(reset: boolean) {
         if (reset) setLoadingList(true)
@@ -65,42 +57,6 @@ function MessagesPage() {
             if (reset) setLoadingList(false)
         }
     }
-
-    async function loadThread(reset: boolean) {
-        if (reset) setLoadingThread(true)
-        setError(null)
-        try {
-            const result = await listMessages({
-                data: {
-                    chatId,
-                    limit: PAGE_SIZE,
-                    cursor: reset ? undefined : (threadCursor ?? undefined),
-                },
-            })
-            setThreadItems((previous) => {
-                const next = (reset ? result.items : [...previous, ...result.items]).slice(0, MAX_ITEMS)
-                const seen = new Set<string>()
-                return next.filter((message) => {
-                    if (seen.has(message.id)) return false
-                    seen.add(message.id)
-                    return true
-                })
-            })
-            setThreadCursor(result.nextCursor)
-            setHasMoreThread(result.hasMore)
-        } catch (err) {
-            setError(errorText(err))
-        } finally {
-            if (reset) setLoadingThread(false)
-        }
-    }
-
-    const flashNew = useCallback((id: string) => {
-        setNewHeads((previous) => (previous.includes(id) ? previous : [...previous, id]))
-        window.setTimeout(() => {
-            setNewHeads((previous) => previous.filter((item) => item !== id))
-        }, 2500)
-    }, [])
 
     async function refresh() {
         setError(null)
@@ -134,10 +90,6 @@ function MessagesPage() {
     }, [])
 
     useEffect(() => {
-        if (selected) void loadThread(true)
-    }, [selected])
-
-    useEffect(() => {
         const unsubscribe = connectRealtime({
             onMessageStored: (payload) => {
                 const event = payload as RealtimeMessageStored
@@ -145,13 +97,6 @@ function MessagesPage() {
                     if (previous.some((message) => message.id === event.message.id)) return previous
                     return [event.message, ...previous].slice(0, MAX_ITEMS)
                 })
-                if (selected && event.message.chatId === selected.chatId) {
-                    setThreadItems((previous) => {
-                        if (previous.some((message) => message.id === event.message.id)) return previous
-                        return [event.message, ...previous].slice(0, MAX_ITEMS)
-                    })
-                    flashNew(event.message.id)
-                }
                 setSummaries((current) =>
                     current.map((row) =>
                         row.chatId === event.message.chatId
@@ -167,7 +112,7 @@ function MessagesPage() {
             },
         })
         return unsubscribe
-    }, [selected, flashNew])
+    }, [])
 
     const summaryById = useMemo(
         () => new Map(summaries.map((row) => [row.chatId, row])),
@@ -195,19 +140,7 @@ function MessagesPage() {
     }
 
     function selectChat(message: WorkerMessage) {
-        const summary = summaryById.get(message.chatId)
-        if (summary) {
-            setSelected(summary)
-            return
-        }
-        setSelected({
-            chatId: message.chatId,
-            title: message.chat.title,
-            telegramChatId: message.chat.telegramChatId,
-            messageCount: 1,
-            lastText: message.text,
-            lastReceivedAt: message.receivedAt,
-        })
+        setSelected(message)
     }
 
     const groupHeader = (targetChatId: string) => {
@@ -416,90 +349,29 @@ function MessagesPage() {
 
             {selected ? (
                 <DetailsDrawer
-                    ariaLabel={`Messages from ${selected.title}`}
+                    ariaLabel={`Message from ${selected.senderName ?? 'Unknown'}`}
                     icon={<MessageSquare className="h-4 w-4 text-(--lagoon-deep)" aria-hidden="true" />}
-                    title={selected.title}
+                    title={selected.chat.title}
                     subtitle={
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
-                            {selected.messageCount.toLocaleString()} messages
+                            From {selected.senderName ?? 'Unknown'} · {formatTime(selected.receivedAt)}
                         </span>
                     }
                     onClose={() => setSelected(null)}
                 >
-                    {error && <p className="mb-3 text-xs text-red-500">{error}</p>}
-
-                    {loadingThread ? (
-                        <div className="flex items-center justify-center py-16 text-xs text-(--sea-ink-soft)">
-                            Loading messages…
-                        </div>
-                    ) : threadItems.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center p-8 text-center">
-                            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
-                                <MessageSquare className="h-6 w-6" />
-                            </div>
-                            <h4 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
-                                No messages in this chat yet
-                            </h4>
-                            <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
-                                Messages from this monitored chat will appear here the moment they are received.
+                    <div className="flex flex-col gap-2">
+                        <div className="max-w-[85%] min-w-0 rounded-2xl rounded-tl-sm bg-(--header-bg) px-3.5 py-2.5">
+                            <p className="m-0 mt-0.5 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
+                                {selected.text}
                             </p>
                         </div>
-                    ) : (
-                        <ul className="m-0 flex flex-col gap-2">
-                            {(() => {
-                                const rows: ReactElement[] = []
-                                let lastDayKey: string | null = null
-                                for (const message of threadItems) {
-                                    const dayKey = dayKeyOf(message.receivedAt)
-                                    if (dayKey !== lastDayKey) {
-                                        lastDayKey = dayKey
-                                        rows.push(
-                                            <li
-                                                key={`day-${dayKey}`}
-                                                className="my-1 self-center rounded-full border border-(--line) bg-(--header-bg) px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)"
-                                            >
-                                                {dayLabel(message.receivedAt)}
-                                            </li>,
-                                        )
-                                    }
-                                    rows.push(
-                                        <li key={message.id} className="flex">
-                                            <div
-                                                className={`max-w-[85%] min-w-0 rounded-2xl rounded-tl-sm px-3.5 py-2.5 transition ${newHeads.includes(message.id)
-                                                        ? 'ring-2 ring-(--lagoon)'
-                                                        : 'border border-(--line)'
-                                                    } bg-(--header-bg)`}
-                                            >
-                                                <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-xs">
-                                                    <span className="font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
-                                                        {message.senderName ?? 'Unknown'}
-                                                    </span>
-                                                    <span className="ml-auto text-[10px] text-(--sea-ink-soft)">
-                                                        {formatTime(message.receivedAt)}
-                                                    </span>
-                                                </p>
-                                                <p className="m-0 mt-0.5 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
-                                                    {message.text}
-                                                </p>
-                                            </div>
-                                        </li>,
-                                    )
-                                }
-                                return rows
-                            })()}
-                        </ul>
-                    )}
-
-                    {hasMoreThread && (
-                        <div className="mt-4 flex justify-center">
-                            <button
-                                onClick={() => void loadThread(false)}
-                                className="rounded-full border border-(--line) bg-(--surface-strong) px-5 py-2 text-xs font-semibold text-(--sea-ink) transition hover:border-(--lagoon) dark:text-zinc-200"
-                            >
-                                Load older
-                            </button>
-                        </div>
-                    )}
+                        <button
+                            onClick={() => setSelected(null)}
+                            className="mt-2 self-start rounded-full border border-(--line) bg-(--surface-strong) px-4 py-1.5 text-xs font-semibold text-(--sea-ink) transition hover:border-(--lagoon) dark:text-zinc-200"
+                        >
+                            Close
+                        </button>
+                    </div>
                 </DetailsDrawer>
             ) : null}
         </>

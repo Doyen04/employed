@@ -39,31 +39,31 @@ export function LogTable<T>({
 
     const segments: { key: string | undefined; rows: T[] }[] | null = grouping
         ? (() => {
-              const out: { key: string | undefined; rows: T[] }[] = []
-              const byKey = new Map<string, { key: string; rows: T[] }>()
-              let lastUngrouped: { key: undefined; rows: T[] } | undefined
-              for (const row of rows) {
-                  const key = grouping.groupBy(row)
-                  if (key === undefined) {
-                      if (lastUngrouped) {
-                          lastUngrouped.rows.push(row)
-                      } else {
-                          lastUngrouped = { key: undefined, rows: [row] }
-                          out.push(lastUngrouped)
-                      }
-                      continue
-                  }
-                  lastUngrouped = undefined
-                  let segment = byKey.get(key)
-                  if (!segment) {
-                      segment = { key, rows: [] }
-                      byKey.set(key, segment)
-                      out.push(segment)
-                  }
-                  segment.rows.push(row)
-              }
-              return out
-          })()
+            const out: { key: string | undefined; rows: T[] }[] = []
+            const byKey = new Map<string, { key: string; rows: T[] }>()
+            let lastUngrouped: { key: undefined; rows: T[] } | undefined
+            for (const row of rows) {
+                const key = grouping.groupBy(row)
+                if (key === undefined) {
+                    if (lastUngrouped) {
+                        lastUngrouped.rows.push(row)
+                    } else {
+                        lastUngrouped = { key: undefined, rows: [row] }
+                        out.push(lastUngrouped)
+                    }
+                    continue
+                }
+                lastUngrouped = undefined
+                let segment = byKey.get(key)
+                if (!segment) {
+                    segment = { key, rows: [] }
+                    byKey.set(key, segment)
+                    out.push(segment)
+                }
+                segment.rows.push(row)
+            }
+            return out
+        })()
         : null
 
     const mobileCardsProps = {
