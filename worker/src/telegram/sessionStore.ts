@@ -1,13 +1,14 @@
 import { prisma } from '../prisma'
 import { decryptSecret, encryptSecret } from '../crypto'
+import { getSetting, setSetting } from '../prisma/settings'
 
 const SESSION_KEY = 'telegram.session'
 
 export async function getSessionString(): Promise<string | null> {
-    const row = await prisma.setting.findUnique({ where: { key: SESSION_KEY } })
-    if (!row) return null
+    const raw = await getSetting(SESSION_KEY)
+    if (!raw) return null
     try {
-        return decryptSecret(row.value)
+        return decryptSecret(raw)
     } catch (error) {
         console.error('[sessionStore] failed to decrypt session:', error)
         return null
@@ -15,12 +16,7 @@ export async function getSessionString(): Promise<string | null> {
 }
 
 export async function setSessionString(session: string): Promise<void> {
-    const encrypted = encryptSecret(session)
-    await prisma.setting.upsert({
-        where: { key: SESSION_KEY },
-        update: { value: encrypted },
-        create: { key: SESSION_KEY, value: encrypted },
-    })
+    await setSetting(SESSION_KEY, encryptSecret(session))
 }
 
 export async function hasSession(): Promise<boolean> {

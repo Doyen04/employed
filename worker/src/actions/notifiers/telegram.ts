@@ -1,4 +1,5 @@
-import { decryptSecret } from '../../crypto'
+import { decryptJson } from '../../utils/json'
+import { getMonitoredChatRefusal } from '../../prisma/chats'
 import { buildNotificationText } from './format'
 import type { Notifier, NotifierResult } from '../types'
 
@@ -11,7 +12,7 @@ export const telegramNotifier: Notifier = {
             return { status: 'failed', error: 'telegram notifier requires config.targetChatId' }
         }
 
-        const blocked = await monitoredChatRefusal(target)
+        const blocked = await getMonitoredChatRefusal(target)
         if (blocked) {
             return { status: 'failed', error: blocked }
         }
@@ -31,25 +32,7 @@ export const telegramNotifier: Notifier = {
     },
 }
 
-async function monitoredChatRefusal(target: string): Promise<string | null> {
-    try {
-        const { prisma } = await import('../../prisma')
-        const chat = await prisma.chat.findUnique({ where: { telegramChatId: BigInt(target) } })
-        if (chat?.isMonitored) {
-            return `refusing to send into monitored chat "${chat.title}" — notifications there would re-trigger analysis (infinite loop). Use a non-monitored channel or another chat.`
-        }
-    } catch {
-        // not a tracked chat id — sending is safe (unmonitored chats are ignored by the listener)
-    }
-    return null
-}
-
 export function decryptNotifierConfig(encryptedConfig: unknown): Record<string, unknown> {
     if (typeof encryptedConfig !== 'string') return {}
-    try {
-        return JSON.parse(decryptSecret(encryptedConfig)) as Record<string, unknown>
-    } catch (error) {
-        console.error('[notifiers] failed to decrypt notifier config:', error)
-        return {}
-    }
+    return decryptJson(encryptedConfig, {})
 }

@@ -3,6 +3,7 @@ import { prisma } from './prisma'
 import { startServer } from './server'
 import { startTelegramListener } from './telegram/listener'
 import { clearDiagnostic, getDiagnosticsState, reportDiagnostic } from './diagnostics'
+import { getErrorMessage } from './utils/errors'
 
 async function main() {
   try {
@@ -12,7 +13,7 @@ async function main() {
     await reportDiagnostic(
       'db.connection',
       'error',
-      `Database connection failed: ${error instanceof Error ? error.message : String(error)}`,
+      `Database connection failed: ${getErrorMessage(error)}`,
     )
     throw error
   }
@@ -28,7 +29,7 @@ async function main() {
     await reportDiagnostic(
       'system.startup',
       'error',
-      `Telegram listener failed to start: ${error instanceof Error ? error.message : String(error)}`,
+      `Telegram listener failed to start: ${getErrorMessage(error)}`,
     )
   }
 

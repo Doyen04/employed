@@ -1,17 +1,16 @@
 import type { NotificationPayload } from '../types'
+import { truncate } from '../../utils/truncate'
 
 export function buildNotificationText(payload: NotificationPayload): string {
   const fields = Object.entries(payload.analysis)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join('\n')
 
-  const text = payload.text.length > 500 ? `${payload.text.slice(0, 500)}…` : payload.text
-
   return [
     `[${payload.analysisConfigName}]`,
     `Chat: ${payload.chatTitle}`,
     `Sender: ${payload.senderName ?? 'unknown'}`,
-    `Message: ${text}`,
+    `Message: ${truncate(payload.text, 500)}`,
     fields ? `\n${fields}` : '',
   ]
     .filter(Boolean)

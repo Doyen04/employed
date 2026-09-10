@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { clearSession, hasSession } from '../../telegram/sessionStore'
 import { telegramLogin } from '../../telegram/authFlow'
+import { getErrorMessage } from '../../utils/errors'
 
 export const telegramRouter = Router()
 
@@ -37,7 +38,7 @@ telegramRouter.post('/login/start', (req, res) => {
         const status = telegramLogin.start(body.data.phoneNumber)
         res.status(202).json({ login: status })
     } catch (error) {
-        res.status(409).json({ error: (error as Error).message })
+        res.status(409).json({ error: getErrorMessage(error) })
     }
 })
 

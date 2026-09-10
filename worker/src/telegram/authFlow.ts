@@ -6,6 +6,7 @@ import { setSessionString } from './sessionStore'
 import { resetTelegramClient } from './client'
 import { startTelegramListener } from './listener'
 import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { createClient } from './factory'
 
 export type TelegramLoginStatus =
     | { state: 'idle' }
@@ -68,12 +69,7 @@ class TelegramLoginFlow {
     }
 
     private async run(phone: string): Promise<void> {
-        this.client = new TelegramClient(
-            new StringSession(''),
-            Number(config.TELEGRAM_API_ID),
-            config.TELEGRAM_API_HASH ?? '',
-            { connectionRetries: 5 },
-        )
+        this.client = createClient()
 
         try {
             await this.client.start({

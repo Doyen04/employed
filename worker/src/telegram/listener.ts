@@ -1,4 +1,5 @@
 import type { TelegramClient } from 'teleproto'
+import type { StringSession } from 'teleproto/sessions'
 import { NewMessage, Raw } from 'teleproto/events'
 import type { NewMessageEvent } from 'teleproto/events'
 import { UnauthorizedError } from 'teleproto/errors'
@@ -7,7 +8,7 @@ import bigInt from 'big-integer'
 
 import { Prisma } from '../generated/prisma/client'
 import { prisma } from '../prisma'
-import { buildClient, resetTelegramClient } from './client'
+import { createClient, resetTelegramClient } from './client'
 import { clearSession, getSessionString } from './sessionStore'
 import { runAnalysis } from '../llm/analyze'
 import { matchesCondition } from '../actions/resolver'
@@ -15,6 +16,10 @@ import { dispatchAction } from '../actions/dispatch'
 import { reportDiagnostic, clearDiagnostic } from '../diagnostics'
 import { toJsonValue } from '../types/json'
 import { emitMessageNew, emitMessageStored } from '../socket/server'
+import { getSetting, setSetting } from '../prisma/settings'
+import { chatRef } from '../api/serializers'
+import { getErrorMessage } from '../utils/errors'
+import { truncate } from '../utils/truncate'
 
 const LAST_SEEN_PREFIX = 'tg.lastMsg:'
 const HEALTH_CHECK_INTERVAL_MS = 60_000
@@ -24,7 +29,7 @@ async function purgeRevokedSession(reason: string): Promise<void> {
     try {
         await clearSession()
     } catch (purgeError) {
-        console.error('[listener] failed to purge chat data:', (purgeError as Error).message)
+        console.error('[listener] failed to purge chat data:', getErrorMessage(purgeError))
     }
 }
 
@@ -33,16 +38,12 @@ function lastSeenKey(telegramChatId: bigint): string {
 }
 
 async function getLastSeen(telegramChatId: bigint): Promise<number | null> {
-    const row = await prisma.setting.findUnique({ where: { key: lastSeenKey(telegramChatId) } })
-    return row ? Number(row.value) : null
+    const raw = await getSetting(lastSeenKey(telegramChatId))
+    return raw ? Number(raw) : null
 }
 
 async function setLastSeen(telegramChatId: bigint, messageId: number): Promise<void> {
-    await prisma.setting.upsert({
-        where: { key: lastSeenKey(telegramChatId) },
-        update: { value: String(messageId) },
-        create: { key: lastSeenKey(telegramChatId), value: String(messageId) },
-    })
+    await setSetting(lastSeenKey(telegramChatId), String(messageId))
 }
 
 async function resolveChatTitle(
@@ -139,11 +140,7 @@ function serializeStored(
     chat: { id: string; title: string; telegramChatId: bigint },
     message: MessageRow,
 ) {
-    const chatRef = {
-        id: chat.id,
-        title: chat.title,
-        telegramChatId: chat.telegramChatId.toString(),
-    }
+    const ref = chatRef(chat)
     return {
         message: {
             id: message.id,
@@ -152,9 +149,9 @@ function serializeStored(
             senderName: message.senderName,
             text: message.text,
             receivedAt: message.receivedAt.toISOString(),
-            chat: chatRef,
+            chat: ref,
         },
-        chat: chatRef,
+        chat: ref,
     }
 }
 
@@ -178,7 +175,7 @@ async function processMessage(
             'analysis.config',
             'warning',
             'No active analysis configs — messages are not being analyzed.',
-            { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
+            { chatTitle: chat.title, messageText: truncate(message.text, 200) },
         )
         return
     }
@@ -192,7 +189,7 @@ async function processMessage(
             'analysis.config',
             'warning',
             'No active analysis config covers this chat — message was not analyzed.',
-            { chatTitle: chat.title, messageText: message.text.slice(0, 200) },
+            { chatTitle: chat.title, messageText: truncate(message.text, 200) },
         )
         return
     }
@@ -204,12 +201,12 @@ async function processMessage(
         try {
             output = await runAnalysis(cfg, message.text)
         } catch (error) {
-            const errorMessage = (error as Error).message || String(error)
+            const errorMessage = getErrorMessage(error)
             allOk = false
             console.error('[listener] analysis failed:', errorMessage)
             await reportDiagnostic('llm.analyze', 'error', errorMessage, {
                 chatTitle: chat.title,
-                messageText: message.text.slice(0, 200),
+                messageText: truncate(message.text, 200),
             })
             continue
         }
@@ -230,11 +227,7 @@ async function processMessage(
             })
         }
 
-        const chatPayload = {
-            id: chat.id,
-            title: chat.title,
-            telegramChatId: chat.telegramChatId.toString(),
-        }
+        const chatPayload = chatRef(chat)
         emitMessageNew({
             message: {
                 id: message.id,
@@ -257,14 +250,14 @@ async function processMessage(
     }
 }
 
-function onNewMessage(client: TelegramClient) {
+function onNewMessage(client: TelegramClient<StringSession>) {
     return (event: NewMessageEvent): void => {
         ingestMessage(client, event, new Date())
-            .catch((error) => console.error('[listener] ingest failed:', (error as Error).message))
+            .catch((error) => console.error('[listener] ingest failed:', getErrorMessage(error)))
     }
 }
 
-async function backfillMonitoredChats(client: TelegramClient): Promise<void> {
+async function backfillMonitoredChats(client: TelegramClient<StringSession>): Promise<void> {
     const chats = await prisma.chat.findMany({ where: { isMonitored: true } })
     for (const chat of chats) {
         const lastSeen = await getLastSeen(chat.telegramChatId)
@@ -303,7 +296,7 @@ async function backfillMonitoredChats(client: TelegramClient): Promise<void> {
                 }
             }
         } catch (error) {
-            console.error(`[listener] backfill failed for chat ${chat.id}:`, (error as Error).message)
+            console.error(`[listener] backfill failed for chat ${chat.id}:`, getErrorMessage(error))
             reportDiagnostic(
                 'telegram.listener',
                 'warning',
@@ -317,7 +310,7 @@ export async function startTelegramListener(): Promise<boolean> {
     const session = await getSessionString()
     if (!session) return false
 
-    const client = buildClient(session)
+    const client = createClient(session)
 
     try {
         await client.connect()
@@ -331,7 +324,7 @@ export async function startTelegramListener(): Promise<boolean> {
             await purgeRevokedSession('telegram session rejected')
             return false
         }
-        await reportDiagnostic('telegram.listener', 'error', `telegram connect failed: ${(error as Error).message}`)
+        await reportDiagnostic('telegram.listener', 'error', `telegram connect failed: ${getErrorMessage(error)}`)
         throw error
     }
 
@@ -361,7 +354,7 @@ export async function startTelegramListener(): Promise<boolean> {
             ).catch(() => { })
             resetTelegramClient()
             clearSession().catch((purgeError) =>
-                console.error('[listener] failed to purge chat data:', (purgeError as Error).message),
+                console.error('[listener] failed to purge chat data:', getErrorMessage(purgeError)),
             )
         },
         new Raw({ types: [UpdateConnectionState] }),

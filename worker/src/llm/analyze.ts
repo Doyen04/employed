@@ -1,5 +1,6 @@
 import { createLlmProvider, type LlmProvider } from './client'
 import type { AnalysisConfig } from '../generated/prisma/client'
+import { truncate } from '../utils/truncate'
 
 let provider: LlmProvider | null | undefined
 
@@ -32,7 +33,7 @@ export async function runAnalysis(
     const extracted = extractJson(raw)
     if (!extracted) {
         throw new Error(
-            `LLM output was not valid JSON: ${raw.length > 160 ? `${raw.slice(0, 160)}…` : raw}`,
+            `LLM output was not valid JSON: ${truncate(raw, 160)}`,
         )
     }
 

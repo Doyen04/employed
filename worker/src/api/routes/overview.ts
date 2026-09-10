@@ -2,6 +2,8 @@ import { Router } from 'express'
 
 import { prisma } from '../../prisma'
 import { getDiagnosticsState } from '../../diagnostics'
+import { getErrorMessage } from '../../utils/errors'
+import { chatRef } from '../serializers'
 
 export const overviewRouter = Router()
 
@@ -105,11 +107,7 @@ overviewRouter.get('/', async (_req, res) => {
                 text: message.text,
                 receivedAt: message.receivedAt.toISOString(),
                 chat: message.chat
-                    ? {
-                        id: message.chat.id,
-                        title: message.chat.title,
-                        telegramChatId: message.chat.telegramChatId.toString(),
-                    }
+                    ? chatRef(message.chat)
                     : { id: '', title: 'Unknown', telegramChatId: '' },
             })),
             recentActions: recentActions.map((action) => ({
@@ -133,6 +131,6 @@ overviewRouter.get('/', async (_req, res) => {
         })
     } catch (error) {
         console.error('[overviewRouter GET /] Error:', error)
-        res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+        res.status(500).json({ error: getErrorMessage(error) })
     }
 })

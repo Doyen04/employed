@@ -2,7 +2,9 @@ import { Router } from 'express'
 import { z } from 'zod'
 
 import { prisma } from '../../prisma'
-import { decryptSecret, encryptSecret } from '../../crypto'
+import { encryptJson, decryptJson } from '../../utils/json'
+import { pickDefined } from '../../utils/pickDefined'
+import { getMonitoredChatRefusal } from '../../prisma/chats'
 import { toJsonValue } from '../../types/json'
 import type { ActionRule, AnalysisConfig, Notifier } from '../../generated/prisma/client'
 
@@ -25,12 +27,8 @@ function serializeConfig(config: AnalysisConfig & { allowedChats?: { id: string 
 function serializeNotifier(notifier: Notifier) {
   let telegramTargetChatId: string | null = null
   if (notifier.type === 'telegram' && typeof notifier.config === 'string') {
-    try {
-      const decrypted = JSON.parse(decryptSecret(notifier.config)) as { targetChatId?: unknown }
-      if (typeof decrypted.targetChatId === 'string') telegramTargetChatId = decrypted.targetChatId
-    } catch (error) {
-      console.error('[settings] failed to read telegram notifier config:', error)
-    }
+    const decrypted = decryptJson<{ targetChatId?: unknown }>(notifier.config, {})
+    if (typeof decrypted.targetChatId === 'string') telegramTargetChatId = decrypted.targetChatId
   }
   return {
     id: notifier.id,
@@ -98,17 +96,17 @@ settingsRouter.post('/analysis-configs', async (req, res) => {
 
 settingsRouter.patch('/analysis-configs/:id', async (req, res) => {
     const body = configSchema.partial().parse(req.body ?? {})
-    const data: Record<string, unknown> = {}
-    if (body.name !== undefined) data.name = body.name
-    if (body.promptTemplate !== undefined) data.promptTemplate = body.promptTemplate
-    if (body.outputSchema !== undefined) data.outputSchema = toJsonValue(body.outputSchema)
-    if (body.isActive !== undefined) data.isActive = body.isActive
-    if (body.allowedChatIds !== undefined) {
-        data.allowedChats = { set: body.allowedChatIds.map((chatId) => ({ id: chatId })) }
-    }
     const config = await prisma.analysisConfig.update({
         where: { id: req.params.id },
-        data: data as Parameters<typeof prisma.analysisConfig.update>[0]['data'],
+        data: pickDefined({
+            name: body.name,
+            promptTemplate: body.promptTemplate,
+            outputSchema: body.outputSchema !== undefined ? toJsonValue(body.outputSchema) : undefined,
+            isActive: body.isActive,
+            allowedChatIds: body.allowedChatIds !== undefined
+                ? { set: body.allowedChatIds.map((chatId) => ({ id: chatId })) }
+                : undefined,
+        }) as Parameters<typeof prisma.analysisConfig.update>[0]['data'],
         include: { allowedChats: { select: { id: true } } },
     })
     res.json(serializeConfig(config))
@@ -132,16 +130,7 @@ async function assertNotifierAllowed(
     if (candidate.type !== 'telegram') return null
     const raw = candidate.config.targetChatId
     if (typeof raw !== 'string' || !raw.trim()) return null
-
-    try {
-        const chat = await prisma.chat.findUnique({ where: { telegramChatId: BigInt(raw.trim()) } })
-        if (chat?.isMonitored) {
-            return `telegram notifier cannot target monitored chat "${chat.title}" — notifications there would re-trigger analysis (infinite loop). Use a non-monitored channel or another chat.`
-        }
-    } catch {
-        // not a tracked chat id — sending is safe (unmonitored chats are ignored by the listener)
-    }
-    return null
+    return getMonitoredChatRefusal(raw.trim())
 }
 
 settingsRouter.post('/notifiers', async (req, res) => {
@@ -155,7 +144,7 @@ settingsRouter.post('/notifiers', async (req, res) => {
             type: body.type,
             name: body.name,
             isActive: body.isActive,
-            config: encryptSecret(JSON.stringify(body.config)),
+            config: encryptJson(body.config),
         },
     })
     res.status(201).json(serializeNotifier(notifier))
@@ -181,7 +170,7 @@ settingsRouter.patch('/notifiers/:id', async (req, res) => {
     if (body.isActive !== undefined) data.isActive = body.isActive
     if (body.type !== undefined) data.type = body.type
     if (body.config !== undefined) {
-        data.config = encryptSecret(JSON.stringify(body.config))
+        data.config = encryptJson(body.config)
     }
     const updated = await prisma.notifier.update({
         where: { id: req.params.id },
@@ -218,14 +207,14 @@ settingsRouter.post('/action-rules', async (req, res) => {
 
 settingsRouter.patch('/action-rules/:id', async (req, res) => {
     const body = ruleSchema.partial().parse(req.body ?? {})
-    const data: Record<string, unknown> = {}
-    if (body.analysisConfigId !== undefined) data.analysisConfigId = body.analysisConfigId
-    if (body.condition !== undefined) data.condition = toJsonValue(body.condition)
-    if (body.notifierId !== undefined) data.notifierId = body.notifierId
-    if (body.isActive !== undefined) data.isActive = body.isActive
     const rule = await prisma.actionRule.update({
         where: { id: req.params.id },
-        data: data as Parameters<typeof prisma.actionRule.update>[0]['data'],
+        data: pickDefined({
+            analysisConfigId: body.analysisConfigId,
+            condition: body.condition !== undefined ? toJsonValue(body.condition) : undefined,
+            notifierId: body.notifierId,
+            isActive: body.isActive,
+        }) as Parameters<typeof prisma.actionRule.update>[0]['data'],
         include: { notifier: true },
     })
     res.json(serializeRule(rule))

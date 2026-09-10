@@ -1,12 +1,14 @@
 import { Router } from 'express'
 
 import { prisma } from '../../prisma'
+import { parseLimit, parseCursor, buildPage } from '../../utils/pagination'
+import { chatRef } from '../serializers'
 
 export const actionLogsRouter = Router()
 
 actionLogsRouter.get('/', async (req, res) => {
-    const limit = Math.min(Math.max(Number(req.query.limit ?? 50), 1), 200)
-    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined
+    const limit = parseLimit(req.query.limit)
+    const cursor = parseCursor(req.query.cursor)
 
     const rows = await prisma.actionLog.findMany({
         take: limit + 1,
@@ -18,12 +20,10 @@ actionLogsRouter.get('/', async (req, res) => {
         },
     })
 
-    const hasMore = rows.length > limit
-    const page = hasMore ? rows.slice(0, limit) : rows
-    const nextCursor = hasMore ? (page[page.length - 1]?.id ?? null) : null
+    const page = buildPage(rows, limit)
 
     res.json({
-        items: page.map((row) => ({
+        items: page.items.map((row) => ({
             id: row.id,
             status: row.status,
             retryCount: row.retryCount,
@@ -42,15 +42,11 @@ actionLogsRouter.get('/', async (req, res) => {
                     text: row.analysis.message.text,
                     senderName: row.analysis.message.senderName,
                     receivedAt: row.analysis.message.receivedAt.toISOString(),
-                    chat: {
-                        id: row.analysis.message.chat.id,
-                        title: row.analysis.message.chat.title,
-                        telegramChatId: row.analysis.message.chat.telegramChatId.toString(),
-                    },
+                    chat: chatRef(row.analysis.message.chat),
                 },
             },
         })),
-        nextCursor,
-        hasMore,
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
     })
 })

@@ -1,10 +1,8 @@
 import readline from 'node:readline/promises'
 
-import { TelegramClient } from 'teleproto'
-import { StringSession } from 'teleproto/sessions'
-
 import { config } from '../config'
 import { setSessionString } from './sessionStore'
+import { createClient } from './factory'
 
 async function main() {
     if (!config.TELEGRAM_API_ID || !config.TELEGRAM_API_HASH) {
@@ -14,12 +12,7 @@ async function main() {
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 
-    const client = new TelegramClient(
-        new StringSession(''),
-        config.TELEGRAM_API_ID,
-        config.TELEGRAM_API_HASH,
-        { connectionRetries: 5 },
-    )
+    const client = createClient()
 
     await client.start({
         phoneNumber: async () => {

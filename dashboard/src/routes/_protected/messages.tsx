@@ -365,7 +365,7 @@ function MessagesPage() {
                                                         {formatTime(message.receivedAt)}
                                                     </span>
                                                 </p>
-                                                <p className="m-0 mt-0.5 break-words whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
+                                                <p className="m-0 mt-0.5 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
                                                     {message.text}
                                                 </p>
                                             </div>

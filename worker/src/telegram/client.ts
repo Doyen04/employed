@@ -1,30 +1,24 @@
-import { TelegramClient } from 'teleproto'
-import { StringSession } from 'teleproto/sessions'
+import type { TelegramClient } from 'teleproto'
+import type { StringSession } from 'teleproto/sessions'
 import { UnauthorizedError } from 'teleproto/errors'
 
-import { config } from '../config'
 import { getSessionString } from './sessionStore'
 import { withTimeout } from '../utils/withTimeout'
 import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { createClient } from './factory'
+import { getErrorMessage } from '../utils/errors'
 
 const CONNECT_TIMEOUT_MS = 20_000
 
-export function buildClient(session: string): TelegramClient {
-    return new TelegramClient(
-        new StringSession(session),
-        Number(config.TELEGRAM_API_ID ?? 0),
-        config.TELEGRAM_API_HASH ?? '',
-        { connectionRetries: 5 },
-    )
-}
+export { createClient } from './factory'
 
-let client: TelegramClient | null = null
+let client: TelegramClient<StringSession> | null = null
 
-export function getCachedClient(): TelegramClient | null {
+export function getCachedClient(): TelegramClient<StringSession> | null {
     return client
 }
 
-export async function requireTelegramClient(): Promise<TelegramClient> {
+export async function requireTelegramClient(): Promise<TelegramClient<StringSession>> {
     if (client) return client
 
     const session = await getSessionString()
@@ -37,7 +31,7 @@ export async function requireTelegramClient(): Promise<TelegramClient> {
         throw new Error('Telegram session not authenticated — run `npm run login` first')
     }
 
-    const candidate = buildClient(session)
+    const candidate = createClient(session)
     try {
         await withTimeout(candidate.connect(), CONNECT_TIMEOUT_MS, 'telegram connection timed out')
         await withTimeout(candidate.getMe(), CONNECT_TIMEOUT_MS, 'telegram session check timed out')
@@ -52,7 +46,7 @@ export async function requireTelegramClient(): Promise<TelegramClient> {
             )
             throw new Error('Telegram session is invalid or has been revoked — re-login required')
         }
-        if ((error as Error).message === 'telegram connection timed out' || (error as Error).message === 'telegram session check timed out') {
+        if (getErrorMessage(error) === 'telegram connection timed out' || getErrorMessage(error) === 'telegram session check timed out') {
             await reportDiagnostic(
                 'telegram.listener',
                 'warning',
@@ -66,11 +60,11 @@ export async function requireTelegramClient(): Promise<TelegramClient> {
     return client
 }
 
-export async function tryTelegramClient(): Promise<TelegramClient | null> {
+export async function tryTelegramClient(): Promise<TelegramClient<StringSession> | null> {
     try {
         return await requireTelegramClient()
     } catch (error) {
-        console.error('[telegram] client unavailable:', (error as Error).message)
+        console.error('[telegram] client unavailable:', getErrorMessage(error))
         return null
     }
 }

@@ -5,6 +5,8 @@ import { notifierRegistry } from './registry'
 import { decryptNotifierConfig } from './notifiers/telegram'
 import { buildNotificationText } from './notifiers/format'
 import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { getErrorMessage } from '../utils/errors'
+import { truncate } from '../utils/truncate'
 import type { NotificationPayload } from './types'
 import type { ActionLog, ActionRule, Analysis, Chat, Message, Notifier } from '../generated/prisma/client'
 
@@ -51,7 +53,7 @@ export async function dispatchAction(
             'notifier.dispatch',
             'error',
             `Notifier "${rule.notifier.name}" uses unknown type "${rule.notifier.type}".`,
-            { chatTitle: context.chat.title, messageText: context.message.text.slice(0, 200) },
+            { chatTitle: context.chat.title, messageText: truncate(context.message.text, 200) },
         )
         return
     }
@@ -76,12 +78,12 @@ export async function dispatchAction(
         })
         await clearDiagnostic('notifier.dispatch')
     } catch (error) {
-        await failLog(log, (error as Error).message, attempts - 1)
+        await failLog(log, getErrorMessage(error), attempts - 1)
         await reportDiagnostic(
             'notifier.dispatch',
             'error',
-            `Notifier "${rule.notifier.name}" failed: ${(error as Error).message}`,
-            { chatTitle: context.chat.title, messageText: context.message.text.slice(0, 200) },
+            `Notifier "${rule.notifier.name}" failed: ${getErrorMessage(error)}`,
+            { chatTitle: context.chat.title, messageText: truncate(context.message.text, 200) },
         )
     }
 }

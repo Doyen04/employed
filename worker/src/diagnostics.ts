@@ -1,5 +1,6 @@
-import { prisma } from './prisma'
 import { emitDiagnosticsUpdate } from './socket/server'
+import { safeJsonParse } from './utils/json'
+import { getSetting, setSetting } from './prisma/settings'
 
 const KEY = 'system.diagnostics'
 
@@ -28,14 +29,10 @@ export interface DiagnosticsState {
 }
 
 export async function getDiagnosticsState(): Promise<DiagnosticsState> {
-    const row = await prisma.setting.findUnique({ where: { key: KEY } })
-    if (!row) return normalize([])
-    try {
-        const parsed = JSON.parse(row.value) as { issues?: DiagnosticIssue[] }
-        return normalize(parsed.issues ?? [])
-    } catch {
-        return normalize([])
-    }
+    const raw = await getSetting(KEY)
+    if (!raw) return normalize([])
+    const parsed = safeJsonParse<{ issues?: DiagnosticIssue[] }>(raw, {})
+    return normalize(parsed.issues ?? [])
 }
 
 export async function reportDiagnostic(
@@ -99,10 +96,6 @@ function normalize(issues: DiagnosticIssue[]): DiagnosticsState {
 }
 
 async function persist(state: DiagnosticsState): Promise<void> {
-    await prisma.setting.upsert({
-        where: { key: KEY },
-        update: { value: JSON.stringify(state), updatedAt: new Date() },
-        create: { key: KEY, value: JSON.stringify(state) },
-    })
+    await setSetting(KEY, JSON.stringify(state))
     emitDiagnosticsUpdate(state)
 }
