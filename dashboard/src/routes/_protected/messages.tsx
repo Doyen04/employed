@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, Inbox, MessageSquare, Radio, RefreshCw, Search, Zap } from 'lucide-react'
@@ -7,6 +7,9 @@ import { listMessages, messageSummary } from '../../server/messages'
 import { getTelegramStatus } from '../../server/telegram'
 import { connectRealtime } from '../../client/socket'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
+import { LogTable } from '../../components/dashboard/LogTable'
+import type { LogTableColumn } from '../../components/dashboard/LogTable'
+import { DetailsDrawer } from '../../components/dashboard/DetailsDrawer'
 import type { RealtimeMessageStored, WorkerMessage, WorkerMessageSummary } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 
@@ -17,7 +20,7 @@ const MAX_ITEMS = 200
 
 function MessagesPage() {
     const [summaries, setSummaries] = useState<WorkerMessageSummary[]>([])
-    const [chatId, setChatId] = useState<string | undefined>(undefined)
+    const [selected, setSelected] = useState<WorkerMessageSummary | null>(null)
     const [items, setItems] = useState<WorkerMessage[]>([])
     const [newHeads, setNewHeads] = useState<string[]>([])
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
@@ -27,9 +30,10 @@ function MessagesPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [query, setQuery] = useState('')
-    const threadRef = useRef<HTMLDivElement>(null)
 
-    async function load(reset: boolean) {
+    const chatId = selected?.chatId
+
+    async function loadThread(reset: boolean) {
         if (reset) setLoading(true)
         setError(null)
         try {
@@ -65,6 +69,20 @@ function MessagesPage() {
         }, 2500)
     }, [])
 
+    async function refresh() {
+        setError(null)
+        try {
+            const [sumRes, statusRes] = await Promise.allSettled([
+                messageSummary(),
+                getTelegramStatus(),
+            ])
+            if (sumRes.status === 'fulfilled') setSummaries(sumRes.value)
+            if (statusRes.status === 'fulfilled') setTelegramLoggedIn(statusRes.value.loggedIn)
+        } catch (err) {
+            setError(errorText(err))
+        }
+    }
+
     useEffect(() => {
         let alive = true
         async function init() {
@@ -78,26 +96,20 @@ function MessagesPage() {
             setBooting(false)
         }
         void init()
-        void load(true)
         return () => {
             alive = false
         }
     }, [])
 
     useEffect(() => {
-        void load(true)
-    }, [chatId])
-
-    useEffect(() => {
-        if (threadRef.current) threadRef.current.scrollTop = 0
-    }, [chatId])
+        if (selected) void loadThread(true)
+    }, [selected])
 
     useEffect(() => {
         const unsubscribe = connectRealtime({
             onMessageStored: (payload) => {
                 const event = payload as RealtimeMessageStored
-                const matches = !chatId || event.message.chatId === chatId
-                if (matches) {
+                if (selected && event.message.chatId === selected.chatId) {
                     setItems((previous) => {
                         if (previous.some((message) => message.id === event.message.id)) return previous
                         return [event.message, ...previous].slice(0, MAX_ITEMS)
@@ -119,7 +131,7 @@ function MessagesPage() {
             },
         })
         return unsubscribe
-    }, [chatId, flashNew])
+    }, [selected, flashNew])
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase()
@@ -130,275 +142,254 @@ function MessagesPage() {
         )
     }, [summaries, query])
 
-    const selectedChat = summaries.find((row) => row.chatId === chatId)
     const totalMessages = summaries.reduce((sum, row) => sum + row.messageCount, 0)
 
     if (booting) return <PageSkeleton label="Loading messages" />
 
-    return (
-        <section className="island-shell overflow-hidden rounded-2xl p-0">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
-                <div>
-                    <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Messages</h2>
-                    <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
-                        Every message from your monitored chats — browse the inbox or focus a single thread.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-(--sea-ink-soft)">
-                        <span className="relative flex h-2 w-2">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                        </span>
-                        Live
+    const columns: LogTableColumn<WorkerMessageSummary>[] = [
+        {
+            header: 'Chat',
+            cell: (row) => (
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
+                        {initials(row.title)}
                     </span>
-                    <button
-                        onClick={() => void load(true)}
-                        disabled={loading}
-                        className="app-primary-button disabled:cursor-wait disabled:opacity-50"
-                    >
-                        <RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden="true" />
-                        Refresh
-                    </button>
+                    <span className="min-w-0 flex-1 truncate font-medium text-(--sea-ink) dark:text-zinc-100">
+                        {row.title}
+                    </span>
                 </div>
-            </div>
+            ),
+        },
+        {
+            header: 'Telegram ID',
+            hiddenOnMobile: true,
+            cell: (row) => (
+                <span className="whitespace-nowrap font-mono text-xs text-(--sea-ink-soft)">
+                    {row.telegramChatId}
+                </span>
+            ),
+        },
+        {
+            header: 'Messages',
+            cell: (row) => (
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[rgba(236,185,20,0.18)] px-2.5 py-0.5 text-xs font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
+                    {row.messageCount.toLocaleString()}
+                </span>
+            ),
+        },
+        {
+            header: 'Last message',
+            cell: (row) => (
+                <span className="block max-w-72 truncate text-xs text-(--sea-ink-soft)">
+                    {row.lastText ?? 'No messages yet'}
+                </span>
+            ),
+        },
+        {
+            header: 'Last activity',
+            align: 'right',
+            cell: (row) => (
+                <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)" title={row.lastReceivedAt ?? ''}>
+                    {relativeTime(row.lastReceivedAt)}
+                </span>
+            ),
+        },
+    ]
 
-            {error && <p className="border-b border-(--line) px-5 py-2 text-sm text-red-500">{error}</p>}
-
-            {!telegramLoggedIn ? (
-                <div className="flex flex-col items-center justify-center p-10 text-center">
-                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
-                        <Radio className="h-6 w-6" />
+    return (
+        <>
+            <section className="island-shell overflow-hidden rounded-2xl p-0">
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
+                    <div>
+                        <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Messages</h2>
+                        <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
+                            Every message from your monitored chats — open a conversation to read its thread.
+                        </p>
                     </div>
-                    <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
-                        Telegram Disconnected
-                    </h3>
-                    <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
-                        Your Telegram session is not connected. Connect your account to import and monitor your groups, channels, and chats.
-                    </p>
-                    <Link
-                        to="/telegram"
-                        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-(--lagoon-deep) px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 dark:bg-(--lagoon) dark:text-[#4F3D35]"
-                    >
-                        <Zap className="h-3.5 w-3.5" />
-                        Connect Telegram Account
-                        <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                </div>
-            ) : summaries.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-10 text-center">
-                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
-                        <Inbox className="h-6 w-6" />
+                    <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-(--sea-ink-soft)">
+                            <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                            </span>
+                            Live
+                        </span>
+                        <button
+                            onClick={() => void refresh()}
+                            className="app-primary-button"
+                        >
+                            <RefreshCw aria-hidden="true" />
+                            Refresh
+                        </button>
                     </div>
-                    <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
-                        No Monitored Chats
-                    </h3>
-                    <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
-                        Mark chats as "Monitored" on the Chats page to start persisting their messages here.
-                    </p>
                 </div>
-            ) : (
-                <div className="lg:grid lg:h-[min(42rem,calc(100vh-15rem))] lg:grid-cols-[18rem_minmax(0,1fr)] lg:overflow-hidden">
-                    <aside className="hidden min-h-0 flex-col border-r border-(--line) bg-(--surface) lg:flex">
-                        <div className="relative border-b border-(--line) p-3">
-                            <Search className="absolute left-6 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
-                            <input
-                                type="search"
-                                value={query}
-                                onChange={(event) => setQuery(event.target.value)}
-                                placeholder="Search chats…"
-                                aria-label="Search chats"
-                                className="w-full rounded-full border border-(--line) bg-(--surface-strong) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
-                            />
+
+                {error && <p className="border-b border-(--line) px-5 py-2 text-sm text-red-500">{error}</p>}
+
+                {!telegramLoggedIn ? (
+                    <div className="flex flex-col items-center justify-center p-10 text-center">
+                        <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
+                            <Radio className="h-6 w-6" />
                         </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto p-2">
-                            <button
-                                type="button"
-                                onClick={() => setChatId(undefined)}
-                                className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
-                                    chatId === undefined
-                                        ? 'bg-[rgba(236,185,20,0.14)] ring-1 ring-[rgba(236,185,20,0.4)]'
-                                        : 'hover:bg-(--surface-strong)'
-                                }`}
-                            >
-                                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)">
-                                    <Inbox className="h-4 w-4" aria-hidden="true" />
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-sm font-semibold text-(--sea-ink) dark:text-zinc-100">
-                                        Inbox
-                                    </span>
-                                    <span className="block truncate text-xs text-(--sea-ink-soft)">
-                                        {totalMessages.toLocaleString()} messages
-                                    </span>
-                                </span>
-                            </button>
-
-                            {filtered.length === 0 && (
-                                <p className="px-2.5 py-6 text-center text-xs text-(--sea-ink-soft)">
-                                    No chats match {query ? `"${query}"` : ''}.
-                                </p>
-                            )}
-
-                            {filtered.map((row) => {
-                                const active = chatId === row.chatId
-                                return (
-                                    <button
-                                        key={row.chatId}
-                                        type="button"
-                                        onClick={() => setChatId(row.chatId)}
-                                        className={`mb-0.5 flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
-                                            active
-                                                ? 'bg-[rgba(236,185,20,0.14)] ring-1 ring-[rgba(236,185,20,0.4)]'
-                                                : 'hover:bg-(--surface-strong)'
-                                        }`}
-                                    >
-                                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[rgba(236,185,20,0.18)] text-xs font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
-                                            {initials(row.title)}
-                                        </span>
-                                        <span className="min-w-0 flex-1">
-                                            <span
-                                                className={`block truncate text-sm ${
-                                                    active
-                                                        ? 'font-semibold text-(--sea-ink) dark:text-zinc-100'
-                                                        : 'font-medium text-(--sea-ink) dark:text-zinc-200'
-                                                }`}
-                                            >
-                                                {row.title}
-                                            </span>
-                                            <span className="block truncate text-xs text-(--sea-ink-soft)">
-                                                {row.lastText ?? 'No messages yet'}
-                                            </span>
-                                        </span>
-                                        <span className="flex shrink-0 flex-col items-end gap-1">
-                                            <span className="text-[10px] text-(--sea-ink-soft)">
-                                                {relativeTime(row.lastReceivedAt)}
-                                            </span>
-                                            {row.messageCount > 0 && (
-                                                <span className="rounded-full bg-[rgba(236,185,20,0.2)] px-1.5 text-[10px] font-bold text-(--lagoon-deep) dark:text-(--lagoon)">
-                                                    {row.messageCount.toLocaleString()}
-                                                </span>
-                                            )}
-                                        </span>
-                                    </button>
-                                )
-                            })}
+                        <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
+                            Telegram Disconnected
+                        </h3>
+                        <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
+                            Your Telegram session is not connected. Connect your account to import and monitor your groups, channels, and chats.
+                        </p>
+                        <Link
+                            to="/telegram"
+                            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-(--lagoon-deep) px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 dark:bg-(--lagoon) dark:text-[#4F3D35]"
+                        >
+                            <Zap className="h-3.5 w-3.5" />
+                            Connect Telegram Account
+                            <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
+                ) : summaries.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-10 text-center">
+                        <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
+                            <Inbox className="h-6 w-6" />
                         </div>
-                    </aside>
-
-                    <section className="flex min-h-0 flex-col">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--line) px-4 py-3">
-                            <div className="min-w-0">
-                                <h3 className="m-0 truncate text-sm font-semibold text-(--sea-ink) dark:text-zinc-100">
-                                    {selectedChat ? selectedChat.title : 'All chats'}
-                                </h3>
-                                <p className="m-0 text-xs text-(--sea-ink-soft)">
-                                    {selectedChat
-                                        ? `${selectedChat.messageCount.toLocaleString()} messages`
-                                        : `Newest first · ${totalMessages.toLocaleString()} total`}
-                                </p>
+                        <h3 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
+                            No Monitored Chats
+                        </h3>
+                        <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
+                            Mark chats as "Monitored" on the Chats page to start persisting their messages here.
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--surface) px-3 py-2 mx-4 sm:mx-5">
+                            <p className="m-0 text-xs text-(--sea-ink-soft)">
+                                {summaries.length} monitored chats ·{' '}
+                                <b className="text-(--sea-ink) dark:text-zinc-200">{totalMessages.toLocaleString()} messages</b>
+                            </p>
+                            <div className="relative min-w-40 flex-1 sm:max-w-64">
+                                <Search
+                                    className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)"
+                                    aria-hidden="true"
+                                />
+                                <input
+                                    type="search"
+                                    value={query}
+                                    onChange={(event) => setQuery(event.target.value)}
+                                    placeholder="Search chats…"
+                                    aria-label="Search chats"
+                                    className="w-full rounded-full border border-(--line) bg-(--surface-strong) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
+                                />
                             </div>
-                            <select
-                                aria-label="Choose chat"
-                                value={chatId ?? ''}
-                                onChange={(event) => setChatId(event.target.value || undefined)}
-                                className="w-full max-w-full rounded-xl border border-(--line) bg-(--header-bg) px-3 py-1.5 text-xs font-semibold text-(--sea-ink) outline-none transition focus:border-(--lagoon) dark:text-zinc-200 sm:w-48 lg:hidden"
+                        </div>
+
+                        {filtered.length === 0 ? (
+                            <p className="px-8 pb-8 text-center text-sm text-(--sea-ink-soft)">
+                                No chats match {query ? `"${query}"` : ''}.
+                            </p>
+                        ) : (
+                            <div className="px-4 sm:px-5 pb-5">
+                                <LogTable<WorkerMessageSummary>
+                                    rows={filtered}
+                                    rowKey={(row) => row.chatId}
+                                    onRowClick={setSelected}
+                                    rowAriaLabel={() => 'Open conversation'}
+                                    columns={columns}
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
+            </section>
+
+            {selected ? (
+                <DetailsDrawer
+                    ariaLabel={`Messages from ${selected.title}`}
+                    icon={<MessageSquare className="h-4 w-4 text-(--lagoon-deep)" aria-hidden="true" />}
+                    title={selected.title}
+                    subtitle={
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
+                            {selected.messageCount.toLocaleString()} messages
+                        </span>
+                    }
+                    onClose={() => setSelected(null)}
+                >
+                    {error && <p className="mb-3 text-xs text-red-500">{error}</p>}
+
+                    {loading ? (
+                        <div className="flex items-center justify-center py-16 text-xs text-(--sea-ink-soft)">
+                            Loading messages…
+                        </div>
+                    ) : items.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center p-8 text-center">
+                            <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
+                                <MessageSquare className="h-6 w-6" />
+                            </div>
+                            <h4 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
+                                No messages in this chat yet
+                            </h4>
+                            <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
+                                Messages from this monitored chat will appear here the moment they are received.
+                            </p>
+                        </div>
+                    ) : (
+                        <ul className="m-0 flex flex-col gap-2">
+                            {(() => {
+                                const rows: ReactElement[] = []
+                                let lastDayKey: string | null = null
+                                for (const message of items) {
+                                    const dayKey = dayKeyOf(message.receivedAt)
+                                    if (dayKey !== lastDayKey) {
+                                        lastDayKey = dayKey
+                                        rows.push(
+                                            <li
+                                                key={`day-${dayKey}`}
+                                                className="my-1 self-center rounded-full border border-(--line) bg-(--header-bg) px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)"
+                                            >
+                                                {dayLabel(message.receivedAt)}
+                                            </li>,
+                                        )
+                                    }
+                                    rows.push(
+                                        <li key={message.id} className="flex">
+                                            <div
+                                                className={`max-w-[85%] min-w-0 rounded-2xl rounded-tl-sm px-3.5 py-2.5 transition ${
+                                                    newHeads.includes(message.id)
+                                                        ? 'ring-2 ring-(--lagoon)'
+                                                        : 'border border-(--line)'
+                                                } bg-(--header-bg)`}
+                                            >
+                                                <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-xs">
+                                                    <span className="font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
+                                                        {message.senderName ?? 'Unknown'}
+                                                    </span>
+                                                    <span className="ml-auto text-[10px] text-(--sea-ink-soft)">
+                                                        {formatTime(message.receivedAt)}
+                                                    </span>
+                                                </p>
+                                                <p className="m-0 mt-0.5 break-words whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
+                                                    {message.text}
+                                                </p>
+                                            </div>
+                                        </li>,
+                                    )
+                                }
+                                return rows
+                            })()}
+                        </ul>
+                    )}
+
+                    {hasMore && (
+                        <div className="mt-4 flex justify-center">
+                            <button
+                                onClick={() => void loadThread(false)}
+                                className="rounded-full border border-(--line) bg-(--surface-strong) px-5 py-2 text-xs font-semibold text-(--sea-ink) transition hover:border-(--lagoon) dark:text-zinc-200"
                             >
-                                <option value="">All chats</option>
-                                {summaries.map((row) => (
-                                    <option key={row.chatId} value={row.chatId}>
-                                        {row.title}
-                                    </option>
-                                ))}
-                            </select>
+                                Load older
+                            </button>
                         </div>
-
-                        <div ref={threadRef} className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-                            {loading ? (
-                                <div className="flex items-center justify-center py-16 text-xs text-(--sea-ink-soft)">
-                                    Loading messages…
-                                </div>
-                            ) : items.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center p-8 text-center">
-                                    <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-(--lagoon)/15 text-(--sea-ink) dark:text-(--lagoon)">
-                                        <MessageSquare className="h-6 w-6" />
-                                    </div>
-                                    <h4 className="font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
-                                        {selectedChat ? 'No messages in this chat yet' : 'No Ingested Messages'}
-                                    </h4>
-                                    <p className="mt-1 max-w-sm text-xs text-(--sea-ink-soft) dark:text-zinc-400">
-                                        {selectedChat
-                                            ? 'Messages from this monitored chat will appear here the moment they are received.'
-                                            : 'No messages received from monitored chats yet. They will appear here in real time.'}
-                                    </p>
-                                </div>
-                            ) : (
-                                <ul className="m-0 flex flex-col gap-2">
-                                    {(() => {
-                                        const rows: ReactElement[] = []
-                                        let lastDayKey: string | null = null
-                                        for (const message of items) {
-                                            const dayKey = dayKeyOf(message.receivedAt)
-                                            if (dayKey !== lastDayKey) {
-                                                lastDayKey = dayKey
-                                                rows.push(
-                                                    <li
-                                                        key={`day-${dayKey}`}
-                                                        className="lg:sticky lg:top-0 lg:z-10 my-1 self-center rounded-full border border-(--line) bg-(--header-bg) px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)"
-                                                    >
-                                                        {dayLabel(message.receivedAt)}
-                                                    </li>,
-                                                )
-                                            }
-                                            rows.push(
-                                                <li key={message.id} className="flex">
-                                                    <div
-                                                        className={`max-w-[85%] min-w-0 rounded-2xl rounded-tl-sm px-3.5 py-2.5 transition ${
-                                                            newHeads.includes(message.id)
-                                                                ? 'ring-2 ring-(--lagoon)'
-                                                                : 'border border-(--line)'
-                                                        } bg-(--header-bg)`}
-                                                    >
-                                                        <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-xs">
-                                                            <span className="font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
-                                                                {message.senderName ?? 'Unknown'}
-                                                            </span>
-                                                            {chatId === undefined && (
-                                                                <span className="font-medium text-(--sea-ink-soft)">
-                                                                    {message.chat.title}
-                                                                </span>
-                                                            )}
-                                                            <span className="ml-auto text-[10px] text-(--sea-ink-soft)">
-                                                                {formatTime(message.receivedAt)}
-                                                            </span>
-                                                        </p>
-                                                        <p className="m-0 mt-0.5 break-words whitespace-pre-wrap text-sm leading-relaxed text-(--sea-ink) dark:text-zinc-200">
-                                                            {message.text}
-                                                        </p>
-                                                    </div>
-                                                </li>,
-                                            )
-                                        }
-                                        return rows
-                                    })()}
-                                </ul>
-                            )}
-
-                            {hasMore && (
-                                <div className="mt-4 flex justify-center">
-                                    <button
-                                        onClick={() => void load(false)}
-                                        className="rounded-full border border-(--line) bg-(--surface-strong) px-5 py-2 text-xs font-semibold text-(--sea-ink) transition hover:border-(--lagoon) dark:text-zinc-200"
-                                    >
-                                        Load older
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                </div>
-            )}
-        </section>
+                    )}
+                </DetailsDrawer>
+            ) : null}
+        </>
     )
 }
 
@@ -436,9 +427,9 @@ function dayLabel(iso: string): string {
 }
 
 function relativeTime(iso: string | null): string {
-    if (!iso) return ''
+    if (!iso) return '—'
     const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return ''
+    if (Number.isNaN(date.getTime())) return '—'
     const diffMs = Date.now() - date.getTime()
     const minutes = Math.floor(diffMs / 60_000)
     if (minutes < 1) return 'now'

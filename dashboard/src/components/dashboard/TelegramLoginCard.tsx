@@ -216,7 +216,7 @@ export function TelegramLoginCard({
                             Disconnect Telegram
                         </button>
                     ) : (
-                        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-1.5">
+                        <div className="flex flex-wrap items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-1.5">
                             <span className="text-xs font-medium text-red-600 dark:text-red-400 px-2">Confirm disconnect?</span>
                             <button
                                 type="button"
@@ -380,7 +380,7 @@ export function TelegramLoginCard({
                                 type="button"
                                 onClick={handleStart}
                                 disabled={busy || !phone.trim()}
-                                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-(--lagoon-deep) dark:bg-(--lagoon) dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-(--lagoon-deep) dark:bg-(--lagoon) dark:text-[#4F3D35] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                             >
                                 {busy ? (
                                     <>
