@@ -120,11 +120,11 @@ function MessagesPage() {
                     current.map((row) =>
                         row.chatId === event.message.chatId
                             ? {
-                                  ...row,
-                                  lastText: event.message.text,
-                                  lastReceivedAt: event.message.receivedAt,
-                                  messageCount: row.messageCount + 1,
-                              }
+                                ...row,
+                                lastText: event.message.text,
+                                lastReceivedAt: event.message.receivedAt,
+                                messageCount: row.messageCount + 1,
+                            }
                             : row,
                     ),
                 )
@@ -198,7 +198,7 @@ function MessagesPage() {
 
     return (
         <>
-            <section className="island-shell overflow-hidden rounded-2xl p-0">
+            <section className="island-shell overflow-hidden rounded-2xl p-0 pb-1">
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
                     <div>
                         <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Messages</h2>
@@ -351,11 +351,10 @@ function MessagesPage() {
                                     rows.push(
                                         <li key={message.id} className="flex">
                                             <div
-                                                className={`max-w-[85%] min-w-0 rounded-2xl rounded-tl-sm px-3.5 py-2.5 transition ${
-                                                    newHeads.includes(message.id)
+                                                className={`max-w-[85%] min-w-0 rounded-2xl rounded-tl-sm px-3.5 py-2.5 transition ${newHeads.includes(message.id)
                                                         ? 'ring-2 ring-(--lagoon)'
                                                         : 'border border-(--line)'
-                                                } bg-(--header-bg)`}
+                                                    } bg-(--header-bg)`}
                                             >
                                                 <p className="m-0 flex flex-wrap items-baseline gap-x-2 text-xs">
                                                     <span className="font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
