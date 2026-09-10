@@ -12,7 +12,7 @@ import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import { DetailsDrawer } from '../../components/dashboard/DetailsDrawer'
 import type { RealtimeMessageStored, WorkerMessage, WorkerMessageSummary } from '../../lib/types'
 import { errorText } from '../../lib/utils'
-import { initials } from '../../lib/helpers'
+import { initials, formatTime, dayKeyOf, dayLabel } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/messages')({ component: MessagesPage })
 
@@ -391,35 +391,6 @@ function MessagesPage() {
             ) : null}
         </>
     )
-}
-
-function formatTime(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return iso
-    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-}
-
-function dayKeyOf(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return 'unknown'
-    return date.toDateString()
-}
-
-function dayLabel(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return 'Unknown date'
-    const today = new Date()
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    const diffDays = Math.round((startOfDay.getTime() - startOfTarget.getTime()) / 86_400_000)
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    return date.toLocaleDateString(undefined, {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        ...(date.getFullYear() === today.getFullYear() ? {} : { year: 'numeric' }),
-    })
 }
 
 function relativeTime(iso: string | null): string {

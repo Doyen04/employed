@@ -22,7 +22,7 @@ import { LiveFeed } from '../../components/dashboard/LiveFeed'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerOverview, WorkerOverviewAction, WorkerTelegramStatus } from '../../lib/types'
 import { errorText } from '../../lib/utils'
-import { initials, truncate } from '../../lib/helpers'
+import { initials, truncate, formatNumber, formatPercent, timeLabel } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/dashboard')({ component: OverviewPage })
 
@@ -300,20 +300,4 @@ function ActionRow({ action }: { action: WorkerOverviewAction }) {
 
 function CompactEmpty({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
     return <div className="compact-empty"><Icon /><p>{text}</p></div>
-}
-
-function formatNumber(value: number): string { return new Intl.NumberFormat().format(value) }
-function formatPercent(value: number): string { return `${Math.round(value)}%` }
-function timeLabel(value: string | null, fallback = '—'): string {
-    if (!value) return fallback
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return fallback
-    const seconds = Math.round((date.getTime() - Date.now()) / 1000)
-    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
-    if (Math.abs(seconds) < 60) return formatter.format(seconds, 'second')
-    const minutes = Math.round(seconds / 60)
-    if (Math.abs(minutes) < 60) return formatter.format(minutes, 'minute')
-    const hours = Math.round(minutes / 60)
-    if (Math.abs(hours) < 24) return formatter.format(hours, 'hour')
-    return formatter.format(Math.round(hours / 24), 'day')
 }

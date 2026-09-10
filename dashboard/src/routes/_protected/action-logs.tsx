@@ -16,6 +16,7 @@ import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
 import { StatCard } from '../../components/dashboard/StatCard'
+import { StatusBadge } from '../../components/dashboard/StatusBadge'
 import type { WorkerActionLog } from '../../lib/types'
 import { errorText } from '../../lib/utils'
 import { formatDateTime, relativeTime } from '../../lib/helpers'
@@ -314,18 +315,5 @@ function ActionLogsPage() {
                 </DetailsDrawer>
             ) : null}
         </>
-    )
-}
-
-function StatusBadge({ status }: { status: WorkerActionLog['status'] }) {
-    const styles: Record<WorkerActionLog['status'], string> = {
-        sent: 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)',
-        pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-        failed: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-    }
-    return (
-        <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${styles[status]}`}>
-            {status.toUpperCase()}
-        </span>
     )
 }

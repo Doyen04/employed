@@ -17,9 +17,10 @@ import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
 import { StatCard } from '../../components/dashboard/StatCard'
-import type { WorkerAnalysis, Json } from '../../lib/types'
+import { StatusBadge } from '../../components/dashboard/StatusBadge'
+import type { WorkerAnalysis } from '../../lib/types'
 import { errorText } from '../../lib/utils'
-import { formatDateTime, relativeTime, truncate } from '../../lib/helpers'
+import { formatDateTime, relativeTime, verdictEntries, verdictSummary } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/analyses')({ component: AnalysesPage })
 
@@ -305,7 +306,7 @@ useEffect(() => {
                           {action.notifier.type}
                         </span>
                       </p>
-                      <ActionStatusBadge status={action.status} retryCount={action.retryCount} />
+                       <StatusBadge status={action.status} retryCount={action.retryCount} />
                     </div>
                     {action.sentAt && (
                       <p className="m-0 mt-1.5 text-xs text-(--sea-ink-soft)">
@@ -353,37 +354,4 @@ function FiredBadge({ analysis }: { analysis: WorkerAnalysis }) {
                 : 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)'
 
     return <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${className}`}>{label}</span>
-}
-
-function ActionStatusBadge({ status, retryCount }: { status: WorkerAnalysis['actions'][number]['status']; retryCount: number }) {
-    const styles: Record<WorkerAnalysis['actions'][number]['status'], string> = {
-        sent: 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep)',
-        pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-        failed: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-    }
-    return (
-        <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${styles[status]}`}>
-            {status.toUpperCase()}
-            {retryCount > 0 ? ` · ${retryCount} retry${retryCount === 1 ? '' : 's'}` : ''}
-        </span>
-    )
-}
-
-function verdictEntries(json: Json): [string, string][] {
-    if (json === null || Array.isArray(json) || typeof json !== 'object') return []
-    return Object.entries(json as Record<string, unknown>).map(([key, val]) => [
-        key,
-        typeof val === 'object' ? JSON.stringify(val) : String(val),
-    ])
-}
-
-function verdictSummary(json: Json): string {
-    const entries = verdictEntries(json)
-    if (entries.length === 0) {
-        return typeof json === 'string' ? truncate(json, 40) : '—'
-    }
-    return entries
-        .slice(0, 2)
-        .map(([key, value]) => `${key}: ${truncate(value, 24)}`)
-        .join(' · ')
 }
