@@ -9,8 +9,10 @@ import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
+import { StatCard } from '../../components/dashboard/StatCard'
 import type { WorkerDiagnosticIssue, WorkerDiagnostics } from '../../lib/types'
 import { errorText } from '../../lib/utils'
+import { formatDateTime } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/diagnostics')({ component: DiagnosticsPage })
 
@@ -113,7 +115,7 @@ function DiagnosticsPage() {
             align: 'right',
             cell: (row) => (
                 <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">
-                    {row.issue ? formatTime(row.issue.updatedAt) : '—'}
+                    {row.issue ? formatDateTime(row.issue.updatedAt) : '—'}
                 </span>
             ),
         },
@@ -146,19 +148,14 @@ function DiagnosticsPage() {
                 {state !== null ? (
                     <>
                         <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4">
-                            <StatusCard label="Status" value={statusLabel(status)} tone={statusTone(status)} />
-                            <StatusCard
-                                icon={CheckCircle2}
-                                label="Healthy systems"
-                                value={healthyCount}
-                                tone="positive"
-                            />
-                            <StatusCard icon={AlertTriangle} label="Warnings" value={warningCount} tone="warning" />
-                            <StatusCard icon={XCircle} label="Errors" value={errorCount} tone="error" />
+                            <StatCard icon={CheckCircle2} label="Status" value={statusLabel(status)} tone={statusTone(status)} valueClassName={statusTone(status) === 'danger' ? 'text-red-500' : statusTone(status) === 'warning' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-500'} />
+                            <StatCard icon={CheckCircle2} label="Healthy systems" value={healthyCount} tone="positive" valueClassName="text-emerald-500" />
+                            <StatCard icon={AlertTriangle} label="Warnings" value={warningCount} tone="warning" valueClassName="text-amber-600 dark:text-amber-400" />
+                            <StatCard icon={XCircle} label="Errors" value={errorCount} tone="danger" valueClassName="text-red-500" />
                         </div>
 
                         <p className="mb-4 text-xs text-(--sea-ink-soft)">
-                            {updatedAt ? `Last change reported at ${formatTime(updatedAt)}` : 'No changes reported yet'}
+                            {updatedAt ? `Last change reported at ${formatDateTime(updatedAt)}` : 'No changes reported yet'}
                             {' — live via socket'}
                         </p>
 
@@ -224,7 +221,7 @@ function DiagnosticsPage() {
                                         <p className="m-0 text-[11px] font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
                                             {selected.issue.context.chatTitle}
                                         </p>
-                                        <p className="m-0 mt-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-(--sea-ink-soft)">
+                                        <p className="m-0 mt-1 whitespace-pre-wrap wrap-break-word text-xs leading-relaxed text-(--sea-ink-soft)">
                                             {selected.issue.context.messageText}
                                         </p>
                                     </div>
@@ -234,7 +231,7 @@ function DiagnosticsPage() {
                             <DrawerSection title="Last reported">
                                 <p className="m-0 flex items-center gap-1.5 text-xs text-(--sea-ink-soft)">
                                     <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-                                    {formatTime(selected.issue.updatedAt)}
+                                    {formatDateTime(selected.issue.updatedAt)}
                                 </p>
                             </DrawerSection>
                         </>
@@ -273,55 +270,14 @@ function SubsystemBadge({ issue }: { issue: WorkerDiagnosticIssue | null }) {
     )
 }
 
-function StatusCard({
-    icon: Icon,
-    label,
-    value,
-    tone,
-}: {
-    icon?: typeof CheckCircle2
-    label: string
-    value: string | number
-    tone: 'accent' | 'positive' | 'warning' | 'error' | 'muted'
-}) {
-    const tones: Record<string, string> = {
-        accent: 'text-(--lagoon)',
-        positive: 'text-emerald-500',
-        warning: 'text-amber-600 dark:text-amber-400',
-        error: 'text-red-500',
-        muted: 'text-(--sea-ink-soft)',
-    }
-    return (
-        <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-(--line) bg-(--surface-strong) px-3 py-2.5">
-            {Icon ? (
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[rgba(236,185,20,0.15)]">
-                    <Icon className={`h-4 w-4 ${tones[tone]}`} aria-hidden="true" />
-                </span>
-            ) : null}
-            <div className="min-w-0 flex-1">
-                <p className="m-0 truncate text-[11px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
-                    {label}
-                </p>
-                <p className={`m-0 truncate text-lg font-bold leading-tight ${tones[tone]}`}>{value}</p>
-            </div>
-        </div>
-    )
-}
-
 function statusLabel(status: WorkerDiagnostics['status']): string {
     if (status === 'ok') return 'Healthy'
     if (status === 'warning') return 'Attention'
     return 'Errors'
 }
 
-function statusTone(status: WorkerDiagnostics['status']): 'accent' | 'positive' | 'warning' | 'error' {
+function statusTone(status: WorkerDiagnostics['status']): 'accent' | 'positive' | 'warning' | 'danger' {
     if (status === 'ok') return 'positive'
     if (status === 'warning') return 'warning'
-    return 'error'
-}
-
-function formatTime(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return iso
-    return date.toLocaleString()
+    return 'danger'
 }

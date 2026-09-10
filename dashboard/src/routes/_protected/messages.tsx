@@ -12,6 +12,7 @@ import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import { DetailsDrawer } from '../../components/dashboard/DetailsDrawer'
 import type { RealtimeMessageStored, WorkerMessage, WorkerMessageSummary } from '../../lib/types'
 import { errorText } from '../../lib/utils'
+import { initials } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/messages')({ component: MessagesPage })
 
@@ -390,10 +391,6 @@ function MessagesPage() {
             ) : null}
         </>
     )
-}
-
-function initials(value: string): string {
-    return value.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'TG'
 }
 
 function formatTime(iso: string): string {

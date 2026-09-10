@@ -16,8 +16,10 @@ import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
+import { StatCard } from '../../components/dashboard/StatCard'
 import type { WorkerAnalysis, Json } from '../../lib/types'
 import { errorText } from '../../lib/utils'
+import { formatDateTime, relativeTime, truncate } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/analyses')({ component: AnalysesPage })
 
@@ -241,9 +243,9 @@ useEffect(() => {
           onClose={() => setSelected(null)}
         >
           <FiredBadge analysis={selected} />
-          <p className="mt-2 m-0 text-xs text-(--sea-ink-soft)" title={formatTime(selected.analyzedAt)}>
+          <p className="mt-2 m-0 text-xs text-(--sea-ink-soft)" title={formatDateTime(selected.analyzedAt)}>
             <Clock3 className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" />
-            Analyzed {formatTime(selected.analyzedAt)}
+            Analyzed {formatDateTime(selected.analyzedAt)}
           </p>
 
           <DrawerSection title="Message">
@@ -307,7 +309,7 @@ useEffect(() => {
                     </div>
                     {action.sentAt && (
                       <p className="m-0 mt-1.5 text-xs text-(--sea-ink-soft)">
-                        Sent {formatTime(action.sentAt)}
+                        Sent {formatDateTime(action.sentAt)}
                       </p>
                     )}
                     {action.errorDetail && (
@@ -324,38 +326,6 @@ useEffect(() => {
         </DetailsDrawer>
       ) : null}
         </>
-    )
-}
-
-function StatCard({
-    icon: Icon,
-    label,
-    value,
-    tone,
-}: {
-    icon: typeof Bot
-    label: string
-    value: number
-    tone: 'accent' | 'positive' | 'danger' | 'muted'
-}) {
-    const toneClass: Record<typeof tone, string> = {
-        accent: 'bg-(--lagoon)/10 text-(--lagoon-deep)',
-        positive: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-        danger: 'bg-red-500/10 text-red-600 dark:text-red-400',
-        muted: 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)',
-    }
-    return (
-        <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-(--line) bg-(--header-bg) px-3 py-2.5">
-            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${toneClass[tone]}`}>
-                <Icon className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-                <p className="m-0 truncate text-[11px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
-                    {label}
-                </p>
-                <p className="m-0 truncate text-lg font-bold leading-tight text-(--sea-ink)">{value}</p>
-            </div>
-        </div>
     )
 }
 
@@ -416,27 +386,4 @@ function verdictSummary(json: Json): string {
         .slice(0, 2)
         .map(([key, value]) => `${key}: ${truncate(value, 24)}`)
         .join(' · ')
-}
-
-function relativeTime(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return iso
-    const seconds = Math.round((Date.now() - date.getTime()) / 1000)
-    if (seconds < 60) return 'just now'
-    const minutes = Math.floor(seconds / 60)
-    if (minutes < 60) return `${minutes}m ago`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h ago`
-    const days = Math.floor(hours / 24)
-    return `${days}d ago`
-}
-
-function formatTime(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return iso
-    return date.toLocaleString()
-}
-
-function truncate(value: string, max: number): string {
-    return value.length > max ? `${value.slice(0, max)}…` : value
 }

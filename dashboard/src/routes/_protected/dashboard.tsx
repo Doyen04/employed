@@ -22,6 +22,7 @@ import { LiveFeed } from '../../components/dashboard/LiveFeed'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import type { WorkerOverview, WorkerOverviewAction, WorkerTelegramStatus } from '../../lib/types'
 import { errorText } from '../../lib/utils'
+import { initials, truncate } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/dashboard')({ component: OverviewPage })
 
@@ -303,8 +304,6 @@ function CompactEmpty({ icon: Icon, text }: { icon: LucideIcon; text: string }) 
 
 function formatNumber(value: number): string { return new Intl.NumberFormat().format(value) }
 function formatPercent(value: number): string { return `${Math.round(value)}%` }
-function truncate(value: string, max: number): string { return value.length > max ? `${value.slice(0, max)}…` : value }
-function initials(value: string): string { return value.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'TG' }
 function timeLabel(value: string | null, fallback = '—'): string {
     if (!value) return fallback
     const date = new Date(value)

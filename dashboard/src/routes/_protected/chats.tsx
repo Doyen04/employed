@@ -10,6 +10,7 @@ import { LogTable } from '../../components/dashboard/LogTable'
 import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import type { WorkerChat } from '../../lib/types'
 import { errorText } from '../../lib/utils'
+import { initials } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/chats')({ component: ChatsPage })
 
@@ -250,8 +251,4 @@ function ChatsPage() {
             )}
         </Panel>
     )
-}
-
-function initials(value: string): string {
-    return value.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'TG'
 }

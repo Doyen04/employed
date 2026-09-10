@@ -15,8 +15,10 @@ import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
+import { StatCard } from '../../components/dashboard/StatCard'
 import type { WorkerActionLog } from '../../lib/types'
 import { errorText } from '../../lib/utils'
+import { formatDateTime, relativeTime } from '../../lib/helpers'
 
 export const Route = createFileRoute('/_protected/action-logs')({ component: ActionLogsPage })
 
@@ -265,8 +267,8 @@ function ActionLogsPage() {
                     <p className="mt-2 m-0 text-xs text-(--sea-ink-soft)">
                         <Clock3 className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" />
                         {selected.sentAt
-                            ? `Sent ${formatTime(selected.sentAt)}`
-                            : `Dispatched but not yet delivered (analyzed ${formatTime(selected.analysis.analyzedAt)})`}
+                            ? `Sent ${formatDateTime(selected.sentAt)}`
+                            : `Dispatched but not yet delivered (analyzed ${formatDateTime(selected.analysis.analyzedAt)})`}
                     </p>
 
                     {selected.status === 'failed' && selected.errorDetail && (
@@ -305,45 +307,13 @@ function ActionLogsPage() {
                             <span>{selected.analysis.analysisConfigName}</span>
                             <span className="text-(--sea-ink-soft)">·</span>
                             <span className="text-(--sea-ink-soft)">
-                                {formatTime(selected.analysis.analyzedAt)}
+                                {formatDateTime(selected.analysis.analyzedAt)}
                             </span>
                         </p>
                     </DrawerSection>
                 </DetailsDrawer>
             ) : null}
         </>
-    )
-}
-
-function StatCard({
-    icon: Icon,
-    label,
-    value,
-    tone,
-}: {
-    icon: typeof Send
-    label: string
-    value: number
-    tone: 'accent' | 'positive' | 'danger' | 'muted'
-}) {
-    const toneClass: Record<typeof tone, string> = {
-        accent: 'bg-(--lagoon)/10 text-(--lagoon-deep)',
-        positive: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-        danger: 'bg-red-500/10 text-red-600 dark:text-red-400',
-        muted: 'bg-[rgba(79,61,53,0.08)] text-(--sea-ink-soft)',
-    }
-    return (
-        <div className="flex items-center gap-2.5 rounded-xl border border-(--line) bg-(--header-bg) px-3 py-2.5">
-            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${toneClass[tone]}`}>
-                <Icon className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-                <p className="m-0 truncate text-[11px] font-semibold uppercase tracking-wider text-(--sea-ink-soft)">
-                    {label}
-                </p>
-                <p className="m-0 text-lg font-bold leading-tight text-(--sea-ink)">{value}</p>
-            </div>
-        </div>
     )
 }
 
@@ -358,23 +328,4 @@ function StatusBadge({ status }: { status: WorkerActionLog['status'] }) {
             {status.toUpperCase()}
         </span>
     )
-}
-
-function relativeTime(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return iso
-    const seconds = Math.round((Date.now() - date.getTime()) / 1000)
-    if (seconds < 60) return 'just now'
-    const minutes = Math.floor(seconds / 60)
-    if (minutes < 60) return `${minutes}m ago`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h ago`
-    const days = Math.floor(hours / 24)
-    return `${days}d ago`
-}
-
-function formatTime(iso: string): string {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) return iso
-    return date.toLocaleString()
 }
