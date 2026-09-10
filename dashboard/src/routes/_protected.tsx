@@ -89,6 +89,8 @@ function AppShell() {
                     </div>
                 </header>
 
+                <main className="app-content"><div className="app-content-inner"><Outlet /></div></main>
+
                 <nav className="app-mobile-nav" aria-label="Mobile dashboard navigation">
                     {NAV.map((item) => (
                         <Link key={item.to} to={item.to} activeOptions={{ exact: true }} activeProps={{ className: 'is-active' }}>
@@ -96,8 +98,6 @@ function AppShell() {
                         </Link>
                     ))}
                 </nav>
-
-                <main className="app-content"><div className="app-content-inner"><Outlet /></div></main>
             </div>
         </div>
     )

@@ -12,6 +12,7 @@
     --dark-gold: #9D8108;
     --taupe: #CBB8A0;
     --espresso: #4F3D35;
+    --mobile-nav-h: 3.5rem;
 
     --sea-ink: #4F3D35;
     --sea-ink-soft: #755E53;
@@ -1031,7 +1032,7 @@ a {
     .mobile-brand-mark svg { width: .85rem; fill: currentColor; }
     .topbar-actions > span:not(.worker-pill) { display: none; }
     .topbar-signout { display: grid; }
-    .app-mobile-nav { display: flex; position: sticky; top: 4.8rem; z-index: 20; gap: .25rem; padding: .5rem .75rem; overflow-x: auto; border-bottom: 1px solid var(--line); background: var(--header-bg); backdrop-filter: blur(18px); scrollbar-width: none; }
+    .app-mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; gap: .25rem; padding: .5rem .75rem env(safe-area-inset-bottom, 0px); overflow-x: auto; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--surface-strong) 96%, var(--foam)); backdrop-filter: blur(18px); scrollbar-width: none; }
     .app-mobile-nav::-webkit-scrollbar { display: none; }
     .app-mobile-nav a { display: flex; flex: 0 0 auto; align-items: center; gap: .35rem; min-height: 2.2rem; padding: .45rem .6rem; border-radius: .55rem; color: var(--sea-ink-soft); font-size: .52rem; font-weight: 750; text-decoration: none; -webkit-tap-highlight-color: transparent; }
     .app-mobile-nav a.is-active { color: var(--lagoon-deep); background: rgba(236,185,20,.18); }
@@ -1042,10 +1043,9 @@ a {
 
 @media (max-width: 600px) {
     .app-topbar { min-height: 4.2rem; padding-inline: .85rem; }
-    .app-mobile-nav { top: 4.2rem; }
     .topbar-title p { display: none; }
     .topbar-settings { display: none; }
-    .app-content { padding: 1rem .75rem calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
+    .app-content { padding: 1rem .75rem calc(1.5rem + var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px)); }
     .overview-heading { align-items: flex-start; }
     .overview-heading h1 { font-size: 1.8rem; }
     .overview-heading > div:first-child > p:last-child { max-width: 260px; line-height: 1.5; }
@@ -1093,7 +1093,7 @@ a {
     .footer-grid { gap: 2rem; padding-block: 3rem; }
     .footer-links { gap: 2rem; }
     .overview-heading h1 { font-size: 1.6rem; }
-    .app-content { padding: .85rem .6rem calc(1.25rem + env(safe-area-inset-bottom, 0px)); }
+    .app-content { padding: .85rem .6rem calc(1.25rem + var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px)); }
     .pipeline-stage { padding: .75rem; }
     .pipeline-icon { width: 1.55rem; height: 1.55rem; }
     .stage-state { font-size: .52rem; }
