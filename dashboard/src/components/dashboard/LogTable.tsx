@@ -18,6 +18,8 @@ export interface LogTableGrouping<T> {
     onToggleGroup?: (key: string) => void
 }
 
+const DELETE_COLUMN_CLASS = 'logtable-delete'
+
 export function LogTable<T>({
     columns,
     rows,
@@ -26,6 +28,7 @@ export function LogTable<T>({
     rowAriaLabel,
     grouping,
     onDelete,
+    canDelete,
 }: {
     columns: LogTableColumn<T>[]
     rows: T[]
@@ -34,13 +37,25 @@ export function LogTable<T>({
     rowAriaLabel?: (row: T) => string
     grouping?: LogTableGrouping<T>
     onDelete?: (row: T, key: string) => void
+    canDelete?: (row: T) => boolean
 }) {
-    const visible = columns.filter((column) => !column.hiddenOnMobile)
+    const allColumns: LogTableColumn<T>[] = onDelete
+        ? [
+            ...columns,
+            {
+                header: <span className="sr-only">Delete</span>,
+                cell: () => null,
+                align: 'right',
+                hiddenOnMobile: true,
+                className: DELETE_COLUMN_CLASS,
+            },
+        ]
+        : columns
+
+    const visible = allColumns.filter((column) => !column.hiddenOnMobile)
     const titleColumn = visible[0]
     const timeColumn = [...visible].reverse().find((column) => column.align === 'right')
     const metaColumns = visible.slice(1).filter((column) => column !== timeColumn)
-
-    const deleteColumn = onDelete ? columns.find((c) => c.className === 'logtable-delete') : undefined
 
     const segments: { key: string | undefined; rows: T[] }[] | null = grouping
         ? (() => {
@@ -71,7 +86,7 @@ export function LogTable<T>({
         })()
         : null
 
-const mobileCardsProps = {
+    const mobileCardsProps = {
         rowKey,
         title: (row: T) => titleColumn.cell(row),
         overlay: timeColumn ? (row: T) => timeColumn.cell(row) : undefined,
@@ -81,38 +96,35 @@ const mobileCardsProps = {
         })),
         onRowClick,
         rowAriaLabel,
-        onDelete: onDelete && deleteColumn ? (row: T) => onDelete(row, rowKey(row)) : undefined,
+        onDelete: onDelete ? (row: T) => onDelete(row, rowKey(row)) : undefined,
+        canDelete: canDelete ? (row: T) => canDelete(row) : undefined,
     }
 
     const rowColumns = (row: T) =>
-        columns.map((column, index) => {
-            const key = rowKey(row)
-            if (column.className === 'logtable-delete' && onDelete) {
-                return (
-                    <td
-                        key={index}
-                        className={`px-3 py-2.5 ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''} ${column.className ?? ''}`}
-                    >
+        allColumns.map((column, index) => {
+            const deletable = canDelete ? canDelete(row) : true
+            const isDelete = column.className === DELETE_COLUMN_CLASS && onDelete !== undefined && deletable
+            return (
+                <td
+                    key={index}
+                    className={`px-3 py-2.5 ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
+                        } ${column.className ?? ''}`}
+                >
+                    {isDelete ? (
                         <button
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
-                                onDelete(row, key)
+                                onDelete(row, rowKey(row))
                             }}
                             aria-label="Delete"
-                            className="p-1.5 rounded-lg text-(--sea-ink-soft) hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition"
+                            className="p-1.5 rounded-lg text-(--sea-ink-soft) transition hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
                         </button>
-                    </td>
-                )
-            }
-            return (
-                <td
-                    key={index}
-                    className={`px-3 py-2.5 ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''} ${column.className ?? ''}`}
-                >
-                    {column.cell(row)}
+                    ) : (
+                        column.cell(row)
+                    )}
                 </td>
             )
         })
@@ -123,7 +135,7 @@ const mobileCardsProps = {
                 <table className="w-full border-collapse text-sm">
                     <thead>
                         <tr className="text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
-                            {columns.map((column, index) => (
+                            {allColumns.map((column, index) => (
                                 <th
                                     key={index}
                                     className={`whitespace-nowrap px-3 py-2.5 font-semibold ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
@@ -154,7 +166,7 @@ const mobileCardsProps = {
                                                 aria-label={collapsed ? 'Expand group' : 'Collapse group'}
                                                 className="cursor-pointer border-t border-(--line) bg-(--header-bg) transition hover:bg-white/60 dark:hover:bg-zinc-800/60"
                                             >
-                                                <td colSpan={columns.length} className="px-3 py-2">
+                                                <td colSpan={allColumns.length} className="px-3 py-2">
                                                     {grouping!.groupHeader(segment.key as string)}
                                                 </td>
                                             </tr>

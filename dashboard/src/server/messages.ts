@@ -20,3 +20,10 @@ export const messageSummary = createServerFn().handler(async () => {
   const result = await workerFetch<{ items: WorkerMessageSummary[] }>('/messages/summary')
   return result.items
 })
+
+export const deleteMessage = createServerFn({ method: 'POST' })
+  .validator((input: { id: string }) => input)
+  .handler(async ({ data }) => {
+    await requireAuthed()
+    return workerFetch<void>(`/messages/${encodeURIComponent(data.id)}`, { method: 'DELETE' })
+  })

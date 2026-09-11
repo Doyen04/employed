@@ -16,6 +16,7 @@ export function MobileCards<T>({
     onRowClick,
     rowAriaLabel,
     onDelete,
+    canDelete,
 }: {
     rows: T[]
     rowKey: (row: T) => string
@@ -26,6 +27,7 @@ export function MobileCards<T>({
     onRowClick?: (row: T) => void
     rowAriaLabel?: (row: T) => string
     onDelete?: (row: T) => void
+    canDelete?: (row: T) => boolean
 }) {
     return (
         <ul className="flex flex-col gap-2">
@@ -47,7 +49,7 @@ export function MobileCards<T>({
                             <div className="min-w-0 max-w-full">{title(row)}</div>
                             <div className="flex items-center gap-1.5 shrink-0">
                                 {overlay ? <div className="shrink-0">{overlay(row)}</div> : null}
-                                {onDelete ? (
+                                {onDelete && (!canDelete || canDelete(row)) ? (
                                     <button
                                         type="button"
                                         onClick={(e) => {

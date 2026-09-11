@@ -13,3 +13,10 @@ export const listActionLogs = createServerFn()
     if (data.cursor) params.set('cursor', data.cursor)
     return workerFetch<Paged<WorkerActionLog>>(`/action-logs?${params.toString()}`)
   })
+
+export const deleteActionLog = createServerFn({ method: 'POST' })
+  .validator((input: { id: string }) => input)
+  .handler(async ({ data }) => {
+    await requireAuthed()
+    return workerFetch<void>(`/action-logs/${encodeURIComponent(data.id)}`, { method: 'DELETE' })
+  })

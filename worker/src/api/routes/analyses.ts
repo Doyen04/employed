@@ -55,3 +55,17 @@ analysesRouter.get('/', async (req, res) => {
     hasMore: page.hasMore,
   })
 })
+
+analysesRouter.delete('/:id', async (req, res) => {
+  const analysis = await prisma.analysis.findUnique({ where: { id: req.params.id } })
+  if (!analysis) {
+    return res.status(404).json({ error: 'analysis not found' })
+  }
+
+  await prisma.$transaction([
+    prisma.actionLog.deleteMany({ where: { analysisId: req.params.id } }),
+    prisma.analysis.delete({ where: { id: req.params.id } }),
+  ])
+
+  res.status(204).end()
+})

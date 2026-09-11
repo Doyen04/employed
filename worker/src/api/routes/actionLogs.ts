@@ -52,3 +52,13 @@ actionLogsRouter.get('/', async (req, res) => {
         hasMore: page.hasMore,
     })
 })
+
+actionLogsRouter.delete('/:id', async (req, res) => {
+    const log = await prisma.actionLog.findUnique({ where: { id: req.params.id } })
+    if (!log) {
+        return res.status(404).json({ error: 'action log not found' })
+    }
+
+    await prisma.actionLog.delete({ where: { id: req.params.id } })
+    res.status(204).end()
+})

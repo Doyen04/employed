@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { AlertTriangle, CheckCircle2, Clock3, RefreshCw, XCircle } from 'lucide-react'
 
-import { getDiagnostics } from '../../server/diagnostics'
+import { getDiagnostics, clearDiagnostic } from '../../server/diagnostics'
 import { connectRealtime } from '../../client/socket'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
@@ -48,6 +48,20 @@ function DiagnosticsPage() {
         } finally {
             if (silent) setRefreshing(false)
             else setLoading(false)
+        }
+    }
+
+    async function confirmClear(row: SubsystemRow) {
+        if (!row.issue) return
+        if (!window.confirm(`Dismiss this diagnostic: ${row.title}?`)) return
+        setError(null)
+        try {
+            await clearDiagnostic({ data: { key: row.key } })
+            const next = await getDiagnostics()
+            setState(next)
+            setSelected(null)
+        } catch (err) {
+            setError(errorText(err))
         }
     }
 
@@ -177,6 +191,8 @@ function DiagnosticsPage() {
                             rows={rows}
                             rowKey={(row) => row.key}
                             onRowClick={setSelected}
+                            onDelete={(row) => void confirmClear(row)}
+                            canDelete={(row) => row.issue !== null}
                             rowAriaLabel={() => 'Open subsystem details'}
                             columns={columns}
                         />

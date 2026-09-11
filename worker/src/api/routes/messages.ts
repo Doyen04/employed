@@ -74,3 +74,18 @@ messagesRouter.get('/', async (req, res) => {
         hasMore: page.hasMore,
     })
 })
+
+messagesRouter.delete('/:id', async (req, res) => {
+    const message = await prisma.message.findUnique({ where: { id: req.params.id } })
+    if (!message) {
+        return res.status(404).json({ error: 'message not found' })
+    }
+
+    await prisma.$transaction([
+        prisma.actionLog.deleteMany({ where: { analysis: { messageId: req.params.id } } }),
+        prisma.analysis.deleteMany({ where: { messageId: req.params.id } }),
+        prisma.message.delete({ where: { id: req.params.id } }),
+    ])
+
+    res.status(204).end()
+})

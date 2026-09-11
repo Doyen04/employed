@@ -11,7 +11,7 @@ import {
     XCircle,
 } from 'lucide-react'
 
-import { listAnalyses } from '../../server/analyses'
+import { listAnalyses, deleteAnalysis } from '../../server/analyses'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
@@ -55,6 +55,18 @@ function AnalysesPage() {
         } finally {
             if (reset && !silent) setLoading(false)
             if (silent) setRefreshing(false)
+        }
+    }
+
+    async function confirmDelete(analysis: WorkerAnalysis) {
+        if (!window.confirm('Delete this analysis permanently? Its action logs are also removed.')) return
+        setError(null)
+        try {
+            await deleteAnalysis({ data: { id: analysis.id } })
+            setItems((previous) => previous.filter((row) => row.id !== analysis.id))
+            setSelected((current) => (current?.id === analysis.id ? null : current))
+        } catch (err) {
+            setError(errorText(err))
         }
     }
 
@@ -175,6 +187,7 @@ useEffect(() => {
                                     rows={filtered}
                                     rowKey={(analysis) => analysis.id}
                                     onRowClick={setSelected}
+                                    onDelete={(analysis) => void confirmDelete(analysis)}
                                     rowAriaLabel={() => 'Open analysis details'}
                                     columns={[
                                         { header: 'Status', cell: (analysis) => <FiredBadge analysis={analysis} /> },

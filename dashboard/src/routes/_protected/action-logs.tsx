@@ -10,7 +10,7 @@ import {
     Send,
 } from 'lucide-react'
 
-import { listActionLogs } from '../../server/actionLogs'
+import { listActionLogs, deleteActionLog } from '../../server/actionLogs'
 import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
@@ -54,6 +54,18 @@ function ActionLogsPage() {
         } finally {
             if (reset && !silent) setLoading(false)
             if (silent) setRefreshing(false)
+        }
+    }
+
+    async function confirmDelete(log: WorkerActionLog) {
+        if (!window.confirm('Delete this action log permanently?')) return
+        setError(null)
+        try {
+            await deleteActionLog({ data: { id: log.id } })
+            setItems((previous) => previous.filter((row) => row.id !== log.id))
+            setSelected((current) => (current?.id === log.id ? null : current))
+        } catch (err) {
+            setError(errorText(err))
         }
     }
 
@@ -173,6 +185,7 @@ function ActionLogsPage() {
                                     rows={filtered}
                                     rowKey={(log) => log.id}
                                     onRowClick={setSelected}
+                                    onDelete={(log) => void confirmDelete(log)}
                                     rowAriaLabel={() => 'Open action log details'}
                                     columns={[
                                         { header: 'Status', cell: (log) => <StatusBadge status={log.status} /> },

@@ -13,3 +13,10 @@ export const listAnalyses = createServerFn()
     if (data.cursor) params.set('cursor', data.cursor)
     return workerFetch<Paged<WorkerAnalysis>>(`/analyses?${params.toString()}`)
   })
+
+export const deleteAnalysis = createServerFn({ method: 'POST' })
+  .validator((input: { id: string }) => input)
+  .handler(async ({ data }) => {
+    await requireAuthed()
+    return workerFetch<void>(`/analyses/${encodeURIComponent(data.id)}`, { method: 'DELETE' })
+  })

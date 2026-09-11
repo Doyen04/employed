@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, ChevronDown, Inbox, MessageSquare, Radio, RefreshCw, Search, Zap } from 'lucide-react'
 
-import { listMessages, messageSummary } from '../../server/messages'
+import { listMessages, messageSummary, deleteMessage } from '../../server/messages'
 import { getTelegramStatus } from '../../server/telegram'
 import { connectRealtime } from '../../client/socket'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
@@ -141,6 +141,18 @@ function MessagesPage() {
 
     function selectChat(message: WorkerMessage) {
         setSelected(message)
+    }
+
+    async function confirmDelete(message: WorkerMessage) {
+        if (!window.confirm('Delete this message permanently? Its analyses and actions are also removed.')) return
+        setError(null)
+        try {
+            await deleteMessage({ data: { id: message.id } })
+            setItems((previous) => previous.filter((row) => row.id !== message.id))
+            setSelected((current) => (current?.id === message.id ? null : current))
+        } catch (err) {
+            setError(errorText(err))
+        }
     }
 
     const groupHeader = (targetChatId: string) => {
@@ -293,6 +305,7 @@ function MessagesPage() {
                                     rows={filteredItems}
                                     rowKey={(message) => message.id}
                                     onRowClick={selectChat}
+                                    onDelete={(message) => void confirmDelete(message)}
                                     rowAriaLabel={() => 'Open conversation'}
                                     grouping={{
                                         groupBy: (message) => message.chatId,

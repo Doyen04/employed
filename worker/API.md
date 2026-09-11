@@ -110,6 +110,7 @@ most five records and uses the same `Message` shape documented below.
 | --- | --- | ---: | --- |
 | GET | `/messages` | `chatId?`, `limit?` (1–200, default 50), `cursor?` | `200 { items: Message[], nextCursor: string\|null, hasMore: boolean }` |
 | GET | `/messages/summary` | — | `200 { items: MessageSummary[] }` |
+| DELETE | `/messages/:id` | — | `204` or `404 { error }` |
 
 `Message` shape:
 `{ id, chatId, telegramMessageId, senderName: string\|null, text, receivedAt: ISO,
@@ -121,11 +122,15 @@ most five records and uses the same `Message` shape documented below.
 
 Order: newest first. `cursor` is a `Message.id`; pass `nextCursor` for the next page.
 
+Deleting a message cascades: its analyses are removed and, in turn, the action logs of
+those analyses.
+
 ### Diagnostics
 
 | Method | Path | Body | Response |
 | --- | --- | --- | --- |
 | GET | `/diagnostics` | — | `200 Diagnostics` |
+| DELETE | `/diagnostics/:key` | — | `204` (also emitted via `diagnostics:update`) |
 
 `Diagnostics` shape:
 
@@ -198,6 +203,7 @@ otherwise the sent message would be ingested, analyzed, and re-notified forever.
 | Method | Path | Query | Response |
 |---|---|---|---|
 | GET | `/action-logs` | `limit?`, `cursor?` | `200 { items: ActionLog[], nextCursor, hasMore }` |
+| DELETE | `/action-logs/:id` | — | `204` or `404 { error }` |
 
 `ActionLog` item shape:
 `{ id, status: 'pending'\|'sent'\|'failed', retryCount, sentAt: ISO\|null, errorDetail: string\|null,
@@ -215,6 +221,7 @@ old rows); `recipient` is the resolved destination at dispatch time — the chat
 | Method | Path | Query | Response |
 |---|---|---|---|
 | GET | `/analyses` | `limit?`, `cursor?` | `200 { items: Analysis[], nextCursor, hasMore }` |
+| DELETE | `/analyses/:id` | — | `204` or `404 { error }` |
 
 `Analysis` item shape:
 `{ id, analyzedAt: ISO, rawResponse, analysisConfigName: string, fired: boolean,
@@ -225,7 +232,8 @@ old rows); `recipient` is the resolved destination at dispatch time — the chat
 
 Every stored analysis (matched or not) is listed, newest first. `fired` is true when at least
 one action rule matched and `actions` reflects the dispatch attempts on matching rules; it is
-empty for analyses whose verdict matched no rule.
+empty for analyses whose verdict matched no rule. Deleting an analysis also removes its
+action logs.
 
 ### Telegram session
 
