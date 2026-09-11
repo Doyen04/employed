@@ -15,6 +15,7 @@ import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
+import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
 import { StatCard } from '../../components/dashboard/StatCard'
 import { StatusBadge } from '../../components/dashboard/StatusBadge'
 import type { WorkerActionLog } from '../../lib/types'
@@ -37,6 +38,7 @@ function ActionLogsPage() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const [query, setQuery] = useState('')
     const [selected, setSelected] = useState<WorkerActionLog | null>(null)
+    const [pendingDelete, setPendingDelete] = useState<WorkerActionLog | null>(null)
 
     async function load(reset: boolean, silent = false) {
         if (reset && !silent) setLoading(true)
@@ -57,8 +59,7 @@ function ActionLogsPage() {
         }
     }
 
-    async function confirmDelete(log: WorkerActionLog) {
-        if (!window.confirm('Delete this action log permanently?')) return
+    async function deleteActionLogRow(log: WorkerActionLog) {
         setError(null)
         try {
             await deleteActionLog({ data: { id: log.id } })
@@ -66,6 +67,8 @@ function ActionLogsPage() {
             setSelected((current) => (current?.id === log.id ? null : current))
         } catch (err) {
             setError(errorText(err))
+        } finally {
+            setPendingDelete(null)
         }
     }
 
@@ -185,7 +188,7 @@ function ActionLogsPage() {
                                     rows={filtered}
                                     rowKey={(log) => log.id}
                                     onRowClick={setSelected}
-                                    onDelete={(log) => void confirmDelete(log)}
+                                    onDelete={(log) => setPendingDelete(log)}
                                     rowAriaLabel={() => 'Open action log details'}
                                     columns={[
                                         { header: 'Status', cell: (log) => <StatusBadge status={log.status} /> },
@@ -326,6 +329,16 @@ function ActionLogsPage() {
                         </p>
                     </DrawerSection>
                 </DetailsDrawer>
+            ) : null}
+
+            {pendingDelete ? (
+                <ConfirmDialog
+                    title="Delete action log?"
+                    message={`This permanently deletes the "${pendingDelete.analysis.analysisConfigName}" dispatch to ${pendingDelete.notifier.name} (${pendingDelete.recipient ?? 'no recipient'}).`}
+                    confirmLabel="Delete log"
+                    onConfirm={() => void deleteActionLogRow(pendingDelete)}
+                    onCancel={() => setPendingDelete(null)}
+                />
             ) : null}
         </>
     )

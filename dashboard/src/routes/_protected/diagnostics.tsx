@@ -9,6 +9,7 @@ import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
+import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
 import { StatCard } from '../../components/dashboard/StatCard'
 import type { WorkerDiagnosticIssue, WorkerDiagnostics } from '../../lib/types'
 import { errorText } from '../../lib/utils'
@@ -36,6 +37,7 @@ function DiagnosticsPage() {
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [selected, setSelected] = useState<SubsystemRow | null>(null)
+    const [pendingClear, setPendingClear] = useState<SubsystemRow | null>(null)
 
     async function load(silent = false) {
         if (silent) setRefreshing(true)
@@ -51,9 +53,7 @@ function DiagnosticsPage() {
         }
     }
 
-    async function confirmClear(row: SubsystemRow) {
-        if (!row.issue) return
-        if (!window.confirm(`Dismiss this diagnostic: ${row.title}?`)) return
+    async function clearDiagnosticRow(row: SubsystemRow) {
         setError(null)
         try {
             await clearDiagnostic({ data: { key: row.key } })
@@ -62,6 +62,8 @@ function DiagnosticsPage() {
             setSelected(null)
         } catch (err) {
             setError(errorText(err))
+        } finally {
+            setPendingClear(null)
         }
     }
 
@@ -191,7 +193,7 @@ function DiagnosticsPage() {
                             rows={rows}
                             rowKey={(row) => row.key}
                             onRowClick={setSelected}
-                            onDelete={(row) => void confirmClear(row)}
+                            onDelete={(row) => setPendingClear(row)}
                             canDelete={(row) => row.issue !== null}
                             rowAriaLabel={() => 'Open subsystem details'}
                             columns={columns}
@@ -259,6 +261,16 @@ function DiagnosticsPage() {
                         </DrawerSection>
                     )}
                 </DetailsDrawer>
+            ) : null}
+
+            {pendingClear && pendingClear.issue ? (
+                <ConfirmDialog
+                    title="Dismiss diagnostic?"
+                    message={`Dismiss the "${pendingClear.title}" issue? It can be reported again if the subsystem keeps failing.`}
+                    confirmLabel="Dismiss"
+                    onConfirm={() => void clearDiagnosticRow(pendingClear)}
+                    onCancel={() => setPendingClear(null)}
+                />
             ) : null}
         </>
     )

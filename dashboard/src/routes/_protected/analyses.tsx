@@ -16,6 +16,7 @@ import { Panel } from '../../components/dashboard/Panel'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
+import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
 import { StatCard } from '../../components/dashboard/StatCard'
 import { StatusBadge } from '../../components/dashboard/StatusBadge'
 import type { WorkerAnalysis } from '../../lib/types'
@@ -38,6 +39,7 @@ function AnalysesPage() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const [query, setQuery] = useState('')
     const [selected, setSelected] = useState<WorkerAnalysis | null>(null)
+    const [pendingDelete, setPendingDelete] = useState<WorkerAnalysis | null>(null)
 
     async function load(reset: boolean, silent = false) {
         if (reset && !silent) setLoading(true)
@@ -58,8 +60,7 @@ function AnalysesPage() {
         }
     }
 
-    async function confirmDelete(analysis: WorkerAnalysis) {
-        if (!window.confirm('Delete this analysis permanently? Its action logs are also removed.')) return
+    async function deleteAnalysisRow(analysis: WorkerAnalysis) {
         setError(null)
         try {
             await deleteAnalysis({ data: { id: analysis.id } })
@@ -67,6 +68,8 @@ function AnalysesPage() {
             setSelected((current) => (current?.id === analysis.id ? null : current))
         } catch (err) {
             setError(errorText(err))
+        } finally {
+            setPendingDelete(null)
         }
     }
 
@@ -187,7 +190,7 @@ useEffect(() => {
                                     rows={filtered}
                                     rowKey={(analysis) => analysis.id}
                                     onRowClick={setSelected}
-                                    onDelete={(analysis) => void confirmDelete(analysis)}
+                                    onDelete={(analysis) => setPendingDelete(analysis)}
                                     rowAriaLabel={() => 'Open analysis details'}
                                     columns={[
                                         { header: 'Status', cell: (analysis) => <FiredBadge analysis={analysis} /> },
@@ -352,6 +355,16 @@ useEffect(() => {
             )}
           </DrawerSection>
         </DetailsDrawer>
+      ) : null}
+
+      {pendingDelete ? (
+        <ConfirmDialog
+          title="Delete analysis?"
+          message={`This permanently deletes the ${pendingDelete.analysisConfigName} analysis of "${pendingDelete.message.text}". Its action logs are also removed.`}
+          confirmLabel="Delete analysis"
+          onConfirm={() => void deleteAnalysisRow(pendingDelete)}
+          onCancel={() => setPendingDelete(null)}
+        />
       ) : null}
         </>
     )

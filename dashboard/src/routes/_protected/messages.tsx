@@ -7,6 +7,7 @@ import { getTelegramStatus } from '../../server/telegram'
 import { connectRealtime } from '../../client/socket'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { DetailsDrawer } from '../../components/dashboard/DetailsDrawer'
+import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
 import { LogTable } from '../../components/dashboard/LogTable'
 import type { RealtimeMessageStored, WorkerMessage, WorkerMessageSummary } from '../../lib/types'
 import { errorText } from '../../lib/utils'
@@ -22,6 +23,7 @@ function MessagesPage() {
     const [selected, setSelected] = useState<WorkerMessage | null>(null)
     const [items, setItems] = useState<WorkerMessage[]>([])
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+    const [pendingDelete, setPendingDelete] = useState<WorkerMessage | null>(null)
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
     const [booting, setBooting] = useState(true)
     const [listCursor, setListCursor] = useState<string | null>(null)
@@ -143,8 +145,7 @@ function MessagesPage() {
         setSelected(message)
     }
 
-    async function confirmDelete(message: WorkerMessage) {
-        if (!window.confirm('Delete this message permanently? Its analyses and actions are also removed.')) return
+    async function deleteMessageRow(message: WorkerMessage) {
         setError(null)
         try {
             await deleteMessage({ data: { id: message.id } })
@@ -152,6 +153,8 @@ function MessagesPage() {
             setSelected((current) => (current?.id === message.id ? null : current))
         } catch (err) {
             setError(errorText(err))
+        } finally {
+            setPendingDelete(null)
         }
     }
 
@@ -305,7 +308,7 @@ function MessagesPage() {
                                     rows={filteredItems}
                                     rowKey={(message) => message.id}
                                     onRowClick={selectChat}
-                                    onDelete={(message) => void confirmDelete(message)}
+                                    onDelete={(message) => setPendingDelete(message)}
                                     rowAriaLabel={() => 'Open conversation'}
                                     grouping={{
                                         groupBy: (message) => message.chatId,
@@ -386,6 +389,16 @@ function MessagesPage() {
                         </button>
                     </div>
                 </DetailsDrawer>
+            ) : null}
+
+            {pendingDelete ? (
+                <ConfirmDialog
+                    title="Delete message?"
+                    message={`This permanently deletes the message from ${pendingDelete.chat.title}. Its analyses and any actions are also removed.`}
+                    confirmLabel="Delete message"
+                    onConfirm={() => void deleteMessageRow(pendingDelete)}
+                    onCancel={() => setPendingDelete(null)}
+                />
             ) : null}
         </>
     )
