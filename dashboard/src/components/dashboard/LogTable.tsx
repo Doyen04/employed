@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import type { ReactNode } from 'react'
 import { MobileCards } from './MobileCards'
+import { Trash2 } from 'lucide-react'
 
 export interface LogTableColumn<T> {
     header: ReactNode
@@ -24,6 +25,7 @@ export function LogTable<T>({
     onRowClick,
     rowAriaLabel,
     grouping,
+    onDelete,
 }: {
     columns: LogTableColumn<T>[]
     rows: T[]
@@ -31,11 +33,14 @@ export function LogTable<T>({
     onRowClick?: (row: T) => void
     rowAriaLabel?: (row: T) => string
     grouping?: LogTableGrouping<T>
+    onDelete?: (row: T, key: string) => void
 }) {
     const visible = columns.filter((column) => !column.hiddenOnMobile)
     const titleColumn = visible[0]
     const timeColumn = [...visible].reverse().find((column) => column.align === 'right')
     const metaColumns = visible.slice(1).filter((column) => column !== timeColumn)
+
+    const deleteColumn = onDelete ? columns.find((c) => c.className === 'logtable-delete') : undefined
 
     const segments: { key: string | undefined; rows: T[] }[] | null = grouping
         ? (() => {
@@ -66,7 +71,7 @@ export function LogTable<T>({
         })()
         : null
 
-    const mobileCardsProps = {
+const mobileCardsProps = {
         rowKey,
         title: (row: T) => titleColumn.cell(row),
         overlay: timeColumn ? (row: T) => timeColumn.cell(row) : undefined,
@@ -76,18 +81,41 @@ export function LogTable<T>({
         })),
         onRowClick,
         rowAriaLabel,
+        onDelete: onDelete && deleteColumn ? (row: T) => onDelete(row, rowKey(row)) : undefined,
     }
 
     const rowColumns = (row: T) =>
-        columns.map((column, index) => (
-            <td
-                key={index}
-                className={`px-3 py-2.5 ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
-                    } ${column.className ?? ''}`}
-            >
-                {column.cell(row)}
-            </td>
-        ))
+        columns.map((column, index) => {
+            const key = rowKey(row)
+            if (column.className === 'logtable-delete' && onDelete) {
+                return (
+                    <td
+                        key={index}
+                        className={`px-3 py-2.5 ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''} ${column.className ?? ''}`}
+                    >
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onDelete(row, key)
+                            }}
+                            aria-label="Delete"
+                            className="p-1.5 rounded-lg text-(--sea-ink-soft) hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    </td>
+                )
+            }
+            return (
+                <td
+                    key={index}
+                    className={`px-3 py-2.5 ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''} ${column.className ?? ''}`}
+                >
+                    {column.cell(row)}
+                </td>
+            )
+        })
 
     return (
         <div>
