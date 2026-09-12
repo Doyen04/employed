@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { MobileCards } from './MobileCards'
-import { Trash2 } from 'lucide-react'
+import { Loader2, Trash2 } from 'lucide-react'
 
 export interface LogTableColumn<T> {
     header: ReactNode
@@ -32,6 +32,7 @@ export function LogTable<T>({
     selectable,
     selectedKeys,
     onSelectedKeysChange,
+    deletingKey,
 }: {
     columns: LogTableColumn<T>[]
     rows: T[]
@@ -44,6 +45,7 @@ export function LogTable<T>({
     selectable?: boolean
     selectedKeys?: ReadonlySet<string>
     onSelectedKeysChange?: (next: ReadonlySet<string>) => void
+    deletingKey?: string | null
 }) {
     const allColumns: LogTableColumn<T>[] = onDelete
         ? [
@@ -116,6 +118,7 @@ export function LogTable<T>({
 
     function toggleRow(row: T) {
         if (!onSelectedKeysChange) return
+        if (deletingKey !== null && deletingKey !== undefined) return
         const key = rowKey(row)
         const next = new Set(keys)
         if (next.has(key)) next.delete(key)
@@ -125,6 +128,7 @@ export function LogTable<T>({
 
     function toggleAll() {
         if (!onSelectedKeysChange) return
+        if (deletingKey !== null && deletingKey !== undefined) return
         const next = new Set(keys)
         if (allSelected) {
             for (const row of selectableRows) next.delete(rowKey(row))
@@ -133,6 +137,8 @@ export function LogTable<T>({
         }
         onSelectedKeysChange(next)
     }
+
+    const deleting = deletingKey !== null && deletingKey !== undefined
 
     const mobileCardsProps = {
         rowKey,
@@ -149,9 +155,12 @@ export function LogTable<T>({
         selectable: selectableEnabled,
         selectedKeys: keys,
         onToggleRow: toggleRow,
+        deletingKey,
     }
 
     const rowColumns = (row: T) => {
+        const rowKeyValue = rowKey(row)
+        const rowDeleting = deletingKey !== null && rowKeyValue === deletingKey
         const cells: ReactNode[] = []
         if (selectableEnabled) {
             cells.push(
@@ -163,10 +172,11 @@ export function LogTable<T>({
                     {canRowSelect(row) ? (
                         <input
                             type="checkbox"
-                            checked={keys.has(rowKey(row))}
+                            checked={keys.has(rowKeyValue)}
                             onChange={() => toggleRow(row)}
+                            disabled={deleting}
                             aria-label="Select row"
-                            className="h-4 w-4 cursor-pointer rounded accent-(--lagoon-deep)"
+                            className="h-4 w-4 cursor-pointer rounded accent-(--lagoon-deep) disabled:cursor-not-allowed"
                         />
                     ) : null}
                 </td>,
@@ -187,12 +197,17 @@ export function LogTable<T>({
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
-                                onDelete(row, rowKey(row))
+                                onDelete(row, rowKeyValue)
                             }}
-                            aria-label="Delete"
-                            className="p-1.5 rounded-lg text-(--sea-ink-soft) transition hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400"
+                            disabled={deleting}
+                            aria-label={rowDeleting ? 'Deleting…' : 'Delete'}
+                            className="p-1.5 rounded-lg text-(--sea-ink-soft) transition hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            {rowDeleting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                            ) : (
+                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            )}
                         </button>
                     ) : (
                         column.cell(row)

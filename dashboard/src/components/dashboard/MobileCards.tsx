@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Loader2, Trash2 } from 'lucide-react'
 
 export interface MobileCardCell<T> {
     label: ReactNode
@@ -20,6 +20,7 @@ export function MobileCards<T>({
     selectable,
     selectedKeys,
     onToggleRow,
+    deletingKey,
 }: {
     rows: T[]
     rowKey: (row: T) => string
@@ -34,13 +35,17 @@ export function MobileCards<T>({
     selectable?: boolean
     selectedKeys?: ReadonlySet<string>
     onToggleRow?: (row: T) => void
+    deletingKey?: string | null
 }) {
     return (
         <ul className="flex flex-col gap-2">
             {rows.map((row) => {
                 const deletable = !canDelete || canDelete(row)
+                const rowKeyValue = rowKey(row)
+                const deleting = deletingKey !== null && deletingKey !== undefined
+                const rowDeleting = deletingKey !== null && rowKeyValue === deletingKey
                 return (
-                    <li key={rowKey(row)}>
+                    <li key={rowKeyValue}>
                         <div
                             role={onRowClick ? 'button' : undefined}
                             tabIndex={onRowClick ? 0 : undefined}
@@ -58,11 +63,12 @@ export function MobileCards<T>({
                                     {selectable && deletable && selectedKeys && onToggleRow ? (
                                         <input
                                             type="checkbox"
-                                            checked={selectedKeys.has(rowKey(row))}
+                                            checked={selectedKeys.has(rowKeyValue)}
                                             onChange={() => onToggleRow(row)}
                                             onClick={(event) => event.stopPropagation()}
+                                            disabled={deleting}
                                             aria-label="Select row"
-                                            className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded accent-(--lagoon-deep)"
+                                            className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded accent-(--lagoon-deep) disabled:cursor-not-allowed"
                                         />
                                     ) : null}
                                     <div className="min-w-0 max-w-full">{title(row)}</div>
@@ -76,10 +82,15 @@ export function MobileCards<T>({
                                                 e.stopPropagation()
                                                 onDelete(row)
                                             }}
-                                            aria-label="Delete"
-                                            className="p-1.5 rounded-lg text-(--sea-ink-soft) hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition"
+                                            disabled={deleting}
+                                            aria-label={rowDeleting ? 'Deleting…' : 'Delete'}
+                                            className="p-1.5 rounded-lg text-(--sea-ink-soft) hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition disabled:cursor-not-allowed disabled:opacity-60"
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            {rowDeleting ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4" />
+                                            )}
                                         </button>
                                     ) : null}
                                 </div>

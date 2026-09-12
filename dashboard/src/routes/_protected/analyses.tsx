@@ -41,6 +41,7 @@ function AnalysesPage() {
     const [query, setQuery] = useState('')
     const [selected, setSelected] = useState<WorkerAnalysis | null>(null)
     const [pendingDelete, setPendingDelete] = useState<WorkerAnalysis | null>(null)
+    const [deletingKey, setDeletingKey] = useState<string | null>(null)
     const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
     const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
 
@@ -65,6 +66,7 @@ function AnalysesPage() {
 
     async function deleteAnalysisRow(analysis: WorkerAnalysis) {
         setError(null)
+        setDeletingKey(analysis.id)
         try {
             await deleteAnalysis({ data: { id: analysis.id } })
             setItems((previous) => previous.filter((row) => row.id !== analysis.id))
@@ -78,12 +80,14 @@ function AnalysesPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingDelete(null)
         }
     }
 
     async function deleteAnalysisRows(list: WorkerAnalysis[]) {
         setError(null)
+        setDeletingKey('bulk')
         try {
             for (const analysis of list) {
                 await deleteAnalysis({ data: { id: analysis.id } })
@@ -99,6 +103,7 @@ function AnalysesPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingBulkDelete(false)
         }
     }
@@ -237,6 +242,7 @@ useEffect(() => {
                                     selectable
                                     selectedKeys={selectedKeys}
                                     onSelectedKeysChange={setSelectedKeys}
+                                    deletingKey={deletingKey}
                                     rowAriaLabel={() => 'Open analysis details'}
                                     columns={[
                                         { header: 'Status', cell: (analysis) => <FiredBadge analysis={analysis} /> },
@@ -408,6 +414,7 @@ useEffect(() => {
           title="Delete analysis?"
           message={`This permanently deletes the ${pendingDelete.analysisConfigName} analysis of "${pendingDelete.message.text}". Its action logs are also removed.`}
           confirmLabel="Delete analysis"
+          loading={deletingKey === pendingDelete.id}
           onConfirm={() => void deleteAnalysisRow(pendingDelete)}
           onCancel={() => setPendingDelete(null)}
         />
@@ -418,6 +425,7 @@ useEffect(() => {
           title={`Delete ${selectedAnalyses.length} ${selectedAnalyses.length === 1 ? 'analysis' : 'analyses'}?`}
           message={`This permanently deletes ${selectedAnalyses.length} ${selectedAnalyses.length === 1 ? 'analysis' : 'analyses'}. Each one's action logs are also removed.`}
           confirmLabel={`Delete ${selectedAnalyses.length}`}
+          loading={deletingKey !== null}
           onConfirm={() => void deleteAnalysisRows(selectedAnalyses)}
           onCancel={() => setPendingBulkDelete(false)}
         />

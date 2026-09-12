@@ -40,6 +40,7 @@ function ActionLogsPage() {
     const [query, setQuery] = useState('')
     const [selected, setSelected] = useState<WorkerActionLog | null>(null)
     const [pendingDelete, setPendingDelete] = useState<WorkerActionLog | null>(null)
+    const [deletingKey, setDeletingKey] = useState<string | null>(null)
     const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
     const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
 
@@ -64,6 +65,7 @@ function ActionLogsPage() {
 
     async function deleteActionLogRow(log: WorkerActionLog) {
         setError(null)
+        setDeletingKey(log.id)
         try {
             await deleteActionLog({ data: { id: log.id } })
             setItems((previous) => previous.filter((row) => row.id !== log.id))
@@ -77,12 +79,14 @@ function ActionLogsPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingDelete(null)
         }
     }
 
     async function deleteActionLogRows(logs: WorkerActionLog[]) {
         setError(null)
+        setDeletingKey('bulk')
         try {
             for (const log of logs) {
                 await deleteActionLog({ data: { id: log.id } })
@@ -98,6 +102,7 @@ function ActionLogsPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingBulkDelete(false)
         }
     }
@@ -235,6 +240,7 @@ function ActionLogsPage() {
                                     selectable
                                     selectedKeys={selectedKeys}
                                     onSelectedKeysChange={setSelectedKeys}
+                                    deletingKey={deletingKey}
                                     rowAriaLabel={() => 'Open action log details'}
                                     columns={[
                                         { header: 'Status', cell: (log) => <StatusBadge status={log.status} /> },
@@ -382,6 +388,7 @@ function ActionLogsPage() {
                     title="Delete action log?"
                     message={`This permanently deletes the "${pendingDelete.analysis.analysisConfigName}" dispatch to ${pendingDelete.notifier.name} (${pendingDelete.recipient ?? 'no recipient'}).`}
                     confirmLabel="Delete log"
+                    loading={deletingKey === pendingDelete.id}
                     onConfirm={() => void deleteActionLogRow(pendingDelete)}
                     onCancel={() => setPendingDelete(null)}
                 />
@@ -392,6 +399,7 @@ function ActionLogsPage() {
                     title={`Delete ${selectedLogs.length} ${selectedLogs.length === 1 ? 'log' : 'logs'}?`}
                     message={`This permanently deletes ${selectedLogs.length} ${selectedLogs.length === 1 ? 'log' : 'logs'}.`}
                     confirmLabel={`Delete ${selectedLogs.length}`}
+                    loading={deletingKey !== null}
                     onConfirm={() => void deleteActionLogRows(selectedLogs)}
                     onCancel={() => setPendingBulkDelete(false)}
                 />

@@ -39,6 +39,7 @@ function DiagnosticsPage() {
     const [error, setError] = useState<string | null>(null)
     const [selected, setSelected] = useState<SubsystemRow | null>(null)
     const [pendingClear, setPendingClear] = useState<SubsystemRow | null>(null)
+    const [deletingKey, setDeletingKey] = useState<string | null>(null)
     const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
     const [pendingBulkClear, setPendingBulkClear] = useState(false)
 
@@ -58,6 +59,7 @@ function DiagnosticsPage() {
 
     async function clearDiagnosticRow(row: SubsystemRow) {
         setError(null)
+        setDeletingKey(row.key)
         try {
             await clearDiagnostic({ data: { key: row.key } })
             const next = await getDiagnostics()
@@ -72,12 +74,14 @@ function DiagnosticsPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingClear(null)
         }
     }
 
     async function clearDiagnosticRows(list: SubsystemRow[]) {
         setError(null)
+        setDeletingKey('bulk')
         try {
             for (const row of list) {
                 await clearDiagnostic({ data: { key: row.key } })
@@ -89,6 +93,7 @@ function DiagnosticsPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingBulkClear(false)
         }
     }
@@ -238,6 +243,7 @@ function DiagnosticsPage() {
                             selectable
                             selectedKeys={selectedKeys}
                             onSelectedKeysChange={setSelectedKeys}
+                            deletingKey={deletingKey}
                             rowAriaLabel={() => 'Open subsystem details'}
                             columns={columns}
                         />
@@ -311,6 +317,7 @@ function DiagnosticsPage() {
                     title="Dismiss diagnostic?"
                     message={`Dismiss the "${pendingClear.title}" issue? It can be reported again if the subsystem keeps failing.`}
                     confirmLabel="Dismiss"
+                    loading={deletingKey === pendingClear.key}
                     onConfirm={() => void clearDiagnosticRow(pendingClear)}
                     onCancel={() => setPendingClear(null)}
                 />
@@ -321,6 +328,7 @@ function DiagnosticsPage() {
                     title={`Dismiss ${selectedRows.length} ${selectedRows.length === 1 ? 'diagnostic' : 'diagnostics'}?`}
                     message={`Dismiss ${selectedRows.length} ${selectedRows.length === 1 ? 'issue' : 'issues'}? Each can be reported again if its subsystem keeps failing.`}
                     confirmLabel={`Dismiss ${selectedRows.length}`}
+                    loading={deletingKey !== null}
                     onConfirm={() => void clearDiagnosticRows(selectedRows)}
                     onCancel={() => setPendingBulkClear(false)}
                 />

@@ -25,6 +25,7 @@ function MessagesPage() {
     const [items, setItems] = useState<WorkerMessage[]>([])
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [pendingDelete, setPendingDelete] = useState<WorkerMessage | null>(null)
+    const [deletingKey, setDeletingKey] = useState<string | null>(null)
     const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
     const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
@@ -155,6 +156,7 @@ function MessagesPage() {
 
     async function deleteMessageRow(message: WorkerMessage) {
         setError(null)
+        setDeletingKey(message.id)
         try {
             await deleteMessage({ data: { id: message.id } })
             setItems((previous) => previous.filter((row) => row.id !== message.id))
@@ -168,12 +170,14 @@ function MessagesPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingDelete(null)
         }
     }
 
     async function deleteMessageRows(messages: WorkerMessage[]) {
         setError(null)
+        setDeletingKey('bulk')
         try {
             for (const message of messages) {
                 await deleteMessage({ data: { id: message.id } })
@@ -189,6 +193,7 @@ function MessagesPage() {
         } catch (err) {
             setError(errorText(err))
         } finally {
+            setDeletingKey(null)
             setPendingBulkDelete(false)
         }
     }
@@ -358,6 +363,7 @@ function MessagesPage() {
                                     selectable
                                     selectedKeys={selectedKeys}
                                     onSelectedKeysChange={setSelectedKeys}
+                                    deletingKey={deletingKey}
                                     rowAriaLabel={() => 'Open conversation'}
                                     grouping={{
                                         groupBy: (message) => message.chatId,
@@ -445,6 +451,7 @@ function MessagesPage() {
                     title="Delete message?"
                     message={`This permanently deletes the message from ${pendingDelete.chat.title}. Its analyses and any actions are also removed.`}
                     confirmLabel="Delete message"
+                    loading={deletingKey === pendingDelete.id}
                     onConfirm={() => void deleteMessageRow(pendingDelete)}
                     onCancel={() => setPendingDelete(null)}
                 />
@@ -455,6 +462,7 @@ function MessagesPage() {
                     title={`Delete ${selectedMessages.length} ${selectedMessages.length === 1 ? 'message' : 'messages'}?`}
                     message={`This permanently deletes ${selectedMessages.length} ${selectedMessages.length === 1 ? 'message' : 'messages'}. Each message's analyses and any actions are also removed.`}
                     confirmLabel={`Delete ${selectedMessages.length}`}
+                    loading={deletingKey !== null}
                     onConfirm={() => void deleteMessageRows(selectedMessages)}
                     onCancel={() => setPendingBulkDelete(false)}
                 />
