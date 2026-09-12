@@ -24,7 +24,11 @@ export const webhookNotifier: Notifier = {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json', ...headers },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({
+                    analysisConfigName: payload.analysisConfigName,
+                    senderName: payload.senderName,
+                    analysis: payload.analysis,
+                }),
             })
             if (!response.ok) {
                 return { status: 'failed', error: `webhook responded with ${response.status}` }
