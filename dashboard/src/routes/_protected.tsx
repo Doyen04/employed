@@ -6,6 +6,7 @@ import {
     HeartPulse,
     LayoutDashboard,
     LogOut,
+    Mail,
     MessageSquare,
     Radio,
     ScanSearch,
@@ -19,12 +20,22 @@ import { getSession, logout } from '../server/auth'
 import { WorkerStatusPill } from '../components/dashboard/WorkerStatusPill'
 import ThemeToggle from '../components/ThemeToggle'
 
-type AppPath = '/dashboard' | '/messages' | '/analyses' | '/chats' | '/diagnostics' | '/telegram' | '/settings' | '/action-logs'
+type AppPath =
+    | '/dashboard'
+    | '/messages'
+    | '/analyses'
+    | '/mail'
+    | '/chats'
+    | '/diagnostics'
+    | '/telegram'
+    | '/settings'
+    | '/action-logs'
 
 const NAV: { to: AppPath; label: string; description: string; icon: LucideIcon }[] = [
     { to: '/dashboard', label: 'Overview', description: 'System pulse', icon: LayoutDashboard },
     { to: '/messages', label: 'Messages', description: 'Intelligence inbox', icon: MessageSquare },
     { to: '/analyses', label: 'Analyses', description: 'LLM verdicts', icon: ScanSearch },
+    { to: '/mail', label: 'Mail', description: 'Send analysed mail', icon: Mail },
     { to: '/chats', label: 'Chats', description: 'Monitored sources', icon: Radio },
     { to: '/diagnostics', label: 'Diagnostics', description: 'System health', icon: HeartPulse },
     { to: '/telegram', label: 'Telegram', description: 'Account connection', icon: Send },
@@ -64,9 +75,9 @@ function AppShell() {
 
                 <nav className="app-sidebar-nav" aria-label="Dashboard navigation">
                     <p>Monitor</p>
-                    {NAV.slice(0, 5).map((item) => <SidebarLink key={item.to} item={item} />)}
+                    {NAV.slice(0, 6).map((item) => <SidebarLink key={item.to} item={item} />)}
                     <p>Configure</p>
-                    {NAV.slice(5).map((item) => <SidebarLink key={item.to} item={item} />)}
+                    {NAV.slice(6).map((item) => <SidebarLink key={item.to} item={item} />)}
                 </nav>
 
                 <div className="sidebar-footer">

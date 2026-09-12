@@ -174,6 +174,7 @@ dashboard banner shows every live problem at once instead of just the last one.
 | POST | `/settings/notifiers` | `{ type, name, config, isActive }` | `201 Notifier` |
 | PATCH | `/settings/notifiers/:id` | partial `Notifier` (`config` re-encrypted when present) | `200 Notifier` |
 | DELETE | `/settings/notifiers/:id` | — | `204` |
+| POST | `/settings/notifiers/:id/test` | `{ to? }` | `200 { ok: true }` or `400 { ok: false, error }` |
 | POST | `/settings/action-rules` | `{ analysisConfigId, condition, notifierId, isActive }` | `201 ActionRule` |
 | PATCH | `/settings/action-rules/:id` | partial `ActionRule` | `200 ActionRule` |
 | DELETE | `/settings/action-rules/:id` | — | `204` |
@@ -181,7 +182,7 @@ dashboard banner shows every live problem at once instead of just the last one.
 Shapes:
 
 - `AnalysisConfig`: `{ id, name, promptTemplate, outputSchema, isActive, createdAt, allowedChatIds: string[] }`
-- `Notifier` (secrets never read back): `{ id, type, name, isActive, configConfigured: true, telegramTargetChatId }` — the only field echoed back is the non-secret Telegram destination chat id (for the selector UI); all other config stays write-only.
+- `Notifier` (secrets never read back): `{ id, type, name, isActive, configConfigured: true, telegramTargetChatId, configEmailTo }` — the only fields echoed back are the non-secret Telegram destination chat id (for the selector UI) and the email recipient `to` (for the edit form); all other config stays write-only.
 - `ActionRule`: `{ id, analysisConfigId, condition, notifierId, notifierName, notifierType, isActive }`
 
 `allowedChatIds` is a **chat allowlist**: an empty array (the default) means the config applies
@@ -234,6 +235,31 @@ Every stored analysis (matched or not) is listed, newest first. `fired` is true 
 one action rule matched and `actions` reflects the dispatch attempts on matching rules; it is
 empty for analyses whose verdict matched no rule. Deleting an analysis also removes its
 action logs.
+
+### Mail
+
+| Method | Path | Body / Query | Response |
+|---|---|---|---|
+| GET | `/mail` | `limit?`, `cursor?` | `200 { items: MailJob[], nextCursor: string\|null, hasMore: boolean }` |
+| POST | `/mail/send` | `{ analysisId, recipients: string[], subject?, body?, notifierId? }` | `200 MailSendResult` or `400 { error }` |
+
+`MailJob` item shape:
+`{ messageId, senderName: string\|null, text, receivedAt: ISO,
+   chat: { id, title, telegramChatId },
+   analysisId, analyzedAt: ISO, provider: string\|null, model: string\|null,
+   analysisConfigName: string, analysis: rawResponseJson, body: string }`
+
+Each item is the **latest** analysis of one message. `body` is the pre-built default email text
+(LLM analysis only, same format as notifiers). Cursor is the item's own `analysisId`; pass
+`nextCursor` for the next page.
+
+`MailSendResult` shape:
+`{ ok: true, host: string, from: string, to: string[], subject: string, sentAt: ISO }`
+
+SMTP resolution order: the `notifierId`'s email config, or the first active email notifier's
+config, falling back to the `SMTP_*` environment variables. An explicit `body` replaces the
+default analysis text; `subject` is required or an analysis-style subject is used automatically.
+Manual sends are **not** written to `ActionLog`.
 
 ### Telegram session
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Check, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react'
+import { Check, ChevronDown, Pencil, Plus, RefreshCw, Send, Trash2, X } from 'lucide-react'
 
 import { Panel } from '../Panel'
 import {
@@ -10,6 +10,7 @@ import {
     deleteActionRule,
     deleteAnalysisConfig,
     deleteNotifier,
+    testNotifier,
     updateActionRule,
     updateAnalysisConfig,
     updateNotifier,
@@ -627,6 +628,8 @@ function ItemList({
     onDelete,
     onDeleteConfirm,
     onCancelDelete,
+    onTest,
+    testingId,
 }: {
     empty: string
     rows: Row[]
@@ -636,6 +639,8 @@ function ItemList({
     onDelete: (id: string) => void
     onDeleteConfirm: (id: string) => void
     onCancelDelete: () => void
+    onTest?: (id: string) => void
+    testingId?: string | null
 }) {
     if (rows.length === 0) {
         return <p className="m-0 text-sm text-(--sea-ink-soft)">{empty}</p>
@@ -684,6 +689,21 @@ function ItemList({
                             </>
                         ) : (
                             <>
+                                {onTest ? (
+                                    <button
+                                        type="button"
+                                        title="Send test email"
+                                        onClick={() => onTest(row.id)}
+                                        disabled={busy || testingId !== null}
+                                        className="grid h-7 w-7 place-items-center rounded-lg border border-(--line) text-(--sea-ink-soft) transition hover:bg-white/50 hover:text-(--sea-ink) dark:hover:bg-zinc-800 disabled:opacity-50"
+                                    >
+                                        {testingId === row.id ? (
+                                            <RefreshCw className="h-3 w-3 animate-spin" />
+                                        ) : (
+                                            <Send className="h-3 w-3" />
+                                        )}
+                                    </button>
+                                ) : null}
                                 <button
                                     type="button"
                                     title="Edit"
@@ -890,10 +910,17 @@ function NotifiersSection({
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
+    const [testingId, setTestingId] = useState<string | null>(null)
+    const [testFeedback, setTestFeedback] = useState<{ id: string; ok: boolean; message: string } | null>(null)
 
     const targetChatId =
         config !== null && !Array.isArray(config) && typeof config === 'object'
             ? String((config as Record<string, unknown>).targetChatId ?? '')
+            : ''
+
+    const emailTo =
+        config !== null && !Array.isArray(config) && typeof config === 'object'
+            ? String((config as Record<string, unknown>).to ?? '')
             : ''
 
     const blockedNotificationTarget =
@@ -909,16 +936,24 @@ function NotifiersSection({
         setConfigDirty(false)
         setIsActive(true)
         setError(null)
+        setTestFeedback(null)
         setEditing({ mode: 'create' })
     }
 
     function openEdit(item: WorkerNotifier) {
         setName(item.name)
         setType(item.type)
-        setConfig(item.telegramTargetChatId ? { targetChatId: item.telegramTargetChatId } : {})
+        setConfig(
+            item.type === 'telegram' && item.telegramTargetChatId
+                ? { targetChatId: item.telegramTargetChatId }
+                : item.type === 'email' && item.configEmailTo
+                    ? { to: item.configEmailTo }
+                    : {},
+        )
         setConfigDirty(false)
         setIsActive(item.isActive)
         setError(null)
+        setTestFeedback(null)
         setEditing({ mode: 'edit', item })
     }
 
@@ -960,6 +995,23 @@ function NotifiersSection({
         }
     }
 
+    async function runTest(id: string) {
+        setTestingId(id)
+        setTestFeedback(null)
+        setError(null)
+        try {
+            const notifier = notifiers.find((item) => item.id === id)
+            await testNotifier({ data: { id, to: notifier?.configEmailTo ?? undefined } })
+            setTestFeedback({ id, ok: true, message: 'Test email sent — check your inbox.' })
+        } catch (err) {
+            const message = errorText(err)
+            setTestFeedback({ id, ok: false, message })
+            setError(message)
+        } finally {
+            setTestingId(null)
+        }
+    }
+
     return (
         <Panel
             title="Notifiers"
@@ -971,7 +1023,7 @@ function NotifiersSection({
                     title={editing.mode === 'create' ? 'New notifier' : `Edit ${editing.item.name}`}
                     busy={busy}
                     error={error}
-                    saveDisabled={!name.trim()}
+                    saveDisabled={!name.trim() || (type === 'email' && !emailTo.trim())}
                     onSave={save}
                     onCancel={() => setEditing(null)}
                 >
@@ -1009,6 +1061,21 @@ function NotifiersSection({
                                 </p>
                             ) : null}
                         </Field>
+                    ) : type === 'email' ? (
+                        <Field
+                            label="Recipient email (to)"
+                            hint="Where notifications are mailed. The connection uses the per-notifier SMTP fields (host / port / secure / user / pass / from) when set, otherwise the SMTP_* environment variables."
+                        >
+                            <TextInput
+                                value={emailTo}
+                                onChange={(value) => {
+                                    setConfigDirty(true)
+                                    setConfig({ to: value.trim() })
+                                }}
+                                placeholder="ops@example.com"
+                                required
+                            />
+                        </Field>
                     ) : (
                         <Field
                             label="Config"
@@ -1044,7 +1111,9 @@ function NotifiersSection({
                                 }`
                                 : ' · not configured'
                             }`
-                            : `${notifier.type.toUpperCase()}${notifier.configConfigured ? '' : ' · not configured'}`,
+                            : notifier.type === 'email'
+                                ? `EMAIL${notifier.configEmailTo ? ` → ${notifier.configEmailTo}` : ' · not configured'}`
+                                : `${notifier.type.toUpperCase()}${notifier.configConfigured ? '' : ' · not configured'}`,
                     status: notifier.isActive,
                 }))}
                 confirmingId={confirmingId}
@@ -1056,7 +1125,24 @@ function NotifiersSection({
                 onDelete={setConfirmingId}
                 onDeleteConfirm={confirmDelete}
                 onCancelDelete={() => setConfirmingId(null)}
+                onTest={
+                    notifiers.some((notifier) => notifier.type === 'email')
+                        ? (id) => {
+                              const item = notifiers.find((notifier) => notifier.id === id)
+                              if (item && item.type === 'email') void runTest(id)
+                          }
+                        : undefined
+                }
+                testingId={testingId}
             />
+            {testFeedback ? (
+                <p
+                    role="status"
+                    className={`m-0 mt-3 text-xs font-medium ${testFeedback.ok ? 'text-(--lagoon-deep)' : 'text-red-500'}`}
+                >
+                    {testFeedback.ok ? 'Test email sent — check the recipient inbox.' : `Test failed: ${testFeedback.message}`}
+                </p>
+            ) : null}
         </Panel>
     )
 }

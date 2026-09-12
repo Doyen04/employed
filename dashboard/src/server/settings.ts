@@ -100,6 +100,16 @@ export const deleteNotifier = createServerFn({ method: 'POST' })
     return { ok: true }
   })
 
+export const testNotifier = createServerFn({ method: 'POST' })
+  .validator((input: { id: string; to?: string }) => input)
+  .handler(async ({ data }) => {
+    await requireAuthed()
+    return workerFetch<{ ok: true }>(
+      `/settings/notifiers/${encodeURIComponent(data.id)}/test`,
+      { method: 'POST', body: JSON.stringify({ to: data.to }) },
+    )
+  })
+
 export const createActionRule = createServerFn({ method: 'POST' })
   .validator(
     (input: {

@@ -53,6 +53,7 @@ export interface WorkerNotifier {
   isActive: boolean
   configConfigured: boolean
   telegramTargetChatId?: string | null
+  configEmailTo?: string | null
 }
 
 export interface WorkerActionRule {
@@ -122,6 +123,30 @@ export interface WorkerAnalysis {
     errorDetail: string | null
     notifier: { id: string; name: string; type: NotifierType }
   }[]
+}
+
+export interface WorkerMailJob {
+  messageId: string
+  senderName: string | null
+  text: string
+  receivedAt: string
+  chat: ChatRef
+  analysisId: string
+  analyzedAt: string
+  provider: string | null
+  model: string | null
+  analysisConfigName: string
+  analysis: Json
+  body: string
+}
+
+export interface WorkerMailSendResult {
+  ok: true
+  host: string
+  from: string
+  to: string[]
+  subject: string
+  sentAt: string
 }
 
 export interface Paged<T> {

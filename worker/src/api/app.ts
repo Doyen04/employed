@@ -11,6 +11,7 @@ import { analysesRouter } from './routes/analyses'
 import { telegramRouter } from './routes/telegram'
 import { overviewRouter } from './routes/overview'
 import { diagnosticsRouter } from './routes/diagnostics'
+import { mailRouter } from './routes/mail'
 
 export function createApp() {
     const app = express()
@@ -35,6 +36,7 @@ export function createApp() {
     app.use('/action-logs', actionLogsRouter)
     app.use('/analyses', analysesRouter)
     app.use('/telegram', telegramRouter)
+    app.use('/mail', mailRouter)
 
     return app
 }

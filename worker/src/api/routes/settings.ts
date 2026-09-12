@@ -6,6 +6,7 @@ import { encryptJson, decryptJson } from '../../utils/json'
 import { pickDefined } from '../../utils/pickDefined'
 import { getMonitoredChatRefusal } from '../../prisma/chats'
 import { toJsonValue } from '../../types/json'
+import { resolveSmtp, sendSmtpMail } from '../../actions/notifiers/email'
 import type { ActionRule, AnalysisConfig, Notifier } from '../../generated/prisma/client'
 
 export const settingsRouter = Router()
@@ -26,9 +27,14 @@ function serializeConfig(config: AnalysisConfig & { allowedChats?: { id: string 
 
 function serializeNotifier(notifier: Notifier) {
   let telegramTargetChatId: string | null = null
+  let configEmailTo: string | null = null
   if (notifier.type === 'telegram' && typeof notifier.config === 'string') {
     const decrypted = decryptJson<{ targetChatId?: unknown }>(notifier.config, {})
     if (typeof decrypted.targetChatId === 'string') telegramTargetChatId = decrypted.targetChatId
+  }
+  if (notifier.type === 'email' && typeof notifier.config === 'string') {
+    const decrypted = decryptJson<{ to?: unknown }>(notifier.config, {})
+    if (typeof decrypted.to === 'string' && decrypted.to.trim()) configEmailTo = decrypted.to.trim()
   }
   return {
     id: notifier.id,
@@ -37,6 +43,7 @@ function serializeNotifier(notifier: Notifier) {
     isActive: notifier.isActive,
     configConfigured: true,
     telegramTargetChatId,
+    configEmailTo,
   }
 }
 
@@ -182,6 +189,42 @@ settingsRouter.patch('/notifiers/:id', async (req, res) => {
 settingsRouter.delete('/notifiers/:id', async (req, res) => {
     await prisma.notifier.delete({ where: { id: req.params.id } })
     res.status(204).end()
+})
+
+settingsRouter.post('/notifiers/:id/test', async (req, res) => {
+    const body = z.object({ to: z.string().optional() }).parse(req.body ?? {})
+    const notifier = await prisma.notifier.findUnique({ where: { id: req.params.id } })
+    if (!notifier) {
+        return res.status(404).json({ ok: false, error: 'notifier not found' })
+    }
+    if (notifier.type !== 'email') {
+        return res.status(400).json({ ok: false, error: 'test is only supported for email notifiers' })
+    }
+
+    const config = typeof notifier.config === 'string' ? decryptJson<Record<string, unknown>>(notifier.config, {}) : {}
+    const resolved = resolveSmtp(config)
+    if (!resolved.ok) {
+        return res.status(400).json({ ok: false, error: resolved.error })
+    }
+
+    const to = body.to?.trim() || String(config.to ?? '').trim()
+    if (!to) {
+        return res
+            .status(400)
+            .json({ ok: false, error: 'email notifier has no recipient — set config.to or pass a test address' })
+    }
+
+    const result = await sendSmtpMail({
+        from: resolved.from,
+        connection: resolved.connection,
+        to,
+        subject: 'Employed — test email',
+        text: 'This is a test email from your Employed worker. SMTP is working.',
+    })
+    if (result.status === 'failed') {
+        return res.status(400).json({ ok: false, error: result.error ?? 'send failed' })
+    }
+    res.json({ ok: true })
 })
 
 const ruleSchema = z.object({
