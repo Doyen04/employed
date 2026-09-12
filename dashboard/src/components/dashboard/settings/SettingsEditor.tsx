@@ -833,11 +833,16 @@ function AnalysisConfigsSection({
                     <Field label="Name">
                         <TextInput value={name} onChange={setName} placeholder="e.g. Customer support triage" required />
                     </Field>
-                    <Field label="Prompt template">
+                    <Field
+                        label="Prompt template"
+                        hint={
+                            '{{text}} is replaced with the incoming message when the prompt runs. Tell the LLM to reply with ONLY a JSON object and list every key it must include — keys must match your output schema exactly, because each analysis is matched against action-rule conditions as flat key/value pairs. Prefer strict, verifiable instructions: state the default for missing or unknown values (e.g. "" / "not found" / "not specified") and forbid guessing.'
+                        }
+                    >
                         <TextArea
                             value={promptTemplate}
                             onChange={setPromptTemplate}
-                            rows={4}
+                            rows={6}
                             placeholder="Analyze the incoming message and reply with a JSON object matching the output schema."
                             required
                         />

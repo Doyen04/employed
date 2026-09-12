@@ -66,16 +66,19 @@ export async function sendSmtpMail(input: SendMailInput): Promise<NotifierResult
     }
 }
 
-function getSmtpConfig(cfg: Record<string, unknown>) {
+function getSmtpConfig(cfg: Record<string, unknown>):
+    | { ok: true; connection: SmtpConnectionOptions; from: string; to: string }
+    | { ok: false; error: string } {
     const resolved = resolveSmtp(cfg)
     if (!resolved.ok) {
-        return { error: resolved.error }
+        return { ok: false, error: resolved.error }
     }
     const to = String(cfg.to ?? '').trim()
     if (!to) {
-        return { error: 'email notifier requires config.to — set a recipient email address' }
+        return { ok: false, error: 'email notifier requires config.to — set a recipient email address' }
     }
     return {
+        ok: true,
         connection: resolved.connection,
         from: resolved.from,
         to,
@@ -85,7 +88,7 @@ function getSmtpConfig(cfg: Record<string, unknown>) {
 export const emailNotifier: Notifier = {
     async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<NotifierResult> {
         const smtp = getSmtpConfig(config)
-        if (smtp.error) {
+        if (!smtp.ok) {
             return { status: 'failed', error: smtp.error }
         }
 

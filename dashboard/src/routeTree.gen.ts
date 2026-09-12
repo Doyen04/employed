@@ -17,6 +17,7 @@ import { Route as ProtectedAnalysesRouteImport } from './routes/_protected/analy
 import { Route as ProtectedChatsRouteImport } from './routes/_protected/chats'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedDiagnosticsRouteImport } from './routes/_protected/diagnostics'
+import { Route as ProtectedMailRouteImport } from './routes/_protected/mail'
 import { Route as ProtectedMessagesRouteImport } from './routes/_protected/messages'
 import { Route as ProtectedSettingsRouteImport } from './routes/_protected/settings'
 import { Route as ProtectedTelegramRouteImport } from './routes/_protected/telegram'
@@ -60,6 +61,11 @@ const ProtectedDiagnosticsRoute = ProtectedDiagnosticsRouteImport.update({
   path: '/diagnostics',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedMailRoute = ProtectedMailRouteImport.update({
+  id: '/mail',
+  path: '/mail',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedMessagesRoute = ProtectedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/chats': typeof ProtectedChatsRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/diagnostics': typeof ProtectedDiagnosticsRoute
+  '/mail': typeof ProtectedMailRoute
   '/messages': typeof ProtectedMessagesRoute
   '/settings': typeof ProtectedSettingsRoute
   '/telegram': typeof ProtectedTelegramRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/chats': typeof ProtectedChatsRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/diagnostics': typeof ProtectedDiagnosticsRoute
+  '/mail': typeof ProtectedMailRoute
   '/messages': typeof ProtectedMessagesRoute
   '/settings': typeof ProtectedSettingsRoute
   '/telegram': typeof ProtectedTelegramRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/_protected/chats': typeof ProtectedChatsRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/diagnostics': typeof ProtectedDiagnosticsRoute
+  '/_protected/mail': typeof ProtectedMailRoute
   '/_protected/messages': typeof ProtectedMessagesRoute
   '/_protected/settings': typeof ProtectedSettingsRoute
   '/_protected/telegram': typeof ProtectedTelegramRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/chats'
     | '/dashboard'
     | '/diagnostics'
+    | '/mail'
     | '/messages'
     | '/settings'
     | '/telegram'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/chats'
     | '/dashboard'
     | '/diagnostics'
+    | '/mail'
     | '/messages'
     | '/settings'
     | '/telegram'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/_protected/chats'
     | '/_protected/dashboard'
     | '/_protected/diagnostics'
+    | '/_protected/mail'
     | '/_protected/messages'
     | '/_protected/settings'
     | '/_protected/telegram'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedDiagnosticsRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/mail': {
+      id: '/_protected/mail'
+      path: '/mail'
+      fullPath: '/mail'
+      preLoaderRoute: typeof ProtectedMailRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/messages': {
       id: '/_protected/messages'
       path: '/messages'
@@ -248,6 +267,7 @@ interface ProtectedRouteChildren {
   ProtectedChatsRoute: typeof ProtectedChatsRoute
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedDiagnosticsRoute: typeof ProtectedDiagnosticsRoute
+  ProtectedMailRoute: typeof ProtectedMailRoute
   ProtectedMessagesRoute: typeof ProtectedMessagesRoute
   ProtectedSettingsRoute: typeof ProtectedSettingsRoute
   ProtectedTelegramRoute: typeof ProtectedTelegramRoute
@@ -259,6 +279,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedChatsRoute: ProtectedChatsRoute,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedDiagnosticsRoute: ProtectedDiagnosticsRoute,
+  ProtectedMailRoute: ProtectedMailRoute,
   ProtectedMessagesRoute: ProtectedMessagesRoute,
   ProtectedSettingsRoute: ProtectedSettingsRoute,
   ProtectedTelegramRoute: ProtectedTelegramRoute,
@@ -276,12 +297,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

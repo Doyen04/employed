@@ -110,7 +110,7 @@ settingsRouter.patch('/analysis-configs/:id', async (req, res) => {
             promptTemplate: body.promptTemplate,
             outputSchema: body.outputSchema !== undefined ? toJsonValue(body.outputSchema) : undefined,
             isActive: body.isActive,
-            allowedChatIds: body.allowedChatIds !== undefined
+            allowedChats: body.allowedChatIds !== undefined
                 ? { set: body.allowedChatIds.map((chatId) => ({ id: chatId })) }
                 : undefined,
         }) as Parameters<typeof prisma.analysisConfig.update>[0]['data'],
