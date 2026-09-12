@@ -9,6 +9,7 @@ import {
     Search,
     Send,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { listActionLogs, deleteActionLog } from '../../server/actionLogs'
 import { Panel } from '../../components/dashboard/Panel'
@@ -64,7 +65,6 @@ function ActionLogsPage() {
     }
 
     async function deleteActionLogRow(log: WorkerActionLog) {
-        setError(null)
         setDeletingKey(log.id)
         try {
             await deleteActionLog({ data: { id: log.id } })
@@ -76,8 +76,9 @@ function ActionLogsPage() {
                 return next
             })
             setSelected((current) => (current?.id === log.id ? null : current))
+            toast.success('Action log deleted.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingDelete(null)
@@ -85,7 +86,6 @@ function ActionLogsPage() {
     }
 
     async function deleteActionLogRows(logs: WorkerActionLog[]) {
-        setError(null)
         setDeletingKey('bulk')
         try {
             for (const log of logs) {
@@ -99,8 +99,9 @@ function ActionLogsPage() {
                 return next
             })
             setSelected((current) => (current && removed.has(current.id) ? null : current))
+            toast.success(`Deleted ${logs.length} action log${logs.length === 1 ? '' : 's'}.`)
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingBulkDelete(false)

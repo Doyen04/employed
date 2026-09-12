@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
 
 import { getSession, login } from '../server/auth'
 
@@ -17,18 +18,16 @@ export const Route = createFileRoute('/login')({
 function LoginPage() {
     const navigate = useNavigate()
     const [password, setPassword] = useState('')
-    const [error, setError] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault()
         setBusy(true)
-        setError(null)
         try {
             await login({ data: password })
             await navigate({ to: '/dashboard' })
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'login failed')
+            toast.error(err instanceof Error ? err.message : 'login failed')
             setBusy(false)
         }
     }
@@ -57,12 +56,6 @@ function LoginPage() {
                             className="rounded-xl border border-(--line) bg-(--header-bg) px-4 py-2.5 font-normal text-(--sea-ink) outline-none transition focus:border-(--lagoon) focus:ring-2 focus:ring-(--lagoon)/20"
                         />
                     </label>
-
-                    {error && (
-                        <p role="alert" className="m-0 text-sm text-red-500">
-                            {error}
-                        </p>
-                    )}
 
                     <button
                         type="submit"

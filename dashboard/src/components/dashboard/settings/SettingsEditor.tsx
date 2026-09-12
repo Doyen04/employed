@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Check, ChevronDown, Pencil, Plus, RefreshCw, Send, Trash2, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { Panel } from '../Panel'
 import {
@@ -562,7 +563,6 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
 function FormShell({
     title,
     busy,
-    error,
     saveDisabled,
     onSave,
     onCancel,
@@ -570,7 +570,6 @@ function FormShell({
 }: {
     title: string
     busy: boolean
-    error: string | null
     saveDisabled: boolean
     onSave: () => void
     onCancel: () => void
@@ -583,11 +582,6 @@ function FormShell({
                 {busy ? <RefreshCw className="h-3.5 w-3.5 animate-spin text-(--sea-ink-soft)" /> : null}
             </div>
             {children}
-            {error ? (
-                <p role="alert" className="m-0 text-xs font-medium text-red-600">
-                    {error}
-                </p>
-            ) : null}
             <div className="flex items-center gap-2">
                 <button
                     type="button"
@@ -751,7 +745,6 @@ function AnalysisConfigsSection({
     const [allowedChatIds, setAllowedChatIds] = useState<string[]>([])
     const [isActive, setIsActive] = useState(true)
     const [busy, setBusy] = useState(false)
-    const [error, setError] = useState<string | null>(null)
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
     const monitoredChats = chats.filter((chat) => chat.isMonitored)
@@ -762,7 +755,6 @@ function AnalysisConfigsSection({
         setSchema({})
         setAllowedChatIds([])
         setIsActive(true)
-        setError(null)
         setEditing({ mode: 'create' })
     }
 
@@ -772,13 +764,11 @@ function AnalysisConfigsSection({
         setSchema(item.outputSchema)
         setAllowedChatIds(item.allowedChatIds)
         setIsActive(item.isActive)
-        setError(null)
         setEditing({ mode: 'edit', item })
     }
 
     async function save() {
         setBusy(true)
-        setError(null)
         try {
             const payload = {
                 name: name.trim(),
@@ -787,15 +777,17 @@ function AnalysisConfigsSection({
                 isActive,
                 allowedChatIds: allowedChatIds.filter((id) => chats.some((chat) => chat.id === id)),
             }
-            if (editing?.mode === 'create') {
+            const created = editing?.mode === 'create'
+            if (created) {
                 await createAnalysisConfig({ data: payload })
             } else if (editing?.mode === 'edit') {
                 await updateAnalysisConfig({ data: { id: editing.item.id, ...payload } })
             }
             await onChanged()
             setEditing(null)
+            toast.success(created ? 'Analysis config created.' : 'Analysis config saved.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setBusy(false)
         }
@@ -803,13 +795,14 @@ function AnalysisConfigsSection({
 
     async function confirmDelete(id: string) {
         setBusy(true)
-        setError(null)
         try {
+            const config = configs.find((item) => item.id === id)
             await deleteAnalysisConfig({ data: { id } })
             await onChanged()
             setConfirmingId(null)
+            toast.success(`Deleted "${config?.name ?? id}" analysis config.`)
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setBusy(false)
         }
@@ -825,7 +818,6 @@ function AnalysisConfigsSection({
                 <FormShell
                     title={editing.mode === 'create' ? 'New analysis config' : `Edit ${editing.item.name}`}
                     busy={busy}
-                    error={error}
                     saveDisabled={!name.trim() || !promptTemplate.trim()}
                     onSave={save}
                     onCancel={() => setEditing(null)}
@@ -913,10 +905,8 @@ function NotifiersSection({
     const [configDirty, setConfigDirty] = useState(false)
     const [isActive, setIsActive] = useState(true)
     const [busy, setBusy] = useState(false)
-    const [error, setError] = useState<string | null>(null)
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
     const [testingId, setTestingId] = useState<string | null>(null)
-    const [testFeedback, setTestFeedback] = useState<{ id: string; ok: boolean; message: string } | null>(null)
 
     const targetChatId =
         config !== null && !Array.isArray(config) && typeof config === 'object'
@@ -940,8 +930,6 @@ function NotifiersSection({
         setConfig({})
         setConfigDirty(false)
         setIsActive(true)
-        setError(null)
-        setTestFeedback(null)
         setEditing({ mode: 'create' })
     }
 
@@ -957,17 +945,15 @@ function NotifiersSection({
         )
         setConfigDirty(false)
         setIsActive(item.isActive)
-        setError(null)
-        setTestFeedback(null)
         setEditing({ mode: 'edit', item })
     }
 
     async function save() {
         setBusy(true)
-        setError(null)
         try {
             const base = { name: name.trim(), type, isActive }
-            if (editing?.mode === 'create') {
+            const created = editing?.mode === 'create'
+            if (created) {
                 await createNotifier({ data: { ...base, config } })
             } else if (editing?.mode === 'edit') {
                 const patch: { id: string; name: string; type: NotifierType; isActive: boolean; config?: Json } = {
@@ -979,8 +965,9 @@ function NotifiersSection({
             }
             await onChanged()
             setEditing(null)
+            toast.success(created ? 'Notifier created.' : 'Notifier saved.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setBusy(false)
         }
@@ -988,13 +975,14 @@ function NotifiersSection({
 
     async function confirmDelete(id: string) {
         setBusy(true)
-        setError(null)
         try {
+            const notifier = notifiers.find((item) => item.id === id)
             await deleteNotifier({ data: { id } })
             await onChanged()
             setConfirmingId(null)
+            toast.success(`Deleted "${notifier?.name ?? id}" notifier.`)
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setBusy(false)
         }
@@ -1002,16 +990,12 @@ function NotifiersSection({
 
     async function runTest(id: string) {
         setTestingId(id)
-        setTestFeedback(null)
-        setError(null)
         try {
             const notifier = notifiers.find((item) => item.id === id)
             await testNotifier({ data: { id, to: notifier?.configEmailTo ?? undefined } })
-            setTestFeedback({ id, ok: true, message: 'Test email sent — check your inbox.' })
+            toast.success('Test email sent — check your inbox.')
         } catch (err) {
-            const message = errorText(err)
-            setTestFeedback({ id, ok: false, message })
-            setError(message)
+            toast.error(errorText(err))
         } finally {
             setTestingId(null)
         }
@@ -1027,7 +1011,6 @@ function NotifiersSection({
                 <FormShell
                     title={editing.mode === 'create' ? 'New notifier' : `Edit ${editing.item.name}`}
                     busy={busy}
-                    error={error}
                     saveDisabled={!name.trim() || (type === 'email' && !emailTo.trim())}
                     onSave={save}
                     onCancel={() => setEditing(null)}
@@ -1140,14 +1123,6 @@ function NotifiersSection({
                 }
                 testingId={testingId}
             />
-            {testFeedback ? (
-                <p
-                    role="status"
-                    className={`m-0 mt-3 text-xs font-medium ${testFeedback.ok ? 'text-(--lagoon-deep)' : 'text-red-500'}`}
-                >
-                    {testFeedback.ok ? 'Test email sent — check the recipient inbox.' : `Test failed: ${testFeedback.message}`}
-                </p>
-            ) : null}
         </Panel>
     )
 }
@@ -1171,7 +1146,6 @@ function ActionRulesSection({
     const [condition, setCondition] = useState<Json>({})
     const [isActive, setIsActive] = useState(true)
     const [busy, setBusy] = useState(false)
-    const [error, setError] = useState<string | null>(null)
     const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
     function openCreate() {
@@ -1179,7 +1153,6 @@ function ActionRulesSection({
         setNotifierId(notifiers[0]?.id ?? '')
         setCondition({})
         setIsActive(true)
-        setError(null)
         setEditing({ mode: 'create' })
     }
 
@@ -1188,13 +1161,11 @@ function ActionRulesSection({
         setNotifierId(item.notifierId)
         setCondition(item.condition)
         setIsActive(item.isActive)
-        setError(null)
         setEditing({ mode: 'edit', item })
     }
 
     async function save() {
         setBusy(true)
-        setError(null)
         try {
             const payload = {
                 analysisConfigId,
@@ -1202,15 +1173,17 @@ function ActionRulesSection({
                 condition,
                 isActive,
             }
-            if (editing?.mode === 'create') {
+            const created = editing?.mode === 'create'
+            if (created) {
                 await createActionRule({ data: payload })
             } else if (editing?.mode === 'edit') {
                 await updateActionRule({ data: { id: editing.item.id, ...payload } })
             }
             await onChanged()
             setEditing(null)
+            toast.success(created ? 'Action rule created.' : 'Action rule saved.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setBusy(false)
         }
@@ -1218,13 +1191,13 @@ function ActionRulesSection({
 
     async function confirmDelete(id: string) {
         setBusy(true)
-        setError(null)
         try {
             await deleteActionRule({ data: { id } })
             await onChanged()
             setConfirmingId(null)
+            toast.success('Action rule deleted.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setBusy(false)
         }
@@ -1240,7 +1213,6 @@ function ActionRulesSection({
                 <FormShell
                     title={editing.mode === 'create' ? 'New action rule' : `Edit rule ${editing.item.id}`}
                     busy={busy}
-                    error={error}
                     saveDisabled={!analysisConfigId || !notifierId}
                     onSave={save}
                     onCancel={() => setEditing(null)}

@@ -1,80 +1,84 @@
 import {
-  HeadContent,
-  Scripts,
-  createRootRoute,
-  useRouterState,
+    HeadContent,
+    Outlet,
+    Scripts,
+    createRootRoute,
+    useRouterState,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import { NotFound } from '../components/NotFound'
+import { ThemeToaster } from '../components/dashboard/Toaster'
 
 import appCss from '../styles.css?url'
 
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'Employed — Telegram signal intelligence',
-      },
-      {
-        name: 'description',
-        content:
-          'Employed monitors the Telegram conversations you choose, analyzes messages with AI, and triggers the right action when something important appears.',
-      },
-      {
-        name: 'theme-color',
-        content: '#4F3D35',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
-  }),
-  shellComponent: RootDocument,
-  notFoundComponent: NotFound,
+    head: () => ({
+        meta: [
+            {
+                charSet: 'utf-8',
+            },
+            {
+                name: 'viewport',
+                content: 'width=device-width, initial-scale=1',
+            },
+            {
+                title: 'Employed — Telegram signal intelligence',
+            },
+            {
+                name: 'description',
+                content:
+                    'Employed monitors the Telegram conversations you choose, analyzes messages with AI, and triggers the right action when something important appears.',
+            },
+            {
+                name: 'theme-color',
+                content: '#4F3D35',
+            },
+        ],
+        links: [
+            {
+                rel: 'stylesheet',
+                href: appCss,
+            },
+        ],
+    }),
+    shellComponent: RootDocument,
+    component: () => <Outlet />, 
+    notFoundComponent: NotFound,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const isPublicLanding = pathname === '/'
+    const pathname = useRouterState({ select: (s) => s.location.pathname })
+    const isPublicLanding = pathname === '/'
 
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <HeadContent />
-      </head>
-      <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(236,185,20,0.3)]">
-        {isPublicLanding && <Header />}
-        {children}
-        {isPublicLanding && <Footer />}
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
-        <Scripts />
-      </body>
-    </html>
-  )
+    return (
+        <html lang="en" suppressHydrationWarning>
+            <head>
+                <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+                <HeadContent />
+            </head>
+            <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(236,185,20,0.3)]">
+                {isPublicLanding && <Header />}
+                {children}
+                {isPublicLanding && <Footer />}
+                <ThemeToaster />
+                <TanStackDevtools
+                    config={{
+                        position: 'bottom-right',
+                    }}
+                    plugins={[
+                        {
+                            name: 'Tanstack Router',
+                            render: <TanStackRouterDevtoolsPanel />,
+                        },
+                    ]}
+                />
+                <Scripts />
+            </body>
+        </html>
+    )
 }

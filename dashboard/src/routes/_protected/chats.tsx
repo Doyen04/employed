@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, Radio, RefreshCw, Search, Zap } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { listChats, refreshChats, updateChat } from '../../server/chats'
 import { getTelegramStatus } from '../../server/telegram'
@@ -74,16 +75,22 @@ function ChatsPage() {
 
     async function handleToggleMonitor(chat: WorkerChat) {
         const previous = chats
+        const nextMonitored = !chat.isMonitored
         setChats((current) =>
             current.map((item) =>
-                item.id === chat.id ? { ...item, isMonitored: !item.isMonitored } : item,
+                item.id === chat.id ? { ...item, isMonitored: nextMonitored } : item,
             ),
         )
         try {
-            await updateChat({ data: { id: chat.id, isMonitored: !chat.isMonitored } })
+            await updateChat({ data: { id: chat.id, isMonitored: nextMonitored } })
+            toast.success(
+                nextMonitored
+                    ? `Monitoring enabled for "${chat.title}".`
+                    : `Monitoring disabled for "${chat.title}".`,
+            )
         } catch (err) {
             setChats(previous)
-            setError(errorText(err))
+            toast.error(errorText(err))
         }
     }
 

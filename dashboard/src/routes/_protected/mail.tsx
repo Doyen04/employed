@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { RefreshCw, Send } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { listMailJobs, sendManualMail } from '../../server/mail'
 import { Panel } from '../../components/dashboard/Panel'
@@ -25,7 +26,6 @@ function MailPage() {
     const [subject, setSubject] = useState('')
     const [body, setBody] = useState('')
     const [sending, setSending] = useState(false)
-    const [sendStatus, setSendStatus] = useState<{ ok: boolean; message: string } | null>(null)
 
     async function load(reset: boolean, silent = false) {
         if (reset && !silent) setLoading(true)
@@ -54,7 +54,6 @@ function MailPage() {
         setSelected(job)
         setSubject(`[${job.analysisConfigName}] Analysed message — ${job.chat.title}`)
         setBody(job.body)
-        setSendStatus(null)
     }
 
     const recipientList = useMemo(
@@ -69,16 +68,15 @@ function MailPage() {
     async function send() {
         if (!selected) return
         if (recipientList.length === 0) {
-            setSendStatus({ ok: false, message: 'Enter at least one recipient email address.' })
+            toast.error('Enter at least one recipient email address.')
             return
         }
         const invalid = recipientList.find((address) => !address.includes('@'))
         if (invalid) {
-            setSendStatus({ ok: false, message: `"${invalid}" does not look like an email address.` })
+            toast.error(`"${invalid}" does not look like an email address.`)
             return
         }
         setSending(true)
-        setSendStatus(null)
         try {
             const result = await sendManualMail({
                 data: {
@@ -88,12 +86,11 @@ function MailPage() {
                     body,
                 },
             })
-            setSendStatus({
-                ok: true,
-                message: `Sent to ${result.to.length} recipient${result.to.length === 1 ? '' : 's'} via ${result.host}.`,
-            })
+            toast.success(
+                `Sent to ${result.to.length} recipient${result.to.length === 1 ? '' : 's'} via ${result.host}.`,
+            )
         } catch (err) {
-            setSendStatus({ ok: false, message: errorText(err) })
+            toast.error(errorText(err))
         } finally {
             setSending(false)
         }
@@ -229,15 +226,6 @@ function MailPage() {
                                         Pre-filled with the LLM analysis. Edit freely.
                                     </span>
                                 </label>
-
-                                {sendStatus ? (
-                                    <p
-                                        role="status"
-                                        className={`m-0 text-xs font-medium ${sendStatus.ok ? 'text-(--lagoon-deep)' : 'text-red-500'}`}
-                                    >
-                                        {sendStatus.message}
-                                    </p>
-                                ) : null}
 
                                 <div className="flex flex-wrap items-center gap-2">
                                     <button

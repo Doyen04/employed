@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { AlertTriangle, CheckCircle2, Clock3, RefreshCw, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { getDiagnostics, clearDiagnostic } from '../../server/diagnostics'
 import { connectRealtime } from '../../client/socket'
@@ -58,7 +59,6 @@ function DiagnosticsPage() {
     }
 
     async function clearDiagnosticRow(row: SubsystemRow) {
-        setError(null)
         setDeletingKey(row.key)
         try {
             await clearDiagnostic({ data: { key: row.key } })
@@ -71,8 +71,9 @@ function DiagnosticsPage() {
                 return nextKeys
             })
             setSelected(null)
+            toast.success('Diagnostic entry cleared.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingClear(null)
@@ -80,7 +81,6 @@ function DiagnosticsPage() {
     }
 
     async function clearDiagnosticRows(list: SubsystemRow[]) {
-        setError(null)
         setDeletingKey('bulk')
         try {
             for (const row of list) {
@@ -90,8 +90,9 @@ function DiagnosticsPage() {
             setState(next)
             setSelectedKeys(new Set())
             setSelected(null)
+            toast.success(`Cleared ${list.length} diagnostic entr${list.length === 1 ? 'y' : 'ies'}.`)
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingBulkClear(false)

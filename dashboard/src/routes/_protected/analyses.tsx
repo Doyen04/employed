@@ -10,6 +10,7 @@ import {
     Send,
     XCircle,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { listAnalyses, deleteAnalysis } from '../../server/analyses'
 import { Panel } from '../../components/dashboard/Panel'
@@ -65,7 +66,6 @@ function AnalysesPage() {
     }
 
     async function deleteAnalysisRow(analysis: WorkerAnalysis) {
-        setError(null)
         setDeletingKey(analysis.id)
         try {
             await deleteAnalysis({ data: { id: analysis.id } })
@@ -77,8 +77,9 @@ function AnalysesPage() {
                 return next
             })
             setSelected((current) => (current?.id === analysis.id ? null : current))
+            toast.success('Analysis deleted.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingDelete(null)
@@ -86,7 +87,6 @@ function AnalysesPage() {
     }
 
     async function deleteAnalysisRows(list: WorkerAnalysis[]) {
-        setError(null)
         setDeletingKey('bulk')
         try {
             for (const analysis of list) {
@@ -100,8 +100,9 @@ function AnalysesPage() {
                 return next
             })
             setSelected((current) => (current && removed.has(current.id) ? null : current))
+            toast.success(`Deleted ${list.length} analysis${list.length === 1 ? '' : 'es'}.`)
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingBulkDelete(false)

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowRight, ChevronDown, Inbox, MessageSquare, Radio, RefreshCw, Search, Zap } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { listMessages, messageSummary, deleteMessage } from '../../server/messages'
 import { getTelegramStatus } from '../../server/telegram'
@@ -155,7 +156,6 @@ function MessagesPage() {
     }
 
     async function deleteMessageRow(message: WorkerMessage) {
-        setError(null)
         setDeletingKey(message.id)
         try {
             await deleteMessage({ data: { id: message.id } })
@@ -167,8 +167,9 @@ function MessagesPage() {
                 return next
             })
             setSelected((current) => (current?.id === message.id ? null : current))
+            toast.success('Message deleted.')
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingDelete(null)
@@ -176,7 +177,6 @@ function MessagesPage() {
     }
 
     async function deleteMessageRows(messages: WorkerMessage[]) {
-        setError(null)
         setDeletingKey('bulk')
         try {
             for (const message of messages) {
@@ -190,8 +190,9 @@ function MessagesPage() {
                 return next
             })
             setSelected((current) => (current && removed.has(current.id) ? null : current))
+            toast.success(`Deleted ${messages.length} message${messages.length === 1 ? '' : 's'}.`)
         } catch (err) {
-            setError(errorText(err))
+            toast.error(errorText(err))
         } finally {
             setDeletingKey(null)
             setPendingBulkDelete(false)
