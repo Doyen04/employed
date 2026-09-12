@@ -17,6 +17,7 @@ import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
 import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
+import { BulkSelectionBar } from '../../components/dashboard/BulkSelectionBar'
 import { StatCard } from '../../components/dashboard/StatCard'
 import { StatusBadge } from '../../components/dashboard/StatusBadge'
 import type { WorkerAnalysis } from '../../lib/types'
@@ -40,6 +41,8 @@ function AnalysesPage() {
     const [query, setQuery] = useState('')
     const [selected, setSelected] = useState<WorkerAnalysis | null>(null)
     const [pendingDelete, setPendingDelete] = useState<WorkerAnalysis | null>(null)
+    const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
+    const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
 
     async function load(reset: boolean, silent = false) {
         if (reset && !silent) setLoading(true)
@@ -65,11 +68,38 @@ function AnalysesPage() {
         try {
             await deleteAnalysis({ data: { id: analysis.id } })
             setItems((previous) => previous.filter((row) => row.id !== analysis.id))
+            setSelectedKeys((current) => {
+                if (!current.has(analysis.id)) return current
+                const next = new Set(current)
+                next.delete(analysis.id)
+                return next
+            })
             setSelected((current) => (current?.id === analysis.id ? null : current))
         } catch (err) {
             setError(errorText(err))
         } finally {
             setPendingDelete(null)
+        }
+    }
+
+    async function deleteAnalysisRows(list: WorkerAnalysis[]) {
+        setError(null)
+        try {
+            for (const analysis of list) {
+                await deleteAnalysis({ data: { id: analysis.id } })
+            }
+            const removed = new Set(list.map((analysis) => analysis.id))
+            setItems((previous) => previous.filter((row) => !removed.has(row.id)))
+            setSelectedKeys((current) => {
+                const next = new Set(current)
+                for (const id of removed) next.delete(id)
+                return next
+            })
+            setSelected((current) => (current && removed.has(current.id) ? null : current))
+        } catch (err) {
+            setError(errorText(err))
+        } finally {
+            setPendingBulkDelete(false)
         }
     }
 
@@ -106,6 +136,11 @@ useEffect(() => {
             failedDispatches,
         }
     }, [filtered])
+
+    const selectedAnalyses = useMemo(
+        () => filtered.filter((analysis) => selectedKeys.has(analysis.id)),
+        [filtered, selectedKeys],
+    )
 
     if (loading) return <PageSkeleton label="Loading analyses" />
 
@@ -186,11 +221,22 @@ useEffect(() => {
                             <p className="text-sm text-(--sea-ink-soft)">No analyses match this filter.</p>
                         ) : (
                             <>
+                                {selectedAnalyses.length > 0 && (
+                                    <BulkSelectionBar
+                                        count={selectedAnalyses.length}
+                                        noun={selectedAnalyses.length === 1 ? 'analysis' : 'analyses'}
+                                        onClear={() => setSelectedKeys(new Set())}
+                                        onDelete={() => setPendingBulkDelete(true)}
+                                    />
+                                )}
                                 <LogTable<WorkerAnalysis>
                                     rows={filtered}
                                     rowKey={(analysis) => analysis.id}
                                     onRowClick={setSelected}
                                     onDelete={(analysis) => setPendingDelete(analysis)}
+                                    selectable
+                                    selectedKeys={selectedKeys}
+                                    onSelectedKeysChange={setSelectedKeys}
                                     rowAriaLabel={() => 'Open analysis details'}
                                     columns={[
                                         { header: 'Status', cell: (analysis) => <FiredBadge analysis={analysis} /> },
@@ -364,6 +410,16 @@ useEffect(() => {
           confirmLabel="Delete analysis"
           onConfirm={() => void deleteAnalysisRow(pendingDelete)}
           onCancel={() => setPendingDelete(null)}
+        />
+      ) : null}
+
+      {pendingBulkDelete && selectedAnalyses.length > 0 ? (
+        <ConfirmDialog
+          title={`Delete ${selectedAnalyses.length} ${selectedAnalyses.length === 1 ? 'analysis' : 'analyses'}?`}
+          message={`This permanently deletes ${selectedAnalyses.length} ${selectedAnalyses.length === 1 ? 'analysis' : 'analyses'}. Each one's action logs are also removed.`}
+          confirmLabel={`Delete ${selectedAnalyses.length}`}
+          onConfirm={() => void deleteAnalysisRows(selectedAnalyses)}
+          onCancel={() => setPendingBulkDelete(false)}
         />
       ) : null}
         </>

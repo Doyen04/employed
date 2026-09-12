@@ -16,6 +16,7 @@ import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { LogTable } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
 import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
+import { BulkSelectionBar } from '../../components/dashboard/BulkSelectionBar'
 import { StatCard } from '../../components/dashboard/StatCard'
 import { StatusBadge } from '../../components/dashboard/StatusBadge'
 import type { WorkerActionLog } from '../../lib/types'
@@ -39,6 +40,8 @@ function ActionLogsPage() {
     const [query, setQuery] = useState('')
     const [selected, setSelected] = useState<WorkerActionLog | null>(null)
     const [pendingDelete, setPendingDelete] = useState<WorkerActionLog | null>(null)
+    const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
+    const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
 
     async function load(reset: boolean, silent = false) {
         if (reset && !silent) setLoading(true)
@@ -64,11 +67,38 @@ function ActionLogsPage() {
         try {
             await deleteActionLog({ data: { id: log.id } })
             setItems((previous) => previous.filter((row) => row.id !== log.id))
+            setSelectedKeys((current) => {
+                if (!current.has(log.id)) return current
+                const next = new Set(current)
+                next.delete(log.id)
+                return next
+            })
             setSelected((current) => (current?.id === log.id ? null : current))
         } catch (err) {
             setError(errorText(err))
         } finally {
             setPendingDelete(null)
+        }
+    }
+
+    async function deleteActionLogRows(logs: WorkerActionLog[]) {
+        setError(null)
+        try {
+            for (const log of logs) {
+                await deleteActionLog({ data: { id: log.id } })
+            }
+            const removed = new Set(logs.map((log) => log.id))
+            setItems((previous) => previous.filter((row) => !removed.has(row.id)))
+            setSelectedKeys((current) => {
+                const next = new Set(current)
+                for (const id of removed) next.delete(id)
+                return next
+            })
+            setSelected((current) => (current && removed.has(current.id) ? null : current))
+        } catch (err) {
+            setError(errorText(err))
+        } finally {
+            setPendingBulkDelete(false)
         }
     }
 
@@ -103,6 +133,11 @@ function ActionLogsPage() {
         }
         return { total: filtered.length, sent, pending, failed }
     }, [filtered])
+
+    const selectedLogs = useMemo(
+        () => filtered.filter((log) => selectedKeys.has(log.id)),
+        [filtered, selectedKeys],
+    )
 
     if (loading) return <PageSkeleton label="Loading action logs" />
 
@@ -157,8 +192,8 @@ function ActionLogsPage() {
                                         type="button"
                                         onClick={() => setStatusFilter(value)}
                                         className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${statusFilter === value
-                                                ? 'bg-(--lagoon) text-white'
-                                                : 'text-(--sea-ink-soft) hover:bg-white/50 dark:hover:bg-zinc-800'
+                                            ? 'bg-(--lagoon) text-white'
+                                            : 'text-(--sea-ink-soft) hover:bg-white/50 dark:hover:bg-zinc-800'
                                             }`}
                                     >
                                         {label}
@@ -184,11 +219,22 @@ function ActionLogsPage() {
                             <p className="text-sm text-(--sea-ink-soft)">No action logs match this filter.</p>
                         ) : (
                             <>
+                                {selectedLogs.length > 0 && (
+                                    <BulkSelectionBar
+                                        count={selectedLogs.length}
+                                        noun={selectedLogs.length === 1 ? 'log' : 'logs'}
+                                        onClear={() => setSelectedKeys(new Set())}
+                                        onDelete={() => setPendingBulkDelete(true)}
+                                    />
+                                )}
                                 <LogTable<WorkerActionLog>
                                     rows={filtered}
                                     rowKey={(log) => log.id}
                                     onRowClick={setSelected}
                                     onDelete={(log) => setPendingDelete(log)}
+                                    selectable
+                                    selectedKeys={selectedKeys}
+                                    onSelectedKeysChange={setSelectedKeys}
                                     rowAriaLabel={() => 'Open action log details'}
                                     columns={[
                                         { header: 'Status', cell: (log) => <StatusBadge status={log.status} /> },
@@ -338,6 +384,16 @@ function ActionLogsPage() {
                     confirmLabel="Delete log"
                     onConfirm={() => void deleteActionLogRow(pendingDelete)}
                     onCancel={() => setPendingDelete(null)}
+                />
+            ) : null}
+
+            {pendingBulkDelete && selectedLogs.length > 0 ? (
+                <ConfirmDialog
+                    title={`Delete ${selectedLogs.length} ${selectedLogs.length === 1 ? 'log' : 'logs'}?`}
+                    message={`This permanently deletes ${selectedLogs.length} ${selectedLogs.length === 1 ? 'log' : 'logs'}.`}
+                    confirmLabel={`Delete ${selectedLogs.length}`}
+                    onConfirm={() => void deleteActionLogRows(selectedLogs)}
+                    onCancel={() => setPendingBulkDelete(false)}
                 />
             ) : null}
         </>

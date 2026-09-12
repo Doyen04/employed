@@ -10,6 +10,7 @@ import { LogTable } from '../../components/dashboard/LogTable'
 import type { LogTableColumn } from '../../components/dashboard/LogTable'
 import { DetailsDrawer, DrawerSection } from '../../components/dashboard/DetailsDrawer'
 import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
+import { BulkSelectionBar } from '../../components/dashboard/BulkSelectionBar'
 import { StatCard } from '../../components/dashboard/StatCard'
 import type { WorkerDiagnosticIssue, WorkerDiagnostics } from '../../lib/types'
 import { errorText } from '../../lib/utils'
@@ -38,6 +39,8 @@ function DiagnosticsPage() {
     const [error, setError] = useState<string | null>(null)
     const [selected, setSelected] = useState<SubsystemRow | null>(null)
     const [pendingClear, setPendingClear] = useState<SubsystemRow | null>(null)
+    const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
+    const [pendingBulkClear, setPendingBulkClear] = useState(false)
 
     async function load(silent = false) {
         if (silent) setRefreshing(true)
@@ -59,11 +62,34 @@ function DiagnosticsPage() {
             await clearDiagnostic({ data: { key: row.key } })
             const next = await getDiagnostics()
             setState(next)
+            setSelectedKeys((current) => {
+                if (!current.has(row.key)) return current
+                const nextKeys = new Set(current)
+                nextKeys.delete(row.key)
+                return nextKeys
+            })
             setSelected(null)
         } catch (err) {
             setError(errorText(err))
         } finally {
             setPendingClear(null)
+        }
+    }
+
+    async function clearDiagnosticRows(list: SubsystemRow[]) {
+        setError(null)
+        try {
+            for (const row of list) {
+                await clearDiagnostic({ data: { key: row.key } })
+            }
+            const next = await getDiagnostics()
+            setState(next)
+            setSelectedKeys(new Set())
+            setSelected(null)
+        } catch (err) {
+            setError(errorText(err))
+        } finally {
+            setPendingBulkClear(false)
         }
     }
 
@@ -96,6 +122,8 @@ function DiagnosticsPage() {
         .filter((key) => !SUBSYSTEM_KEYS.some((row) => row.key === key))
         .map((key) => ({ key, title: key, issue: issueByKey.get(key)! }))
     const rows: SubsystemRow[] = [...knownRows, ...extraRows]
+
+    const selectedRows = rows.filter((row) => selectedKeys.has(row.key))
 
     const columns: LogTableColumn<SubsystemRow>[] = [
         {
@@ -189,12 +217,27 @@ function DiagnosticsPage() {
                             </div>
                         )}
 
+                        {selectedRows.length > 0 && (
+                            <div className="mb-3">
+                                <BulkSelectionBar
+                                    count={selectedRows.length}
+                                    noun={selectedRows.length === 1 ? 'diagnostic' : 'diagnostics'}
+                                    confirmLabel="Dismiss selected"
+                                    onClear={() => setSelectedKeys(new Set())}
+                                    onDelete={() => setPendingBulkClear(true)}
+                                />
+                            </div>
+                        )}
+
                         <LogTable
                             rows={rows}
                             rowKey={(row) => row.key}
                             onRowClick={setSelected}
                             onDelete={(row) => setPendingClear(row)}
                             canDelete={(row) => row.issue !== null}
+                            selectable
+                            selectedKeys={selectedKeys}
+                            onSelectedKeysChange={setSelectedKeys}
                             rowAriaLabel={() => 'Open subsystem details'}
                             columns={columns}
                         />
@@ -270,6 +313,16 @@ function DiagnosticsPage() {
                     confirmLabel="Dismiss"
                     onConfirm={() => void clearDiagnosticRow(pendingClear)}
                     onCancel={() => setPendingClear(null)}
+                />
+            ) : null}
+
+            {pendingBulkClear && selectedRows.length > 0 ? (
+                <ConfirmDialog
+                    title={`Dismiss ${selectedRows.length} ${selectedRows.length === 1 ? 'diagnostic' : 'diagnostics'}?`}
+                    message={`Dismiss ${selectedRows.length} ${selectedRows.length === 1 ? 'issue' : 'issues'}? Each can be reported again if its subsystem keeps failing.`}
+                    confirmLabel={`Dismiss ${selectedRows.length}`}
+                    onConfirm={() => void clearDiagnosticRows(selectedRows)}
+                    onCancel={() => setPendingBulkClear(false)}
                 />
             ) : null}
         </>

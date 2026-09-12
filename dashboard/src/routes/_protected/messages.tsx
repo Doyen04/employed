@@ -8,6 +8,7 @@ import { connectRealtime } from '../../client/socket'
 import { PageSkeleton } from '../../components/dashboard/PageSkeleton'
 import { DetailsDrawer } from '../../components/dashboard/DetailsDrawer'
 import { ConfirmDialog } from '../../components/dashboard/ConfirmDialog'
+import { BulkSelectionBar } from '../../components/dashboard/BulkSelectionBar'
 import { LogTable } from '../../components/dashboard/LogTable'
 import type { RealtimeMessageStored, WorkerMessage, WorkerMessageSummary } from '../../lib/types'
 import { errorText } from '../../lib/utils'
@@ -24,6 +25,8 @@ function MessagesPage() {
     const [items, setItems] = useState<WorkerMessage[]>([])
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [pendingDelete, setPendingDelete] = useState<WorkerMessage | null>(null)
+    const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
+    const [pendingBulkDelete, setPendingBulkDelete] = useState(false)
     const [telegramLoggedIn, setTelegramLoggedIn] = useState<boolean>(true)
     const [booting, setBooting] = useState(true)
     const [listCursor, setListCursor] = useState<string | null>(null)
@@ -132,6 +135,11 @@ function MessagesPage() {
         )
     }, [items, query])
 
+    const selectedMessages = useMemo(
+        () => filteredItems.filter((message) => selectedKeys.has(message.id)),
+        [filteredItems, selectedKeys],
+    )
+
     function toggleGroup(targetChatId: string) {
         setCollapsed((previous) => {
             const next = new Set(previous)
@@ -150,11 +158,38 @@ function MessagesPage() {
         try {
             await deleteMessage({ data: { id: message.id } })
             setItems((previous) => previous.filter((row) => row.id !== message.id))
+            setSelectedKeys((current) => {
+                if (!current.has(message.id)) return current
+                const next = new Set(current)
+                next.delete(message.id)
+                return next
+            })
             setSelected((current) => (current?.id === message.id ? null : current))
         } catch (err) {
             setError(errorText(err))
         } finally {
             setPendingDelete(null)
+        }
+    }
+
+    async function deleteMessageRows(messages: WorkerMessage[]) {
+        setError(null)
+        try {
+            for (const message of messages) {
+                await deleteMessage({ data: { id: message.id } })
+            }
+            const removed = new Set(messages.map((message) => message.id))
+            setItems((previous) => previous.filter((row) => !removed.has(row.id)))
+            setSelectedKeys((current) => {
+                const next = new Set(current)
+                for (const id of removed) next.delete(id)
+                return next
+            })
+            setSelected((current) => (current && removed.has(current.id) ? null : current))
+        } catch (err) {
+            setError(errorText(err))
+        } finally {
+            setPendingBulkDelete(false)
         }
     }
 
@@ -284,6 +319,17 @@ function MessagesPage() {
                             </div>
                         </div>
 
+                        {selectedMessages.length > 0 && (
+                            <div className="px-4 sm:px-5">
+                                <BulkSelectionBar
+                                    count={selectedMessages.length}
+                                    noun={selectedMessages.length === 1 ? 'message' : 'messages'}
+                                    onClear={() => setSelectedKeys(new Set())}
+                                    onDelete={() => setPendingBulkDelete(true)}
+                                />
+                            </div>
+                        )}
+
                         {loadingList ? (
                             <p className="px-8 pb-8 text-center text-sm text-(--sea-ink-soft)">
                                 Loading messages…
@@ -309,6 +355,9 @@ function MessagesPage() {
                                     rowKey={(message) => message.id}
                                     onRowClick={selectChat}
                                     onDelete={(message) => setPendingDelete(message)}
+                                    selectable
+                                    selectedKeys={selectedKeys}
+                                    onSelectedKeysChange={setSelectedKeys}
                                     rowAriaLabel={() => 'Open conversation'}
                                     grouping={{
                                         groupBy: (message) => message.chatId,
@@ -398,6 +447,16 @@ function MessagesPage() {
                     confirmLabel="Delete message"
                     onConfirm={() => void deleteMessageRow(pendingDelete)}
                     onCancel={() => setPendingDelete(null)}
+                />
+            ) : null}
+
+            {pendingBulkDelete && selectedMessages.length > 0 ? (
+                <ConfirmDialog
+                    title={`Delete ${selectedMessages.length} ${selectedMessages.length === 1 ? 'message' : 'messages'}?`}
+                    message={`This permanently deletes ${selectedMessages.length} ${selectedMessages.length === 1 ? 'message' : 'messages'}. Each message's analyses and any actions are also removed.`}
+                    confirmLabel={`Delete ${selectedMessages.length}`}
+                    onConfirm={() => void deleteMessageRows(selectedMessages)}
+                    onCancel={() => setPendingBulkDelete(false)}
                 />
             ) : null}
         </>
