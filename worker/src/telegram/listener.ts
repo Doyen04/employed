@@ -13,7 +13,7 @@ import { clearSession, getSessionString } from './sessionStore'
 import { runAnalysis } from '../llm/analyze'
 import { matchesCondition } from '../actions/resolver'
 import { dispatchAction } from '../actions/dispatch'
-import { reportDiagnostic, clearDiagnostic } from '../diagnostics'
+import { reportDiagnostic } from '../diagnostics'
 import { toJsonValue } from '../types/json'
 import { emitMessageNew, emitMessageStored } from '../socket/server'
 import { getSetting, setSetting } from '../prisma/settings'
@@ -194,8 +194,6 @@ async function processMessage(
         return
     }
 
-    let allOk = true
-
     for (const cfg of scoped) {
         let output: Record<string, unknown>
         let analyzedBy: { provider: string | null; model: string | null } = { provider: null, model: null }
@@ -205,7 +203,6 @@ async function processMessage(
             analyzedBy = { provider: result.provider, model: result.model }
         } catch (error) {
             const errorMessage = getErrorMessage(error)
-            allOk = false
             console.error('[listener] analysis failed:', errorMessage)
             await reportDiagnostic('llm.analyze', 'error', errorMessage, {
                 chatTitle: chat.title,
@@ -247,11 +244,6 @@ async function processMessage(
             analysis: toJsonValue(output),
             analysisConfigName: cfg.name,
         })
-    }
-
-    if (allOk) {
-        await clearDiagnostic('llm.analyze')
-        await clearDiagnostic('analysis.config')
     }
 }
 
@@ -370,9 +362,6 @@ export async function startTelegramListener(): Promise<boolean> {
     client.addEventHandler(onNewMessage(client), new NewMessage({ incoming: true }))
 
     console.log('[listener] telegram listener started')
-
-    await clearDiagnostic('telegram.session')
-    await clearDiagnostic('telegram.listener')
 
     const healthCheck = setInterval(async () => {
         try {

@@ -117,10 +117,13 @@ model ActionLog {
 }
 
 model Diagnostic {
-  key           String   @id
-  severity      String
-  message       String
-  context       Json?
-  firstReported DateTime @default(now())
-  lastReported  DateTime @default(now())
+  id        String   @id @default(cuid())
+  key       String
+  severity  String
+  message   String
+  context   Json?
+  createdAt DateTime @default(now())
+
+  @@index([severity, createdAt])
+  @@index([key])
 }

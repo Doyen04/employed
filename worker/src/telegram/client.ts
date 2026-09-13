@@ -4,7 +4,7 @@ import { UnauthorizedError } from 'teleproto/errors'
 
 import { getSessionString } from './sessionStore'
 import { withTimeout } from '../utils/withTimeout'
-import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { reportDiagnostic } from '../diagnostics'
 import { createClient } from './factory'
 import { getErrorMessage } from '../utils/errors'
 
@@ -35,7 +35,6 @@ export async function requireTelegramClient(): Promise<TelegramClient<StringSess
     try {
         await withTimeout(candidate.connect(), CONNECT_TIMEOUT_MS, 'telegram connection timed out')
         await withTimeout(candidate.getMe(), CONNECT_TIMEOUT_MS, 'telegram session check timed out')
-        await clearDiagnostic('telegram.session')
     } catch (error) {
         candidate.disconnect().catch(() => { })
         if (error instanceof UnauthorizedError) {

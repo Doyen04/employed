@@ -2,7 +2,7 @@ import OpenAI from 'openai'
 import pRetry, { AbortError } from 'p-retry'
 
 import { config } from '../config'
-import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { reportDiagnostic } from '../diagnostics'
 import { getErrorMessage } from '../utils/errors'
 import { truncate } from '../utils/truncate'
 
@@ -213,9 +213,7 @@ class ProviderChain implements LlmProvider {
                     schema,
                 )
                 this.cooldownUntil.delete(entry.name)
-                if (entry === this.providers[0]) {
-                    await clearDiagnostic('llm.failover')
-                } else {
+                if (entry !== this.providers[0]) {
                     await reportDiagnostic(
                         'llm.failover',
                         'warning',

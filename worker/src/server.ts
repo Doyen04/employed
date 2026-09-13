@@ -2,7 +2,7 @@ import { createServer } from 'node:http'
 
 import { config } from './config'
 import { createApp } from './api/app'
-import { getDiagnosticsState } from './diagnostics'
+import { getDiagnosticsStatus } from './diagnostics'
 import { attachSocketIo, emitDiagnosticsUpdate, onSocketConnection } from './socket/server'
 
 export function startServer() {
@@ -11,7 +11,7 @@ export function startServer() {
 
     attachSocketIo(httpServer)
     onSocketConnection(() => {
-        void getDiagnosticsState().then(emitDiagnosticsUpdate)
+        void getDiagnosticsStatus().then(emitDiagnosticsUpdate)
     })
 
     httpServer.listen(config.PORT, '0.0.0.0', () => {

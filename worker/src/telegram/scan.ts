@@ -1,7 +1,7 @@
 import { prisma } from '../prisma'
 import { requireTelegramClient } from './client'
 import { withTimeout } from '../utils/withTimeout'
-import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { reportDiagnostic } from '../diagnostics'
 
 const REFRESH_TIMEOUT_MS = 20_000
 
@@ -32,7 +32,6 @@ export async function refreshChats(): Promise<number> {
             count += 1
         }
 
-        await clearDiagnostic('telegram.scan')
         return count
     } catch (error) {
         const message = (error as Error).message || String(error)

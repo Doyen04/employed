@@ -1,7 +1,7 @@
 import { Router } from 'express'
 
 import { prisma } from '../../prisma'
-import { getDiagnosticsState } from '../../diagnostics'
+import { getDiagnosticsStatus } from '../../diagnostics'
 import { getErrorMessage } from '../../utils/errors'
 import { chatRef } from '../serializers'
 
@@ -74,7 +74,7 @@ overviewRouter.get('/', async (_req, res) => {
                     },
                 },
             }),
-            getDiagnosticsState(),
+            getDiagnosticsStatus(),
         ])
 
         const completedActions = sentActions + failedActions

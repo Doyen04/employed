@@ -2,7 +2,7 @@ import './config'
 import { prisma } from './prisma'
 import { startServer } from './server'
 import { startTelegramListener } from './telegram/listener'
-import { clearDiagnostic, getDiagnosticsState, reportDiagnostic } from './diagnostics'
+import { reportDiagnostic } from './diagnostics'
 import { getErrorMessage } from './utils/errors'
 
 async function main() {
@@ -17,7 +17,6 @@ async function main() {
         )
         throw error
     }
-    await clearDiagnostic('db.connection')
 
     const httpServer = startServer()
 
@@ -35,18 +34,11 @@ async function main() {
 
     if (!telegramStarted) {
         console.log('[main] no telegram session found — run `npm run login` to authenticate')
-        const state = await getDiagnosticsState()
-        const hasSessionIssue = state.issues.some((issue) => issue.key === 'telegram.session')
-        if (!hasSessionIssue) {
-            await reportDiagnostic(
-                'telegram.session',
-                'warning',
-                'No Telegram session — sign in via the Telegram settings page or `npm run login`.',
-            )
-        }
-    } else {
-        await clearDiagnostic('telegram.session')
-        await clearDiagnostic('system.startup')
+        await reportDiagnostic(
+            'telegram.session',
+            'warning',
+            'No Telegram session — sign in via the Telegram settings page or `npm run login`.',
+        )
     }
 
     const shutdown = async () => {

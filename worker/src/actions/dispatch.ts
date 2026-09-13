@@ -4,7 +4,7 @@ import { prisma } from '../prisma'
 import { notifierRegistry } from './registry'
 import { decryptNotifierConfig } from './notifiers/telegram'
 import { buildNotificationText } from './notifiers/format'
-import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { reportDiagnostic } from '../diagnostics'
 import { getErrorMessage } from '../utils/errors'
 import { truncate } from '../utils/truncate'
 import type { NotificationPayload } from './types'
@@ -76,7 +76,6 @@ export async function dispatchAction(
             where: { id: log.id },
             data: { status: 'sent', sentAt: new Date(), retryCount: attempts - 1 },
         })
-        await clearDiagnostic('notifier.dispatch')
     } catch (error) {
         await failLog(log, getErrorMessage(error), attempts - 1)
         await reportDiagnostic(

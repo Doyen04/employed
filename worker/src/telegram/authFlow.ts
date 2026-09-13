@@ -5,7 +5,7 @@ import { config } from '../config'
 import { setSessionString } from './sessionStore'
 import { resetTelegramClient } from './client'
 import { startTelegramListener } from './listener'
-import { clearDiagnostic, reportDiagnostic } from '../diagnostics'
+import { reportDiagnostic } from '../diagnostics'
 import { createClient } from './factory'
 
 export type TelegramLoginStatus =
@@ -45,7 +45,6 @@ class TelegramLoginFlow {
             throw new Error('TELEGRAM_API_ID and TELEGRAM_API_HASH are required in worker/.env')
         }
 
-        clearDiagnostic('login.flow').catch(() => { })
         this.status = { state: 'started' }
         void this.run(phone)
         return this.status
@@ -105,7 +104,6 @@ class TelegramLoginFlow {
         }
 
         if (this.status.state === 'done') {
-            clearDiagnostic('login.flow').catch(() => { })
             startTelegramListener().catch((error) =>
                 console.error('[authFlow] failed to start telegram listener:', (error as Error).message),
             )

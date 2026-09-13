@@ -26,7 +26,7 @@ and the HTTP API share the same `WORKER_API_KEY` token. Events:
 | `message:stored` | `{ message, chat }` after any monitored message is persisted (live or backfill) |
 | `message:new` | `{ message, chat, analysis, analysisConfigName }` after a monitored message is analysed |
 | `chat:update` | `{ id, telegramChatId, title, isMonitored, addedAt }` |
-| `diagnostics:update` | full `DiagnosticsState` (`{ status, issues[], message, updatedAt, context }`) whenever subsystem diagnostics change; also emitted to each client on connect |
+| `diagnostics:update` | latest `DiagnosticStatus` (`{ status, message, updatedAt, context }` — windowed, last 15 min) whenever a diagnostic entry is added or deleted; also emitted to each client on connect |
 
 ## Endpoints
 
@@ -65,9 +65,8 @@ and the HTTP API share the same `WORKER_API_KEY` token. Events:
     latestActionAt: ISO|null
   },
   diagnostics: {
-    status: 'ok'|'warning'|'error' (worst issue severity),
-    issues: [{ key, severity: 'warning'|'error', message, updatedAt: ISO, context|null }],
-    message: string|null (worst issue's message),
+    status: 'ok'|'warning'|'error',
+    message: string|null,
     updatedAt: ISO|null,
     context: { chatTitle, messageText }|null
   },
@@ -81,8 +80,8 @@ when there are no completed actions. `latestActionAt` is the newest action's ana
 timestamp because `ActionLog` has no creation timestamp. `recentMessages` contains at
 most five records and uses the same `Message` shape documented below.
 
-`diagnostics` in the overview is the same payload as `GET /diagnostics` — see the
-[Diagnostics](#diagnostics) section for the full shape and issue keys.
+`diagnostics` in the overview is the same shape as `GET /diagnostics/status` — see the
+[Diagnostics](#diagnostics) section.
 
 `OverviewAction` shape:
 `{ id, status: 'pending'|'sent'|'failed', retryCount, sentAt: ISO|null,
@@ -127,25 +126,33 @@ those analyses.
 
 ### Diagnostics
 
-| Method | Path | Body | Response |
+| Method | Path | Query | Response |
 | --- | --- | --- | --- |
-| GET | `/diagnostics` | — | `200 Diagnostics` |
-| DELETE | `/diagnostics/:key` | — | `204` (also emitted via `diagnostics:update`) |
+| GET | `/diagnostics` | `limit?` (1–200, default 50), `cursor?`, `severity?` (`error`\|`warning`), `q?` | `200 { items: DiagnosticEntry[], nextCursor: string\|null, hasMore: boolean }` |
+| GET | `/diagnostics/status` | — | `200 DiagnosticStatus` |
+| DELETE | `/diagnostics/:id` | — | `204` or `404 { error }` (also emitted via `diagnostics:update`) |
+| DELETE | `/diagnostics` | — | `204` (also emitted via `diagnostics:update`) |
 
-`Diagnostics` shape:
+`DiagnosticEntry` shape:
+`{ id, key, severity: 'warning'|'error', message, createdAt: ISO, context: { chatTitle, messageText }|null }`
 
-```text
-{
-  status: 'ok'|'warning'|'error' (worst issue severity),
-  issues: [{ key, severity: 'warning'|'error', message, updatedAt: ISO, context|null }],
-  message: string|null (worst issue's message),
-  updatedAt: ISO|null,
-  context: { chatTitle, messageText }|null
-}
-```
+`DiagnosticStatus` shape:
+`{ status: 'ok'|'warning'|'error', message: string|null, updatedAt: ISO|null, context: { chatTitle, messageText }|null }`
 
-This is the app-wide health surface. It aggregates **all** failure modes the worker can
-hit, each as an entry in `issues` keyed by source:
+The diagnostics store is an **append-only log**: every worker failure/warning is appended as a
+new `DiagnosticEntry` (older duplicates are never merged or removed). Order: newest first;
+`cursor` is a `Diagnostic.id`; pass `nextCursor` for the next page. `q` filters on `key`
+or `message` (case-insensitive substring), `severity` filters to one severity.
+
+Everything is **deleted manually** — nothing auto-clears on recovery. Per-entry removal is
+`DELETE /diagnostics/:id`; `DELETE /diagnostics` wipes the whole log.
+
+`DiagnosticStatus` is live health summarised from the **last 15 minutes** of the log:
+`ok` when nothing was reported in the window, `warning` when only warnings were recorded,
+`error` when at least one error was recorded (worst recent entry wins). It feeds the
+overview payload, the socket `diagnostics:update` event, and the dashboard status pill.
+
+Reported `key`s:
 
 - `system.startup` — telegram listener failed to boot
 - `db.connection` — database unreachable
@@ -154,14 +161,9 @@ hit, each as an entry in `issues` keyed by source:
 - `telegram.scan` — chat refresh (`POST /chats/refresh`) failed or timed out
 - `login.flow` — Telegram sign-in errors in the web login flow
 - `llm.analyze` — LLM call failed or returned non-JSON
-- `llm.failover` — a request was served by the backup provider because the primary (Groq) errored or hit a rate limit; cleared when the primary succeeds again
+- `llm.failover` — a request was served by the backup provider because the primary (Groq) errored or hit a rate limit (logged per event)
 - `analysis.config` — no active configs, or a message arrived in a chat the active configs don't cover
 - `notifier.dispatch` — a notifier send failed (or unknown notifier type)
-
-`status`/`message`/`updatedAt`/`context` mirror the **worst** current issue (errors beat
-warnings, then newest). Issues are self-clearing: the reporter for each source resolves
-its own key on success (e.g. a successful dispatch removes `notifier.dispatch`), so the
-dashboard banner shows every live problem at once instead of just the last one.
 
 ### Settings
 
@@ -202,7 +204,7 @@ otherwise the sent message would be ingested, analyzed, and re-notified forever.
 ### Action logs
 
 | Method | Path | Query | Response |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/action-logs` | `limit?`, `cursor?` | `200 { items: ActionLog[], nextCursor, hasMore }` |
 | DELETE | `/action-logs/:id` | — | `204` or `404 { error }` |
 
@@ -220,7 +222,7 @@ old rows); `recipient` is the resolved destination at dispatch time — the chat
 ### Analyses
 
 | Method | Path | Query | Response |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/analyses` | `limit?`, `cursor?` | `200 { items: Analysis[], nextCursor, hasMore }` |
 | DELETE | `/analyses/:id` | — | `204` or `404 { error }` |
 
@@ -239,7 +241,7 @@ action logs.
 ### Mail
 
 | Method | Path | Body / Query | Response |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/mail` | `limit?`, `cursor?` | `200 { items: MailJob[], nextCursor: string\|null, hasMore: boolean }` |
 | POST | `/mail/send` | `{ analysisId, recipients: string[], subject?, body?, notifierId? }` | `200 MailSendResult` or `400 { error }` |
 

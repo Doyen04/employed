@@ -176,17 +176,17 @@ export interface WorkerOverviewAction {
 
 export type DiagnosticsStatus = 'ok' | 'warning' | 'error'
 
-export interface WorkerDiagnosticIssue {
+export interface WorkerDiagnosticEntry {
+  id: string
   key: string
   severity: 'warning' | 'error'
   message: string
-  updatedAt: string
+  createdAt: string
   context: { chatTitle: string; messageText: string } | null
 }
 
-export interface WorkerDiagnostics {
+export interface WorkerDiagnosticsStatus {
   status: DiagnosticsStatus
-  issues: WorkerDiagnosticIssue[]
   message: string | null
   updatedAt: string | null
   context: { chatTitle: string; messageText: string } | null
@@ -211,7 +211,7 @@ export interface WorkerOverview {
     latestAnalysisAt: string | null
     latestActionAt: string | null
   }
-  diagnostics: WorkerDiagnostics
+  diagnostics: WorkerDiagnosticsStatus
   recentMessages: WorkerMessage[]
   recentActions: WorkerOverviewAction[]
 }
