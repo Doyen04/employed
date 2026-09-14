@@ -223,15 +223,17 @@ function MessagesPage() {
                         {telegramChatId}
                     </span>
                 </span>
-                <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[rgba(236,185,20,0.18)] px-2.5 py-0.5 text-xs font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
-                    {count.toLocaleString()}
-                </span>
-                <span
-                    className="shrink-0 whitespace-nowrap text-xs text-(--sea-ink-soft)"
-                    title={lastAt ?? ''}
-                >
-                    {relativeTime(lastAt)}
-                </span>
+                <div className="flex shrink-0 items-center justify-end gap-2.5 ml-auto">
+                    <span className="inline-flex min-w-[1.75rem] items-center justify-center whitespace-nowrap rounded-full bg-[rgba(236,185,20,0.18)] px-2 py-0.5 text-xs font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
+                        {count.toLocaleString()}
+                    </span>
+                    <span
+                        className="w-7 shrink-0 text-right whitespace-nowrap text-xs text-(--sea-ink-soft)"
+                        title={lastAt ?? ''}
+                    >
+                        {relativeTime(lastAt)}
+                    </span>
+                </div>
             </div>
         )
     }
