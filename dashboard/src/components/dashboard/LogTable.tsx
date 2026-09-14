@@ -324,7 +324,7 @@ export function LogTable<T>({
                                     type="button"
                                     onClick={() => grouping?.onToggleGroup?.(key)}
                                     aria-label={collapsed ? 'Expand group' : 'Collapse group'}
-                                    className="flex w-full items-center gap-2.5 bg-(--header-bg) px-3 py-2.5 text-left"
+                                    className="flex w-full items-center justify-between gap-2.5 bg-(--header-bg) px-3 py-2.5 text-left"
                                 >
                                     {grouping!.groupHeader(key)}
                                 </button>

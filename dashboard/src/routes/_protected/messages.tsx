@@ -207,7 +207,7 @@ function MessagesPage() {
         const count = summary?.messageCount ?? 0
         const lastAt = summary?.lastReceivedAt ?? first?.receivedAt ?? null
         return (
-            <div className="flex w-full min-w-0 items-center gap-2.5">
+            <div className="flex flex-1 w-full min-w-0 items-center justify-between gap-2.5">
                 <ChevronDown
                     className={`h-3.5 w-3.5 shrink-0 text-(--sea-ink-soft) transition-transform ${collapsed.has(targetChatId) ? '-rotate-90' : ''}`}
                     aria-hidden="true"
