@@ -160,31 +160,29 @@ export function TelegramLoginCard({
         return (
             <div className="flex flex-col h-full gap-6">
                 {/* Connected Card */}
-                <div className="relative overflow-hidden rounded-2xl border border-[rgba(236,185,20,0.35)] bg-[rgba(236,185,20,0.07)] p-6 backdrop-blur-sm">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3.5">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) border border-[rgba(236,185,20,0.3)]">
+                <div className="relative overflow-hidden rounded-2xl border border-[rgba(236,185,20,0.35)] bg-[rgba(236,185,20,0.07)] p-5 sm:p-6 backdrop-blur-sm">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-start sm:items-center gap-3.5">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[rgba(236,185,20,0.2)] text-(--lagoon-deep) border border-[rgba(236,185,20,0.3)]">
                                 <ShieldCheck className="h-6 w-6" />
                             </div>
                             <div>
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold text-(--sea-ink) dark:text-zinc-100 text-lg">
-                                        Telegram Connected
-                                    </h3>
-                                </div>
-                                <p className="mt-0.5 text-xs text-(--sea-ink-soft) dark:text-zinc-400">
+                                <h3 className="font-semibold text-(--sea-ink) dark:text-zinc-100 text-base sm:text-lg">
+                                    Telegram Connected
+                                </h3>
+                                <p className="mt-0.5 text-xs text-(--sea-ink-soft) dark:text-zinc-400 leading-relaxed">
                                     MTProto session active &amp; encrypted via AES-256-GCM. Realtime message ingestion enabled.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div className="rounded-xl border border-(--line) bg-(--surface) p-3">
+                    <div className="mt-5 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="rounded-xl border border-(--line) bg-(--surface) p-3.5">
                             <span className="text-(--sea-ink-soft) dark:text-zinc-400 block font-medium">Protocol</span>
                             <span className="font-semibold text-(--sea-ink) dark:text-zinc-200 mt-0.5 block">Teleproto (MTProto Layer 229)</span>
                         </div>
-                        <div className="rounded-xl border border-(--line) bg-(--surface) p-3">
+                        <div className="rounded-xl border border-(--line) bg-(--surface) p-3.5">
                             <span className="text-(--sea-ink-soft) dark:text-zinc-400 block font-medium">Listener State</span>
                             <span className="font-semibold text-(--lagoon-deep) dark:text-(--lagoon) mt-0.5 block">Listening for Monitored Chats</span>
                         </div>
@@ -192,11 +190,11 @@ export function TelegramLoginCard({
                 </div>
 
                 {/* Actions */}
-                <div className="mt-auto pt-4 border-t border-(--line) flex flex-wrap items-center justify-between gap-3">
+                <div className="mt-auto pt-4 border-t border-(--line) flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     <button
                         type="button"
                         onClick={() => setShowReauth(true)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-(--line) bg-(--surface-strong) px-4 py-2.5 text-xs font-semibold text-(--sea-ink) dark:text-zinc-200 hover:bg-white/80 dark:hover:bg-zinc-800 transition"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-(--line) bg-(--surface-strong) px-4 py-2.5 text-xs font-semibold text-(--sea-ink) dark:text-zinc-200 hover:bg-white/80 dark:hover:bg-zinc-800 transition"
                     >
                         <RefreshCw className="h-3.5 w-3.5" />
                         Switch Account / Re-authenticate
@@ -206,29 +204,31 @@ export function TelegramLoginCard({
                         <button
                             type="button"
                             onClick={() => setShowConfirmDisconnect(true)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/20 transition"
+                            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/20 transition"
                         >
                             <LogOut className="h-3.5 w-3.5" />
                             Disconnect Telegram
                         </button>
                     ) : (
-                        <div className="flex flex-wrap items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-1.5">
-                            <span className="text-xs font-medium text-red-600 dark:text-red-400 px-2">Confirm disconnect?</span>
-                            <button
-                                type="button"
-                                onClick={handleDisconnect}
-                                disabled={busy}
-                                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition disabled:opacity-50"
-                            >
-                                {busy ? 'Disconnecting…' : 'Yes, Disconnect'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmDisconnect(false)}
-                                className="rounded-lg border border-(--line) px-2.5 py-1.5 text-xs font-medium text-(--sea-ink-soft) dark:text-zinc-400 hover:bg-white/40"
-                            >
-                                Cancel
-                            </button>
+                        <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-2">
+                            <span className="text-xs font-medium text-red-600 dark:text-red-400 text-center sm:text-left px-2">Confirm disconnect?</span>
+                            <div className="flex items-center gap-2 justify-center">
+                                <button
+                                    type="button"
+                                    onClick={handleDisconnect}
+                                    disabled={busy}
+                                    className="flex-1 sm:flex-initial rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition disabled:opacity-50"
+                                >
+                                    {busy ? 'Disconnecting…' : 'Yes, Disconnect'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmDisconnect(false)}
+                                    className="flex-1 sm:flex-initial rounded-lg border border-(--line) px-2.5 py-1.5 text-xs font-medium text-(--sea-ink-soft) dark:text-zinc-400 hover:bg-white/40"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
