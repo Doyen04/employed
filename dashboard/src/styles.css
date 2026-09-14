@@ -1032,11 +1032,11 @@ a {
     .mobile-brand-mark svg { width: .85rem; fill: currentColor; }
     .topbar-actions > span:not(.worker-pill) { display: none; }
     .topbar-signout { display: grid; }
-    .app-mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; gap: .25rem; padding: .5rem .75rem env(safe-area-inset-bottom, 0px); overflow-x: auto; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--surface-strong) 96%, var(--foam)); backdrop-filter: blur(18px); scrollbar-width: none; }
+    .app-mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; gap: .35rem; padding: .5rem .75rem calc(.5rem + env(safe-area-inset-bottom, 0px)); overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--surface-strong) 96%, var(--foam)); backdrop-filter: blur(18px); scrollbar-width: none; }
     .app-mobile-nav::-webkit-scrollbar { display: none; }
-    .app-mobile-nav a { display: flex; flex: 0 0 auto; align-items: center; gap: .35rem; min-height: 2.2rem; padding: .45rem .6rem; border-radius: .55rem; color: var(--sea-ink-soft); font-size: .52rem; font-weight: 750; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+    .app-mobile-nav a { display: flex; flex: 0 0 auto; align-items: center; gap: .4rem; min-height: 2.35rem; padding: .45rem .7rem; border-radius: .65rem; color: var(--sea-ink-soft); font-size: .68rem; font-weight: 750; text-decoration: none; -webkit-tap-highlight-color: transparent; scroll-snap-align: start; }
     .app-mobile-nav a.is-active { color: var(--lagoon-deep); background: rgba(236,185,20,.18); }
-    .app-mobile-nav svg { width: .7rem; } 
+    .app-mobile-nav svg { width: .82rem; height: .82rem; } 
     .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
     .pipeline-stage:nth-child(2) .pipeline-arrow { display: none; }
 }
@@ -1073,9 +1073,9 @@ a {
     .worker-pill { padding-inline: .55rem; }
     .worker-pill .worker-pill-label { display: none; }
     .metric-grid { grid-template-columns: 1fr; }
-    .app-mobile-nav { padding: .4rem .5rem; }
-    .app-mobile-nav a { padding: .38rem .5rem; font-size: .5rem; }
-    .app-mobile-nav svg { width: .62rem; }
+    .app-mobile-nav { padding: .4rem .5rem calc(.4rem + env(safe-area-inset-bottom, 0px)); }
+    .app-mobile-nav a { padding: .4rem .6rem; font-size: .64rem; }
+    .app-mobile-nav svg { width: .78rem; height: .78rem; }
 }
 
 @media (max-width: 400px) {

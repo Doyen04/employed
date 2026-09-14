@@ -209,12 +209,12 @@ function ChatsPage() {
                 </div>
             ) : (
                 <>
-                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--line) bg-(--surface-strong) px-4 py-3">
+                    <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-(--line) bg-(--surface-strong) p-3.5 sm:px-4 sm:py-3">
                         <p className="m-0 text-xs text-(--sea-ink-soft)">
                             {chats.length} dialogs · <b className="text-(--sea-ink) dark:text-zinc-200">{monitoredCount} monitored</b>
                         </p>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="relative flex-1 sm:flex-initial">
+                        <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <div className="relative w-full sm:w-48">
                                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)" aria-hidden="true" />
                                 <input
                                     type="search"
@@ -222,16 +222,16 @@ function ChatsPage() {
                                     onChange={(event) => setQuery(event.target.value)}
                                     placeholder="Search chats…"
                                     aria-label="Search chats"
-                                    className="w-full rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100 sm:w-44"
+                                    className="w-full rounded-full border border-(--line) bg-(--surface) py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-(--lagoon) dark:text-zinc-100"
                                 />
                             </div>
-                            <div className="flex items-center gap-1 rounded-full border border-(--line) bg-(--surface) p-1">
+                            <div className="flex items-center justify-center gap-1 rounded-full border border-(--line) bg-(--surface) p-1">
                                 {FILTERS.map(({ key, label }) => (
                                     <button
                                         key={key}
                                         type="button"
                                         onClick={() => setFilter(key)}
-                                        className={`rounded-full px-3 py-1 text-xs font-semibold transition ${filter === key
+                                        className={`flex-1 sm:flex-initial rounded-full px-3 py-1 text-xs font-semibold transition ${filter === key
                                             ? 'bg-[rgba(236,185,20,0.18)] text-(--lagoon-deep) dark:text-(--lagoon)'
                                             : 'text-(--sea-ink-soft) hover:text-(--sea-ink) dark:hover:text-zinc-200'
                                             }`}
