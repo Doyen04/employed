@@ -27,11 +27,6 @@ function LandingPage() {
         <main className="landing-page">
             <section className="hero-section page-wrap" aria-labelledby="hero-heading">
                 <div className="hero-copy landing-reveal">
-                    <a className="eyebrow-pill" href="#how-it-works">
-                        <span className="live-dot" />
-                        Your always-on Telegram signal layer
-                        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    </a>
                     <h1 id="hero-heading" className="hero-title">
                         Stop reading everything.
                         <span> See what matters.</span>

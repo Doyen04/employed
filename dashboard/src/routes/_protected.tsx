@@ -4,7 +4,6 @@ import {
     Bot,
     ChevronRight,
     HeartPulse,
-    Home,
     LayoutDashboard,
     LogOut,
     Mail,
@@ -91,13 +90,12 @@ function AppShell() {
             <div className="app-main-column">
                 <header className="app-topbar">
                     <div className="topbar-title">
+                        <Link to="/" className="topbar-settings topbar-home" aria-label="Go to landing page">
                         <span className="mobile-brand-mark"><Zap /></span>
+                        </Link>
                         <div><p>{current.description}</p><h1>{current.label}</h1></div>
                     </div>
                     <div className="topbar-actions">
-                        <Link to="/" className="topbar-settings topbar-home" aria-label="Go to landing page">
-                            <Home />
-                        </Link>
                         <WorkerStatusPill />
                         <ThemeToggle />
                         <Link to="/settings" className="topbar-settings" aria-label="Open automation settings"><Settings2 /></Link>
