@@ -43,7 +43,6 @@ const TABS = [
 
 type Tab = (typeof TABS)[number]['value']
 
-const PAGE_SIZE = 50
 const MAX_ITEMS = 200
 
 function subsystemTitle(key: string): string {
@@ -87,10 +86,9 @@ function DiagnosticsPage() {
         if (reset) setLoadingList(true)
         setError(null)
         try {
-            const severity = tabValue === 'all' ? undefined : tabValue
+            const severity = tabValue === 'all' ? undefined : tabValue === 'errors' ? 'error' : 'warning'
             const result = await listDiagnostics({
                 data: {
-                    limit: PAGE_SIZE,
                     cursor: reset ? undefined : cursor,
                     severity,
                 },
@@ -284,35 +282,36 @@ function DiagnosticsPage() {
     return (
         <>
             <section className="island-shell overflow-hidden rounded-2xl p-0">
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
-                    <div>
-                        <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Diagnostics log</h2>
-                        <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
-                            Append-only log of every worker error and warning. Entries are kept until you delete them — nothing clears automatically.
-                        </p>
+                <div className="flex flex-col gap-1.5 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <h2 className="m-0 text-base font-semibold text-(--sea-ink) dark:text-zinc-100">Diagnostics log</h2>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => void refresh()}
+                                disabled={refreshing}
+                                className="app-primary-button !min-h-8 !py-1 !px-3 text-xs"
+                                aria-label="Refresh diagnostics"
+                            >
+                                <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+                                <span className="hidden sm:inline">Refresh</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPendingClearAll(true)}
+                                disabled={loadingList || items.length === 0}
+                                aria-label="Clear diagnostics log"
+                                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-red-200 px-3 text-xs font-semibold text-red-600 transition hover:border-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                <span className="hidden sm:inline">Clear log</span>
+                                <span className="sm:hidden">Clear</span>
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                        <button
-                            type="button"
-                            onClick={() => void refresh()}
-                            disabled={refreshing}
-                            className="app-primary-button"
-                            aria-label="Refresh diagnostics"
-                        >
-                            <RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
-                            Refresh
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setPendingClearAll(true)}
-                            disabled={loadingList || items.length === 0}
-                            aria-label="Clear diagnostics log"
-                            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-200 px-3.5 text-xs font-semibold text-red-600 transition hover:border-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20"
-                        >
-                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                            Clear log
-                        </button>
-                    </div>
+                    <p className="m-0 text-sm text-(--sea-ink-soft) dark:text-zinc-400">
+                        Append-only log of every worker error and warning. Entries are kept until you delete them — nothing clears automatically.
+                    </p>
                 </div>
 
                 {error && <p className="border-b border-(--line) px-5 py-2 text-sm text-red-500">{error}</p>}

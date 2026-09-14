@@ -1069,7 +1069,7 @@ a {
     .metric-grid { grid-template-columns: 1fr 1fr; gap: .6rem; }
     .metric-card { padding: .85rem; }
     .metric-icon { top: .8rem; right: .8rem; width: 1.75rem; height: 1.75rem; }
-    .metric-card > p { max-width: 80px; line-height: 1.4; }
+    .metric-card > p { max-width: none; padding-right: 1.8rem; line-height: 1.3; }
     .metric-card > strong { font-size: 1.45rem; }
     .app-panel-heading:not(.compact) { align-items: flex-start; }
     .app-panel-heading.compact { align-items: center; }

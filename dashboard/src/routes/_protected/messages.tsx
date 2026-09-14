@@ -243,29 +243,30 @@ function MessagesPage() {
     return (
         <>
             <section className="island-shell overflow-hidden rounded-2xl p-0">
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
-                    <div>
-                        <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Messages</h2>
-                        <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
-                            Every message from your monitored chats, grouped by chat — click a group to collapse it, or open a chat to read its thread.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-(--sea-ink-soft)">
-                            <span className="relative flex h-2 w-2">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                <div className="flex flex-col gap-1.5 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <h2 className="m-0 text-base font-semibold text-(--sea-ink) dark:text-zinc-100">Messages</h2>
+                        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-(--sea-ink-soft)">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                                </span>
+                                Live
                             </span>
-                            Live
-                        </span>
-                        <button
-                            onClick={() => void refresh()}
-                            className="app-primary-button"
-                        >
-                            <RefreshCw aria-hidden="true" />
-                            Refresh
-                        </button>
+                            <button
+                                type="button"
+                                onClick={() => void refresh()}
+                                className="app-primary-button !min-h-8 !py-1 !px-3 text-xs"
+                            >
+                                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                                Refresh
+                            </button>
+                        </div>
                     </div>
+                    <p className="m-0 text-sm text-(--sea-ink-soft) dark:text-zinc-400">
+                        Every message from your monitored chats, grouped by chat — click a group to collapse it, or open a chat to read its thread.
+                    </p>
                 </div>
 
                 {error && <p className="border-b border-(--line) px-5 py-2 text-sm text-red-500">{error}</p>}

@@ -184,7 +184,7 @@ function ActionLogsPage() {
                         </div>
 
                         <div className="mb-3 flex flex-wrap items-center gap-2">
-                            <div className="inline-flex rounded-lg border border-(--line) p-0.5">
+                            <div className="inline-flex max-w-full overflow-x-auto shrink-0 rounded-lg border border-(--line) p-0.5">
                                 {(
                                     [
                                         ['all', 'All'],
@@ -198,7 +198,7 @@ function ActionLogsPage() {
                                         type="button"
                                         onClick={() => setStatusFilter(value)}
                                         className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${statusFilter === value
-                                            ? 'bg-(--lagoon) text-white'
+                                            ? 'bg-(--lagoon-deep) text-white dark:bg-(--lagoon) dark:text-[#4F3D35]'
                                             : 'text-(--sea-ink-soft) hover:bg-white/50 dark:hover:bg-zinc-800'
                                             }`}
                                     >

@@ -150,23 +150,23 @@ function MailPage() {
     return (
         <>
             <section className="island-shell overflow-hidden rounded-2xl p-0">
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
-                    <div>
-                        <h2 className="m-0 text-base font-semibold text-(--sea-ink)">Mail</h2>
-                        <p className="m-0 mt-0.5 text-sm text-(--sea-ink-soft)">
-                            Send an email about a message the LLM has already analysed — click a row to open the composer.
-                        </p>
+                <div className="flex flex-col gap-1.5 border-b border-(--line) px-4 py-3.5 sm:px-5 sm:py-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <h2 className="m-0 text-base font-semibold text-(--sea-ink) dark:text-zinc-100">Mail</h2>
+                        <button
+                            type="button"
+                            onClick={() => void load(true, true)}
+                            disabled={refreshing}
+                            className="app-primary-button !min-h-8 !py-1 !px-3 text-xs shrink-0"
+                            aria-label="Refresh mail jobs"
+                        >
+                            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+                            Refresh
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => void load(true, true)}
-                        disabled={refreshing}
-                        className="app-primary-button"
-                        aria-label="Refresh mail jobs"
-                    >
-                        <RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
-                        Refresh
-                    </button>
+                    <p className="m-0 text-sm text-(--sea-ink-soft) dark:text-zinc-400">
+                        Send an email about a message the LLM has already analysed — click a row to open the composer.
+                    </p>
                 </div>
 
                 {error ? <p className="border-b border-(--line) px-5 py-2 text-sm text-red-500">{error}</p> : null}

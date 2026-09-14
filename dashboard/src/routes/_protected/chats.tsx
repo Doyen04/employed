@@ -166,9 +166,14 @@ function ChatsPage() {
             description="Pull the account’s dialogs from Telegram and choose which ones are monitored."
             action={
                 telegramLoggedIn ? (
-                    <button onClick={handleRefresh} disabled={refreshing} className="app-primary-button disabled:cursor-wait disabled:opacity-50">
-                        <RefreshCw className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
-                        {refreshing ? 'Refreshing…' : 'Refresh from Telegram'}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="app-primary-button !min-h-8 !py-1 !px-3 text-xs disabled:cursor-wait disabled:opacity-50"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+                        <span className="hidden sm:inline">{refreshing ? 'Refreshing…' : 'Refresh from Telegram'}</span>
+                        <span className="sm:hidden">{refreshing ? 'Refreshing…' : 'Refresh'}</span>
                     </button>
                 ) : undefined
             }
