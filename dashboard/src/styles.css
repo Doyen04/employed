@@ -1020,21 +1020,42 @@ a {
     .app-main-column { padding-left: 0; }
     .mobile-brand-mark { display: grid; width: 2rem; height: 2rem; place-items: center; border-radius: .6rem; color: #4F3D35; background: #ECB914; }
     .mobile-brand-mark svg { width: .85rem; fill: currentColor; }
+    .topbar-title p { display: none; }
     .topbar-actions > span:not(.worker-pill) { display: none; }
     .topbar-signout { display: grid; }
     .topbar-home { display: grid; }
-    .app-mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; gap: .35rem; padding: .5rem .75rem calc(.5rem + env(safe-area-inset-bottom, 0px)); overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--surface-strong) 96%, var(--foam)); backdrop-filter: blur(18px); scrollbar-width: none; }
-    .app-mobile-nav::-webkit-scrollbar { display: none; }
-    .app-mobile-nav a { display: flex; flex: 0 0 auto; align-items: center; gap: .4rem; min-height: 2.35rem; padding: .45rem .7rem; border-radius: .65rem; color: var(--sea-ink-soft); font-size: .68rem; font-weight: 750; text-decoration: none; -webkit-tap-highlight-color: transparent; scroll-snap-align: start; }
+    .app-mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        padding: .4rem .5rem calc(.4rem + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--line);
+        background: color-mix(in oklab, var(--surface-strong) 96%, var(--foam));
+        backdrop-filter: blur(18px);
+    }
+    .app-mobile-nav a {
+        display: grid;
+        flex: 1;
+        place-items: center;
+        min-height: 2.6rem;
+        padding: .4rem .25rem;
+        border-radius: .6rem;
+        color: var(--sea-ink-soft);
+        text-decoration: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .app-mobile-nav a span { display: none; }
     .app-mobile-nav a.is-active { color: var(--lagoon-deep); background: rgba(236,185,20,.18); }
-    .app-mobile-nav svg { width: .82rem; height: .82rem; } 
+    .app-mobile-nav svg { width: 1.05rem; height: 1.05rem; }
     .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
     .pipeline-stage:nth-child(2) .pipeline-arrow { display: none; }
 }
 
 @media (max-width: 600px) {
     .app-topbar { min-height: 4.2rem; padding-inline: .85rem; }
-    .topbar-title p { display: none; }
     .topbar-settings { display: none; }
     .topbar-home { display: grid; }
     .app-content { padding: 1rem .75rem calc(1.5rem + var(--mobile-nav-h) + env(safe-area-inset-bottom, 0px)); }
