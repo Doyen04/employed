@@ -304,12 +304,12 @@ function MessagesPage() {
                     </div>
                 ) : (
                     <>
-                        <div className="my-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--surface) px-3 py-2 mx-4 sm:mx-5">
+                        <div className="my-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--surface) p-3 mx-4 sm:mx-5">
                             <p className="m-0 text-xs text-(--sea-ink-soft)">
                                 {summaries.length} monitored chats ·{' '}
                                 <b className="text-(--sea-ink) dark:text-zinc-200">{totalMessages.toLocaleString()} messages</b>
                             </p>
-                            <div className="relative min-w-40 flex-1 sm:max-w-64">
+                            <div className="relative w-full sm:w-64">
                                 <Search
                                     className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--sea-ink-soft)"
                                     aria-hidden="true"
@@ -376,7 +376,7 @@ function MessagesPage() {
                                         {
                                             header: 'Sender',
                                             cell: (message) => (
-                                                <span className="whitespace-nowrap font-medium text-(--sea-ink-soft)">
+                                                <span className="block min-w-0 truncate font-medium text-(--sea-ink) dark:text-zinc-200" title={message.senderName ?? 'Unknown'}>
                                                     {message.senderName ?? 'Unknown'}
                                                 </span>
                                             ),
@@ -384,7 +384,7 @@ function MessagesPage() {
                                         {
                                             header: 'Message',
                                             cell: (message) => (
-                                                <span className="block max-w-80 truncate text-(--sea-ink)">
+                                                <span className="block min-w-0 truncate text-(--sea-ink-soft) dark:text-zinc-400" title={message.text}>
                                                     {message.text}
                                                 </span>
                                             ),

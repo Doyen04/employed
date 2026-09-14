@@ -72,7 +72,7 @@ export function MobileCards<T>({
                                             className="h-4 w-4 shrink-0 cursor-pointer rounded accent-(--lagoon-deep) disabled:cursor-not-allowed"
                                         />
                                     ) : null}
-                                    <div className="min-w-0 flex-1 truncate font-medium text-(--sea-ink) dark:text-zinc-100">
+                                    <div className="min-w-0 flex-1 overflow-hidden truncate font-medium text-(--sea-ink) dark:text-zinc-100">
                                         {title(row)}
                                     </div>
                                 </div>
