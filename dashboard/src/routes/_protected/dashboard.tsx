@@ -200,15 +200,21 @@ function OverviewPage() {
                         <CompactEmpty icon={MessageSquare} text="Messages from monitored chats will appear here." />
                     ) : (
                         <div className="recent-list">
-                            {overview.recentMessages.map((message) => (
-                                <article className="recent-message" key={message.id}>
-                                    <span className="source-avatar">{initials(message.chat.title)}</span>
-                                    <div className="recent-main">
-                                        <div className="recent-meta"><b>{message.chat.title}</b><span>{message.senderName ?? 'Unknown sender'} · {timeLabel(message.receivedAt)}</span></div>
-                                        <p>{truncate(message.text, 150)}</p>
-                                    </div>
-                                </article>
-                            ))}
+                            {overview.recentMessages.map((message) => {
+                                const showSender = message.senderName && message.senderName !== message.chat.title
+                                return (
+                                    <article className="recent-message" key={message.id}>
+                                        <span className="source-avatar">{initials(message.chat.title)}</span>
+                                        <div className="recent-main">
+                                            <div className="recent-meta">
+                                                <b>{message.chat.title}</b>
+                                                <span>{showSender ? `${message.senderName} · ` : ''}{timeLabel(message.receivedAt)}</span>
+                                            </div>
+                                            <p>{truncate(message.text, 150)}</p>
+                                        </div>
+                                    </article>
+                                )
+                            })}
                         </div>
                     )}
                 </section>
