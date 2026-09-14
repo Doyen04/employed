@@ -647,8 +647,8 @@ function ItemList({
                     className="flex items-center justify-between gap-3 rounded-xl border border-(--line) bg-(--surface-strong) p-3.5 shadow-xs"
                 >
                     <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="min-w-0 max-w-full truncate font-semibold text-sm text-(--sea-ink) dark:text-zinc-100">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-(--sea-ink) dark:text-zinc-100">
                                 {row.name}
                             </span>
                             <span

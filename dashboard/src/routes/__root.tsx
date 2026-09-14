@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
     HeadContent,
     Outlet,
@@ -10,6 +11,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import { NotFound } from '../components/NotFound'
+import { PageSkeleton } from '../components/dashboard/PageSkeleton'
 import { ThemeToaster } from '../components/dashboard/Toaster'
 
 import appCss from '../styles.css?url'
@@ -47,9 +49,22 @@ export const Route = createRootRoute({
         ],
     }),
     shellComponent: RootDocument,
-    component: () => <Outlet />, 
+    component: () => <Outlet />,
     notFoundComponent: NotFound,
+    errorComponent: RootErrorComponent,
 })
+
+function RootErrorComponent() {
+    useEffect(() => {
+        window.location.reload()
+    }, [])
+
+    return (
+        <div className="p-4 sm:p-6 min-h-[60vh] flex flex-col justify-center">
+            <PageSkeleton label="Loading" />
+        </div>
+    )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
     const pathname = useRouterState({ select: (s) => s.location.pathname })
