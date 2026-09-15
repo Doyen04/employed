@@ -22,6 +22,7 @@ export const sendManualMail = createServerFn({ method: 'POST' })
       subject?: string
       body?: string
       notifierId?: string
+      attachments?: { filename: string; content: string; contentType?: string }[]
     }) => input,
   )
   .handler(async ({ data }) => {

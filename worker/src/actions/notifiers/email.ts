@@ -43,12 +43,19 @@ export function resolveSmtp(cfg: Record<string, unknown>): ResolvedSmtp {
     }
 }
 
+export interface MailAttachment {
+    filename: string
+    content: string // Base64 encoded string
+    contentType?: string
+}
+
 export interface SendMailInput {
     from: string
     connection: SmtpConnectionOptions
     to: string | string[]
     subject: string
     text: string
+    attachments?: MailAttachment[]
 }
 
 export async function sendSmtpMail(input: SendMailInput): Promise<NotifierResult> {
@@ -59,6 +66,11 @@ export async function sendSmtpMail(input: SendMailInput): Promise<NotifierResult
             to: input.to,
             subject: input.subject,
             text: input.text,
+            attachments: input.attachments?.map((att) => ({
+                filename: att.filename,
+                content: Buffer.from(att.content, 'base64'),
+                contentType: att.contentType,
+            })),
         })
         return { status: 'sent' }
     } catch (error) {

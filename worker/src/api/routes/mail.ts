@@ -74,12 +74,19 @@ mailRouter.get('/', async (req, res) => {
     })
 })
 
+const attachmentSchema = z.object({
+    filename: z.string().min(1),
+    content: z.string().min(1),
+    contentType: z.string().optional(),
+})
+
 const sendSchema = z.object({
     analysisId: z.string().min(1),
     recipients: z.array(z.string().min(1, 'a recipient address cannot be empty')).min(1, 'at least one recipient is required'),
     subject: z.string().optional(),
     body: z.string().optional(),
     notifierId: z.string().optional(),
+    attachments: z.array(attachmentSchema).optional(),
 })
 
 // POST /mail/send — compose and send an email for an analysed message.
@@ -148,6 +155,7 @@ mailRouter.post('/send', async (req, res) => {
         to: body.recipients,
         subject,
         text,
+        attachments: body.attachments,
     })
 
     if (result.status === 'failed') {
