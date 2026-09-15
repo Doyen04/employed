@@ -224,32 +224,32 @@ export function LogTable<T>({
             <div className="hidden overflow-x-auto rounded-xl border border-(--line) md:block">
                 <table className="w-full table-fixed border-collapse text-sm">
                     {showHeader ? (
-                    <thead>
-                        <tr className="text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
-                            {selectableEnabled ? (
-                                <th className="w-10 px-3 py-2.5">
-                                    <input
-                                        ref={selectAllRef}
-                                        type="checkbox"
-                                        checked={allSelected}
-                                        onChange={toggleAll}
-                                        aria-label="Select all visible rows"
-                                        className="h-4 w-4 cursor-pointer rounded accent-(--lagoon-deep)"
-                                    />
-                                </th>
-                            ) : null}
-                            {allColumns.map((column, index) => (
-                                <th
-                                    key={index}
-                                    className={`whitespace-nowrap px-3 py-2.5 font-semibold ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
-                                        }`}
-                                >
-                                    {column.header}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                ) : null}
+                        <thead>
+                            <tr className="text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
+                                {selectableEnabled ? (
+                                    <th className="w-10 px-3 py-2.5">
+                                        <input
+                                            ref={selectAllRef}
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            onChange={toggleAll}
+                                            aria-label="Select all visible rows"
+                                            className="h-4 w-4 cursor-pointer rounded accent-(--lagoon-deep)"
+                                        />
+                                    </th>
+                                ) : null}
+                                {allColumns.map((column, index) => (
+                                    <th
+                                        key={index}
+                                        className={`whitespace-nowrap px-3 py-2.5 font-semibold ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
+                                            }`}
+                                    >
+                                        {column.header}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                    ) : null}
                     <tbody>
                         {segments
                             ? segments.map((segment) => {
