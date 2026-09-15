@@ -138,6 +138,7 @@ export function LogTable<T>({
         onSelectedKeysChange(next)
     }
 
+    const showHeader = !grouping || visibleRows.length > 0
     const deleting = deletingKey !== null && deletingKey !== undefined
 
     const mobileCardsProps = {
@@ -222,6 +223,7 @@ export function LogTable<T>({
         <div>
             <div className="hidden overflow-x-auto rounded-xl border border-(--line) md:block">
                 <table className="w-full table-fixed border-collapse text-sm">
+                    {showHeader ? (
                     <thead>
                         <tr className="text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
                             {selectableEnabled ? (
@@ -247,6 +249,7 @@ export function LogTable<T>({
                             ))}
                         </tr>
                     </thead>
+                ) : null}
                     <tbody>
                         {segments
                             ? segments.map((segment) => {
