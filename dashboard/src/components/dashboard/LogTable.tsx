@@ -221,7 +221,7 @@ export function LogTable<T>({
     return (
         <div>
             <div className="hidden overflow-x-auto rounded-xl border border-(--line) md:block">
-                <table className="w-full border-collapse text-sm">
+                <table className="w-full table-fixed border-collapse text-sm">
                     <thead>
                         <tr className="text-left text-[11px] uppercase tracking-wider text-(--sea-ink-soft)">
                             {selectableEnabled ? (

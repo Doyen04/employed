@@ -378,6 +378,7 @@ function MessagesPage() {
                                     columns={[
                                         {
                                             header: 'Sender',
+                                            className: 'w-44 max-w-44',
                                             cell: (message) => (
                                                 <span className="block min-w-0 truncate font-medium text-(--sea-ink) dark:text-zinc-200" title={message.senderName ?? 'Unknown'}>
                                                     {message.senderName ?? 'Unknown'}
@@ -386,6 +387,7 @@ function MessagesPage() {
                                         },
                                         {
                                             header: 'Message',
+                                            className: 'w-auto max-w-md md:max-w-xl lg:max-w-2xl',
                                             cell: (message) => (
                                                 <span className="block min-w-0 truncate text-(--sea-ink-soft) dark:text-zinc-400" title={message.text}>
                                                     {message.text}
@@ -394,6 +396,7 @@ function MessagesPage() {
                                         },
                                         {
                                             header: 'Time',
+                                            className: 'w-24',
                                             align: 'right',
                                             cell: (message) => (
                                                 <span
