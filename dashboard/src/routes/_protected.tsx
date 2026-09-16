@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createFileRoute, Link, Outlet, redirect, useRouterState } from '@tanstack/react-router'
 import {
     Activity,
@@ -8,6 +9,8 @@ import {
     LogOut,
     Mail,
     MessageSquare,
+    PanelLeftClose,
+    PanelLeftOpen,
     Radio,
     ScanSearch,
     Send,
@@ -55,6 +58,25 @@ function AppShell() {
     const pathname = useRouterState({ select: (state) => state.location.pathname })
     const current = NAV.find((item) => item.to === pathname) ?? NAV[0]
 
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('employed_sidebar_collapsed')
+            if (saved !== null) return saved === 'true'
+            return window.innerWidth <= 1180
+        }
+        return false
+    })
+
+    const toggleCollapse = () => {
+        setCollapsed((prev) => {
+            const next = !prev
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('employed_sidebar_collapsed', String(next))
+            }
+            return next
+        })
+    }
+
     async function handleSignOut() {
         try {
             await logout()
@@ -64,25 +86,43 @@ function AppShell() {
     }
 
     return (
-        <div className="dashboard-shell">
+        <div className={`dashboard-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
             <aside className="app-sidebar">
                 <div className="app-sidebar-brand">
-                    <Link to="/" aria-label="Employed home">
+                    <Link to="/" aria-label="Employed home" title={collapsed ? 'Employed' : undefined}>
                         <span className="brand-mark"><Zap aria-hidden="true" /></span>
-                        <span><b>Employed</b><small>Signal intelligence</small></span>
+                        {!collapsed && (
+                            <span><b>Employed</b><small>Signal intelligence</small></span>
+                        )}
                     </Link>
                 </div>
 
                 <nav className="app-sidebar-nav" aria-label="Dashboard navigation">
-                    <p>Monitor</p>
-                    {NAV.slice(0, 6).map((item) => <SidebarLink key={item.to} item={item} />)}
-                    <p>Configure</p>
-                    {NAV.slice(6).map((item) => <SidebarLink key={item.to} item={item} />)}
+                    {!collapsed && <p>Monitor</p>}
+                    {NAV.slice(0, 6).map((item) => <SidebarLink key={item.to} item={item} collapsed={collapsed} />)}
+                    {!collapsed && <p>Configure</p>}
+                    {NAV.slice(6).map((item) => <SidebarLink key={item.to} item={item} collapsed={collapsed} />)}
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button type="button" onClick={() => void handleSignOut()} className="sidebar-signout">
-                        <LogOut aria-hidden="true" /><span>Sign out</span>
+                    <button
+                        type="button"
+                        onClick={toggleCollapse}
+                        className="sidebar-toggle-btn"
+                        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    >
+                        {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+                        {!collapsed && <span>Collapse sidebar</span>}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => void handleSignOut()}
+                        className="sidebar-signout"
+                        title={collapsed ? 'Sign out' : undefined}
+                    >
+                        <LogOut aria-hidden="true" />
+                        {!collapsed && <span>Sign out</span>}
                     </button>
                 </div>
             </aside>
@@ -90,8 +130,17 @@ function AppShell() {
             <div className="app-main-column">
                 <header className="app-topbar">
                     <div className="topbar-title">
+                        <button
+                            type="button"
+                            onClick={toggleCollapse}
+                            className="topbar-sidebar-toggle"
+                            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        >
+                            {collapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+                        </button>
                         <Link to="/" className="topbar-settings topbar-home" aria-label="Go to landing page">
-                        <span className="mobile-brand-mark"><Zap /></span>
+                            <span className="mobile-brand-mark"><Zap /></span>
                         </Link>
                         <div><p>{current.description}</p><h1>{current.label}</h1></div>
                     </div>
@@ -116,17 +165,20 @@ function AppShell() {
     )
 }
 
-function SidebarLink({ item }: { item: (typeof NAV)[number] }) {
+function SidebarLink({ item, collapsed }: { item: (typeof NAV)[number]; collapsed?: boolean }) {
     return (
         <Link
             to={item.to}
             activeOptions={{ exact: true }}
             activeProps={{ className: 'sidebar-link is-active' }}
             className="sidebar-link"
+            title={collapsed ? `${item.label} — ${item.description}` : undefined}
         >
             <span className="sidebar-link-icon"><item.icon aria-hidden="true" /></span>
-            <span><b>{item.label}</b><small>{item.description}</small></span>
-            <ChevronRight className="sidebar-chevron" aria-hidden="true" />
+            {!collapsed && (
+                <span><b>{item.label}</b><small>{item.description}</small></span>
+            )}
+            {!collapsed && <ChevronRight className="sidebar-chevron" aria-hidden="true" />}
         </Link>
     )
 }
