@@ -246,20 +246,22 @@ useEffect(() => {
                                     deletingKey={deletingKey}
                                     rowAriaLabel={() => 'Open analysis details'}
                                     columns={[
-                                        { header: 'Status', cell: (analysis) => <FiredBadge analysis={analysis} /> },
+                                        { header: 'Status', className: 'w-24', cell: (analysis) => <FiredBadge analysis={analysis} /> },
                                         {
                                             header: 'Config',
+                                            className: 'w-36 sm:w-44',
                                             cell: (analysis) => (
-                                                <span className="whitespace-nowrap font-semibold text-(--sea-ink)">
+                                                <span className="block truncate font-semibold text-(--sea-ink)" title={analysis.analysisConfigName}>
                                                     {analysis.analysisConfigName}
                                                 </span>
                                             ),
                                         },
                                         {
                                             header: 'Analyzed by',
+                                            className: 'w-32 sm:w-40',
                                             hiddenOnMobile: true,
                                             cell: (analysis) => (
-                                                <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">
+                                                <span className="block truncate text-xs text-(--sea-ink-soft)">
                                                     {analysis.provider
                                                         ? [analysis.provider, analysis.model].filter(Boolean).join(' · ')
                                                         : '—'}
@@ -268,14 +270,16 @@ useEffect(() => {
                                         },
                                         {
                                             header: 'Chat',
+                                            className: 'w-32 sm:w-40',
                                             cell: (analysis) => (
-                                                <span className="whitespace-nowrap text-(--sea-ink)">
+                                                <span className="block truncate text-(--sea-ink)" title={analysis.message.chat.title}>
                                                     {analysis.message.chat.title}
                                                 </span>
                                             ),
                                         },
                                         {
                                             header: 'Message',
+                                            className: 'w-auto min-w-0',
                                             cell: (analysis) => (
                                                 <span className="block max-w-60 truncate text-(--sea-ink-soft)">
                                                     “{analysis.message.text}”
@@ -284,6 +288,7 @@ useEffect(() => {
                                         },
                                         {
                                             header: 'Verdict',
+                                            className: 'w-36 sm:w-48',
                                             hiddenOnMobile: true,
                                             cell: (analysis) => (
                                                 <span className="block max-w-48 truncate font-mono text-xs text-(--sea-ink-soft)">
@@ -293,6 +298,7 @@ useEffect(() => {
                                         },
                                         {
                                             header: 'Time',
+                                            className: 'w-20 sm:w-24',
                                             align: 'right',
                                             cell: (analysis) => (
                                                 <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">

@@ -244,9 +244,10 @@ function ActionLogsPage() {
                                     deletingKey={deletingKey}
                                     rowAriaLabel={() => 'Open action log details'}
                                     columns={[
-                                        { header: 'Status', cell: (log) => <StatusBadge status={log.status} /> },
+                                        { header: 'Status', className: 'w-24', cell: (log) => <StatusBadge status={log.status} /> },
                                         {
                                             header: 'Sent to',
+                                            className: 'w-32 sm:w-40',
                                             cell: (log) => (
                                                 <span className="block max-w-40 truncate whitespace-nowrap text-(--sea-ink)">
                                                     {log.recipient ?? '—'}
@@ -255,8 +256,9 @@ function ActionLogsPage() {
                                         },
                                         {
                                             header: 'Notifier',
+                                            className: 'w-32 sm:w-40',
                                             cell: (log) => (
-                                                <span className="whitespace-nowrap font-semibold text-(--sea-ink)">
+                                                <span className="block truncate font-semibold text-(--sea-ink)">
                                                     {log.notifier.name}
                                                     <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wider text-(--sea-ink-soft)">
                                                         {log.notifier.type}
@@ -266,22 +268,25 @@ function ActionLogsPage() {
                                         },
                                         {
                                             header: 'Config',
+                                            className: 'w-32 sm:w-40',
                                             cell: (log) => (
-                                                <span className="whitespace-nowrap text-(--sea-ink)">
+                                                <span className="block truncate text-(--sea-ink)" title={log.analysis.analysisConfigName}>
                                                     {log.analysis.analysisConfigName}
                                                 </span>
                                             ),
                                         },
                                         {
                                             header: 'Chat',
+                                            className: 'w-32 sm:w-40',
                                             cell: (log) => (
-                                                <span className="whitespace-nowrap text-(--sea-ink)">
+                                                <span className="block truncate text-(--sea-ink)" title={log.analysis.message.chat.title}>
                                                     {log.analysis.message.chat.title}
                                                 </span>
                                             ),
                                         },
                                         {
                                             header: 'Message',
+                                            className: 'w-auto min-w-0',
                                             hiddenOnMobile: true,
                                             cell: (log) => (
                                                 <span className="block max-w-48 truncate text-(--sea-ink-soft)">
@@ -291,6 +296,7 @@ function ActionLogsPage() {
                                         },
                                         {
                                             header: 'Time',
+                                            className: 'w-20 sm:w-24',
                                             align: 'right',
                                             cell: (log) => (
                                                 <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">

@@ -203,21 +203,24 @@ function MailPage() {
     const columns: LogTableColumn<WorkerMailJob>[] = [
         {
             header: 'Chat',
+            className: 'w-32 sm:w-44',
             cell: (job) => (
-                <span className="whitespace-nowrap font-semibold text-(--sea-ink)">{job.chat.title}</span>
+                <span className="block truncate font-semibold text-(--sea-ink)" title={job.chat.title}>{job.chat.title}</span>
             ),
         },
         {
             header: 'Config',
+            className: 'w-36 sm:w-48',
             hiddenOnMobile: true,
             cell: (job) => (
-                <span className="whitespace-nowrap text-xs font-semibold text-(--lagoon-deep) dark:text-(--lagoon)">
+                <span className="block truncate text-xs font-semibold text-(--lagoon-deep) dark:text-(--lagoon)" title={job.analysisConfigName}>
                     {job.analysisConfigName}
                 </span>
             ),
         },
         {
             header: 'Message',
+            className: 'w-auto min-w-0',
             cell: (job) => (
                 <span className="block max-w-72 truncate text-xs text-(--sea-ink-soft)" title={job.text}>
                     {job.text}
@@ -226,15 +229,17 @@ function MailPage() {
         },
         {
             header: 'Sender',
+            className: 'w-24 sm:w-32',
             hiddenOnMobile: true,
             cell: (job) => (
-                <span className="whitespace-nowrap text-xs text-(--sea-ink-soft)">
+                <span className="block truncate text-xs text-(--sea-ink-soft)" title={job.senderName ?? '—'}>
                     {job.senderName ?? '—'}
                 </span>
             ),
         },
         {
             header: 'Analysed',
+            className: 'w-20 sm:w-24',
             align: 'right',
             cell: (job) => (
                 <span

@@ -190,7 +190,7 @@ export function LogTable<T>({
             cells.push(
                 <td
                     key={index}
-                    className={`px-3 py-2.5 ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
+                    className={`px-3 py-2.5 overflow-hidden ${column.align === 'right' ? 'text-right' : ''} ${column.hiddenOnMobile ? 'hidden md:table-cell' : ''
                         } ${column.className ?? ''}`}
                 >
                     {isDelete ? (
