@@ -367,10 +367,14 @@ a {
 
 .brand-mark {
     display: inline-grid;
-    width: 2rem;
-    height: 2rem;
+    width: 2.15rem;
+    height: 2.15rem;
+    min-width: 2.15rem;
+    max-width: 2.15rem;
+    aspect-ratio: 1 / 1;
     place-items: center;
-    flex: 0 0 auto;
+    flex: 0 0 2.15rem;
+    shrink: 0;
     border-radius: 0.65rem;
     color: #4F3D35;
     background: #ECB914;
@@ -857,8 +861,8 @@ a {
 
 .dashboard-shell.sidebar-collapsed .app-sidebar { width: 4.5rem; }
 .dashboard-shell.sidebar-collapsed .app-sidebar-brand { justify-content: center; align-items: center; padding: 0; width: 100%; }
-.dashboard-shell.sidebar-collapsed .app-sidebar-brand > a { justify-content: center; align-items: center; gap: 0; width: 100%; margin: 0 auto; text-align: center; }
-.dashboard-shell.sidebar-collapsed .app-sidebar-brand .brand-mark { display: grid; place-items: center; margin: 0 auto; width: 2.2rem; height: 2.2rem; }
+.dashboard-shell.sidebar-collapsed .app-sidebar-brand > a { display: inline-flex; justify-content: center; align-items: center; gap: 0; width: auto; margin: 0 auto; text-align: center; }
+.dashboard-shell.sidebar-collapsed .app-sidebar-brand .brand-mark { display: grid; place-items: center; margin: 0 auto; width: 2.15rem; height: 2.15rem; min-width: 2.15rem; max-width: 2.15rem; aspect-ratio: 1 / 1; flex: 0 0 2.15rem; }
 .dashboard-shell.sidebar-collapsed .app-sidebar-nav { padding: .8rem .4rem; }
 .dashboard-shell.sidebar-collapsed .sidebar-link { justify-content: center; align-items: center; padding: .5rem; gap: 0; }
 .dashboard-shell.sidebar-collapsed .sidebar-footer { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .8rem .4rem; }
