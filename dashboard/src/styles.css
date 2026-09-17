@@ -1167,3 +1167,102 @@ a {
     .recent-message, .action-row, .live-feed-row { padding: .75rem .9rem; }
     .app-topbar { padding-inline: .7rem; gap: .6rem; }
 }
+
+/* Custom Driver.js Popover Styling for Employed Theme */
+.driver-popover.employed-driver-popover {
+    background-color: var(--surface-strong);
+    color: var(--sea-ink);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    padding: 1.1rem 1.2rem;
+    box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.22);
+    font-family: var(--font-sans);
+    max-width: 320px;
+}
+
+.employed-driver-popover .driver-popover-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--sea-ink);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
+}
+
+.employed-driver-popover .driver-popover-description {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--sea-ink-soft);
+    margin-bottom: 0.8rem;
+}
+
+.employed-driver-popover .driver-popover-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.8rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--line);
+}
+
+.employed-driver-popover .driver-popover-progress-text {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--sea-ink-soft);
+}
+
+.employed-driver-popover .driver-popover-navigation-btns {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.employed-driver-popover .driver-popover-btn {
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 0.55rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--sea-ink);
+    cursor: pointer;
+    transition: all 150ms ease;
+    text-shadow: none;
+}
+
+.employed-driver-popover .driver-popover-btn:hover {
+    border-color: var(--lagoon);
+    background: rgba(236, 185, 20, 0.18);
+}
+
+.employed-driver-popover .driver-popover-next-btn,
+.employed-driver-popover .driver-popover-done-btn {
+    background: #ECB914;
+    color: #4F3D35;
+    border-color: #ECB914;
+}
+
+.dark .driver-popover.employed-driver-popover {
+    background-color: #261B16;
+    color: #F6D579;
+    border-color: rgba(236, 185, 20, 0.25);
+}
+
+.dark .employed-driver-popover .driver-popover-title {
+    color: #FFF;
+}
+
+.dark .employed-driver-popover .driver-popover-description {
+    color: #D1C2BA;
+}
+
+.dark .employed-driver-popover .driver-popover-btn {
+    background: #33241E;
+    color: #FFF;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark .employed-driver-popover .driver-popover-next-btn,
+.dark .employed-driver-popover .driver-popover-done-btn {
+    background: #ECB914;
+    color: #4F3D35;
+}
+

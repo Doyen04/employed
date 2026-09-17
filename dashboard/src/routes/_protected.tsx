@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute, Link, Outlet, redirect, useRouterState } from '@tanstack/react-router'
 import {
     Activity,
     Bot,
     ChevronRight,
     HeartPulse,
+    HelpCircle,
     LayoutDashboard,
     LogOut,
     Mail,
@@ -22,6 +23,7 @@ import type { LucideIcon } from 'lucide-react'
 import { getSession, logout } from '../server/auth'
 import { WorkerStatusPill } from '../components/dashboard/WorkerStatusPill'
 import ThemeToggle from '../components/ThemeToggle'
+import { isTourCompleted, startTour } from '../lib/tour'
 
 type AppPath =
     | '/dashboard'
@@ -76,6 +78,15 @@ function AppShell() {
             return next
         })
     }
+
+    useEffect(() => {
+        if (!isTourCompleted()) {
+            const timer = setTimeout(() => {
+                startTour()
+            }, 600)
+            return () => clearTimeout(timer)
+        }
+    }, [])
 
     async function handleSignOut() {
         try {
@@ -146,6 +157,15 @@ function AppShell() {
                     </div>
                     <div className="topbar-actions">
                         <WorkerStatusPill />
+                        <button
+                            type="button"
+                            onClick={() => startTour()}
+                            className="topbar-settings"
+                            aria-label="Start interactive guided tour"
+                            title="Start interactive guided tour"
+                        >
+                            <HelpCircle aria-hidden="true" />
+                        </button>
                         <ThemeToggle />
                         <Link to="/settings" className="topbar-settings" aria-label="Open automation settings"><Settings2 /></Link>
                     </div>
