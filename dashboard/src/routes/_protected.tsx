@@ -168,6 +168,15 @@ function AppShell() {
                         </button>
                         <ThemeToggle />
                         <Link to="/settings" className="topbar-settings" aria-label="Open automation settings"><Settings2 /></Link>
+                        <button
+                            type="button"
+                            onClick={() => void handleSignOut()}
+                            className="topbar-signout"
+                            aria-label="Sign out"
+                            title="Sign out"
+                        >
+                            <LogOut aria-hidden="true" />
+                        </button>
                     </div>
                 </header>
 

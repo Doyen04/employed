@@ -154,11 +154,13 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Reserve scrollbar gutter on desktop only — mobile uses overlay scrollbars */
-@media (min-width: 821px) {
-    html {
-        scrollbar-gutter: stable;
-    }
+html {
+    /* Prevent any driver.js popover or overlay from expanding the document */
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    /* Reserve scrollbar space on desktop so tour toggling overflow:hidden doesn't shift layout */
+    scrollbar-gutter: stable both-edges;
 }
 
 html,
@@ -169,10 +171,12 @@ body,
 
 body {
     margin: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
     color: var(--sea-ink);
     font-family: var(--font-sans);
     background-color: var(--bg-base);
-    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
