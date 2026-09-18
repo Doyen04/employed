@@ -155,12 +155,16 @@
 }
 
 html {
-    /* Prevent any driver.js popover or overlay from expanding the document */
     max-width: 100%;
     overflow-x: hidden;
     position: relative;
-    /* Reserve scrollbar space on desktop so tour toggling overflow:hidden doesn't shift layout */
-    scrollbar-gutter: stable both-edges;
+}
+
+/* Desktop only: reserve scrollbar gutter so driver.js toggling overflow:hidden doesn't shift content */
+@media (min-width: 821px) {
+    html {
+        scrollbar-gutter: stable;
+    }
 }
 
 html,
