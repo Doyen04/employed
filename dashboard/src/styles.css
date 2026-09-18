@@ -154,8 +154,11 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-html {
-    scrollbar-gutter: stable;
+/* Reserve scrollbar gutter on desktop only — mobile uses overlay scrollbars */
+@media (min-width: 821px) {
+    html {
+        scrollbar-gutter: stable;
+    }
 }
 
 html,
