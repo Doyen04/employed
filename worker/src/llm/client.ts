@@ -117,16 +117,16 @@ function buildPayload(
     const responseFormat =
         mode === 'json_schema'
             ? {
-                  type: 'json_schema',
-                  json_schema: {
-                      name: SCHEMA_NAME,
-                      strict: false,
-                      schema: normalizeSchema(schema),
-                  },
-              }
+                type: 'json_schema',
+                json_schema: {
+                    name: SCHEMA_NAME,
+                    strict: false,
+                    schema: normalizeSchema(schema),
+                },
+            }
             : mode === 'json_object'
-              ? { type: 'json_object' }
-              : undefined
+                ? { type: 'json_object' }
+                : undefined
 
     return {
         model: entry.model,
