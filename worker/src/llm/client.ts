@@ -9,6 +9,12 @@ import { truncate } from '../utils/truncate'
 const GROQ_DEFAULT_MODEL = 'openai/gpt-oss-120b'
 const OPENROUTER_DEFAULT_MODEL = 'openrouter/free'
 
+const OPENROUTER_SEARCH_TOOLS: { type: string }[] = [
+    { type: 'openrouter:web_search' },
+    { type: 'openrouter:web_fetch' },
+]
+const GROQ_SEARCH_TOOLS: { type: string }[] = [{ type: 'browser_search' }]
+
 const SCHEMA_NAME = 'analysis_result'
 
 export interface LlmResult {
@@ -28,6 +34,7 @@ interface ProviderEntry {
     model: string
     fallbackModels: string[]
     isOpenRouter: boolean
+    searchMode: 'openrouter' | 'groq' | 'none'
     client: OpenAI
 }
 
@@ -186,6 +193,64 @@ async function attemptWithRetries(
     })
 }
 
+function searchModeFor(baseUrl: string, isOpenRouter: boolean): ProviderEntry['searchMode'] {
+    if (isOpenRouter) return 'openrouter'
+    try {
+        if (new URL(baseUrl).hostname.includes('groq')) return 'groq'
+    } catch {
+        // unparseable base URL — web search can't be assumed
+    }
+    return 'none'
+}
+
+function searchToolsFor(entry: ProviderEntry): { type: string }[] {
+    if (entry.searchMode === 'openrouter') return OPENROUTER_SEARCH_TOOLS
+    if (entry.searchMode === 'groq') return GROQ_SEARCH_TOOLS
+    return []
+}
+
+/**
+ * Attempts a single Responses-API completion with the provider's web
+ * search/fetch tool attached. Returns null when the provider has no search
+ * tool or the call itself fails — the caller then falls back to the regular
+ * chat-completions path so search adds capability, never a hard dependency.
+ */
+async function completeWithSearch(
+    client: OpenAI,
+    entry: ProviderEntry,
+    prompt: string,
+): Promise<string | null> {
+    const rawTools = searchToolsFor(entry)
+    if (rawTools.length === 0) return null
+
+    const tools: OpenAI.Responses.Tool[] = rawTools.map(
+        (tool) => tool as unknown as OpenAI.Responses.Tool,
+    )
+    const response = await client.responses.create({
+        model: entry.model,
+        input: `${prompt}\n\nWeb search and web fetch tools are available. Use them to verify external facts mentioned in the message — deadlines, eligibility requirements, funding amounts, official application pages — before answering. Always reply with a single valid JSON object and nothing else.`,
+        tools,
+        temperature: 0,
+    })
+    const content = response.output_text
+    return content && content.length > 0 ? content : null
+}
+
+async function tryCompleteWithSearch(
+    entry: ProviderEntry,
+    prompt: string,
+): Promise<string | null> {
+    if (entry.searchMode === 'none') return null
+    try {
+        return await completeWithSearch(entry.client, entry, prompt)
+    } catch (error) {
+        console.warn(
+            `[llm] ${entry.name} web search unavailable (${getErrorMessage(error)}) — falling back to plain completion`,
+        )
+        return null
+    }
+}
+
 class ProviderChain implements LlmProvider {
     private providers: ProviderEntry[]
     private cooldownUntil = new Map<string, number>()
@@ -204,6 +269,19 @@ class ProviderChain implements LlmProvider {
         let lastError: unknown
 
         for (const entry of candidates) {
+            const searched = await tryCompleteWithSearch(entry, prompt)
+            if (searched !== null) {
+                this.cooldownUntil.delete(entry.name)
+                if (entry !== this.providers[0]) {
+                    await reportDiagnostic(
+                        'llm.failover',
+                        'warning',
+                        `${entry.name} unavailable (${reasonOf(lastError)}) — routed to backup provider.`,
+                    )
+                }
+                return { content: searched, provider: entry.name, model: entry.model }
+            }
+
             try {
                 const content = await attemptWithRetries(
                     entry.client,
@@ -255,12 +333,15 @@ export function createLlmProvider(): LlmProvider | null {
     const primary = config.LLM_MODELS || config.LLM_MODEL || GROQ_DEFAULT_MODEL
     const backup = config.LLM_BACKUP_MODELS || config.LLM_BACKUP_MODEL || OPENROUTER_DEFAULT_MODEL
 
+    const isPrimaryOpenRouter = config.LLM_BASE_URL.includes('openrouter.ai')
+
     const providers: ProviderEntry[] = [
         {
             name: providerLabel(config.LLM_BASE_URL),
             model: resolveModels(primary)[0] ?? GROQ_DEFAULT_MODEL,
             fallbackModels: resolveModels(primary).slice(1),
-            isOpenRouter: config.LLM_BASE_URL.includes('openrouter.ai'),
+            isOpenRouter: isPrimaryOpenRouter,
+            searchMode: searchModeFor(config.LLM_BASE_URL, isPrimaryOpenRouter),
             client: new OpenAI({
                 apiKey: config.LLM_API_KEY,
                 baseURL: config.LLM_BASE_URL,
@@ -270,11 +351,13 @@ export function createLlmProvider(): LlmProvider | null {
     ]
 
     if (config.LLM_BACKUP_API_KEY) {
+        const isBackupOpenRouter = config.LLM_BACKUP_BASE_URL.includes('openrouter.ai')
         providers.push({
             name: providerLabel(config.LLM_BACKUP_BASE_URL),
             model: resolveModels(backup)[0] ?? OPENROUTER_DEFAULT_MODEL,
             fallbackModels: resolveModels(backup).slice(1),
-            isOpenRouter: config.LLM_BACKUP_BASE_URL.includes('openrouter.ai'),
+            isOpenRouter: isBackupOpenRouter,
+            searchMode: searchModeFor(config.LLM_BACKUP_BASE_URL, isBackupOpenRouter),
             client: new OpenAI({
                 apiKey: config.LLM_BACKUP_API_KEY,
                 baseURL: config.LLM_BACKUP_BASE_URL,
