@@ -244,6 +244,11 @@ async function tryCompleteWithSearch(
     try {
         return await completeWithSearch(entry.client, entry, prompt)
     } catch (error) {
+        await reportDiagnostic(
+            'llm.websearch',
+            'warning',
+            `${entry.name} web search unavailable (${getErrorMessage(error)}) — falling back to plain completion.`,
+        )
         console.warn(
             `[llm] ${entry.name} web search unavailable (${getErrorMessage(error)}) — falling back to plain completion`,
         )

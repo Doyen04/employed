@@ -162,6 +162,7 @@ Reported `key`s:
 - `login.flow` — Telegram sign-in errors in the web login flow
 - `llm.analyze` — LLM call failed or returned non-JSON
 - `llm.failover` — a request was served by the backup provider because the primary (Groq) errored or hit a rate limit (logged per event)
+- `llm.websearch` — the provider's web-search tools (OpenRouter `openrouter:web_search`/`openrouter:web_fetch`, Groq `browser_search`) were requested but the call failed; analysis fell back to plain completion (logged per event)
 - `analysis.config` — no active configs, or a message arrived in a chat the active configs don't cover
 - `notifier.dispatch` — a notifier send failed (or unknown notifier type)
 

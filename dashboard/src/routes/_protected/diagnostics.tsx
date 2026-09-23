@@ -31,6 +31,7 @@ const SUBSYSTEM_KEYS: { key: string; title: string }[] = [
     { key: 'login.flow', title: 'Telegram login' },
     { key: 'llm.analyze', title: 'Analysis' },
     { key: 'llm.failover', title: 'LLM failover' },
+    { key: 'llm.websearch', title: 'LLM web search' },
     { key: 'analysis.config', title: 'Analysis config' },
     { key: 'notifier.dispatch', title: 'Notifier' },
 ]
